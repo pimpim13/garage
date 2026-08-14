@@ -73,6 +73,27 @@ h1, h2, h3, .display-font {
   color: var(--ps-black);
 }
 
+.dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+}
+
+.dot-vert {
+  background-color: var(--ps-green-dark);
+}
+
+.dot-rouge {
+  background-color: #c0392b;
+}
+
+.nav-link.active .dot-vert {
+  background-color: var(--ps-black);
+}
+
 .hero {
   background-color: var(--ps-black);
   color: var(--ps-white);
