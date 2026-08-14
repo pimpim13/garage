@@ -8,5 +8,6 @@ urlpatterns = [
     path('', HomeView.as_view(), name='home'),
     path('comptes/', include('apps.accounts.urls')),
     path('calendrier/', include('apps.scheduling.urls')),
+    path('reservations/', include('apps.bookings.urls')),
     path('offres/', include('apps.offers.urls')),
 ]

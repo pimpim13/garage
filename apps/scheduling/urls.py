@@ -1,8 +1,11 @@
 from django.urls import path
-from django.views.generic import TemplateView
+
+from . import views
 
 app_name = 'scheduling'
 
 urlpatterns = [
-    path('', TemplateView.as_view(template_name='scheduling/calendrier.html'), name='calendrier'),
+    path('', views.calendrier, name='calendrier'),
+    path('semaine/<str:semaine>/', views.calendrier, name='calendrier_semaine'),
+    path('seance/<int:pk>/', views.SeanceDetailView.as_view(), name='seance_detail'),
 ]

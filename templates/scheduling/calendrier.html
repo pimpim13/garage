@@ -3,15 +3,46 @@
 {% block content %}
   <h2 class="mb-4">Calendrier des séances</h2>
 
-  <ul class="nav nav-pills mb-4">
-    <li class="nav-item"><a class="nav-link active" href="#">Lun.</a></li>
-    <li class="nav-item"><a class="nav-link" href="#">Mar.</a></li>
-    <li class="nav-item"><a class="nav-link" href="#">Mer.</a></li>
-    <li class="nav-item"><a class="nav-link" href="#">Jeu.</a></li>
-    <li class="nav-item"><a class="nav-link" href="#">Ven.</a></li>
-    <li class="nav-item"><a class="nav-link" href="#">Sam.</a></li>
-    <li class="nav-item"><a class="nav-link" href="#">Dim.</a></li>
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <a href="{% url 'scheduling:calendrier_semaine' semaine=semaine_precedente|date:'Y-m-d' %}" class="btn btn-outline-dark btn-sm">&laquo; Semaine préc.</a>
+    <span class="fw-semibold">Semaine du {{ lundi|date:'d/m/Y' }}</span>
+    <a href="{% url 'scheduling:calendrier_semaine' semaine=semaine_suivante|date:'Y-m-d' %}" class="btn btn-outline-dark btn-sm">Semaine suiv. &raquo;</a>
+  </div>
+
+  <ul class="nav nav-pills mb-4 flex-nowrap overflow-auto gap-1">
+    {% for jour in jours %}
+      <li class="nav-item">
+        <a class="nav-link text-center {% if jour == jour_selectionne %}active{% endif %}"
+           href="{% url 'scheduling:calendrier_semaine' semaine=lundi|date:'Y-m-d' %}?jour={{ jour|date:'Y-m-d' }}">
+          {{ jour|date:'D' }}<br>{{ jour|date:'d' }}
+        </a>
+      </li>
+    {% endfor %}
   </ul>
 
-  <p class="text-muted">La vue calendrier hebdomadaire sera implémentée ici (inscription/désinscription, participants, coach).</p>
+  {% if seances_du_jour %}
+    <div class="row g-3">
+      {% for seance in seances_du_jour %}
+        <div class="col-12 col-md-6 col-lg-4">
+          <a href="{% url 'scheduling:seance_detail' pk=seance.pk %}" class="text-decoration-none text-reset">
+            <div class="card p-3 h-100">
+              <div class="d-flex justify-content-between align-items-start">
+                <h5 class="mb-1">{{ seance.nom }}</h5>
+                <span class="badge {% if seance.places_restantes > 0 %}bg-success{% else %}bg-secondary{% endif %}">
+                  {{ seance.places_restantes }}/{{ seance.capacite_max }}
+                </span>
+              </div>
+              <p class="mb-1">{{ seance.debut|date:'H:i' }} – {{ seance.fin|date:'H:i' }}</p>
+              {% if seance.coach %}<p class="text-muted mb-0">Coach : {{ seance.coach }}</p>{% endif %}
+              {% if seance.pk in inscriptions_membre %}
+                <span class="badge bg-dark mt-2 align-self-start">Vous êtes inscrit(e)</span>
+              {% endif %}
+            </div>
+          </a>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-muted">Aucune séance ce jour-là.</p>
+  {% endif %}
 {% endblock %}
