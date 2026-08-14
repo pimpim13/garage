@@ -3,10 +3,10 @@
 {% block content %}
   <h2 class="mb-4">Calendrier des séances</h2>
 
-  <div class="d-flex align-items-center justify-content-between mb-3">
+  <div class="semaine-nav mb-3">
     <a href="{% url 'scheduling:calendrier_semaine' semaine=semaine_precedente|date:'Y-m-d' %}" class="btn btn-outline-dark btn-sm">&laquo; Semaine préc.</a>
-    <span class="fw-semibold">Semaine du {{ lundi|date:'d/m/Y' }}</span>
-    <a href="{% url 'scheduling:calendrier_semaine' semaine=semaine_suivante|date:'Y-m-d' %}" class="btn btn-outline-dark btn-sm">Semaine suiv. &raquo;</a>
+    <span class="fw-semibold text-center">Semaine du {{ lundi|date:'d/m/Y' }}</span>
+    <a href="{% url 'scheduling:calendrier_semaine' semaine=semaine_suivante|date:'Y-m-d' %}" class="btn btn-outline-dark btn-sm text-end">Semaine suiv. &raquo;</a>
   </div>
 
   <ul class="nav nav-pills mb-4 flex-nowrap overflow-auto gap-1">
