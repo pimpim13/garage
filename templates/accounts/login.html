@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-5">
+      <div class="card p-4">
+        <h2 class="mb-3">Connexion</h2>
+        <form method="post">
+          {% csrf_token %}
+          {{ form|crispy }}
+          <button type="submit" class="btn btn-accent w-100 mt-2">Se connecter</button>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock %}
