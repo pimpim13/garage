@@ -1,16 +1,20 @@
-# Création d'une web App de gestion de salle de sport
+# Création d'une web App de gestion de salle de sport — le Garage
 
+Nom de la salle : **le Garage** (coaching : Loïc Fitness Coaching).
 
 ## Stack technique
 
-- Langage : **Python**, framework **Django**, **Bootstrap**
+- Langage : **Python**, framework **Django 5.2**, **Bootstrap 5** (via django-crispy-forms)
 - Application **responsive**, utilisable sur smartphone
+- Dépôt GitHub : `pimpim13/garage`
 
 ## Profils utilisateurs
 
 - **Administrateur** (super utilisateur)
 - **Gestionnaire**
 - **Membre**
+
+Le **coach** n'est pas un rôle séparé : c'est un Gestionnaire (ou l'Admin) désigné comme animateur d'une séance donnée.
 
 ## Paiement
 
@@ -21,7 +25,7 @@ L'application doit être prête à intégrer un système de paiement, qui ne ser
 Le catalogue des offres doit être **évolutif**. Offres prévues au démarrage :
 
 - Une première offre à **100 €** le carnet de **11 séances**
-- Une offre **famille**
+- Une offre **famille** — mécanisme de décompte encore à préciser (voir « Points à confirmer avec le client »)
 - Des offres **personnalisées** (en prévoir 2 au début)
 
 ## Calendrier des séances
@@ -81,6 +85,16 @@ Système de notification (par email dans un premier temps, extensible ensuite à
 - Nombre de séances restantes faible
 - …
 
+## Points à confirmer avec le client
+
+- **Offre famille** : les séances sont-elles décomptées d'un **pool partagé** (un seul carnet pour le foyer) ou de **carnets individuels liés** (un solde par membre, tarif réduit groupé) ?
+- **Liste d'attente** : quand une séance est complète, faut-il une file d'attente avec promotion automatique en cas de désistement, ou simplement fermer l'inscription (sans liste d'attente au démarrage) ?
+- **Péremption des carnets** : les séances achetées ont-elles une date limite d'utilisation, ou restent-elles valables sans limite de temps ?
+
 ## Design
 
-Le design du site sera inspiré de l'application **peppy.cool**.
+Structure et parcours UX (vue calendrier hebdomadaire, navigation par pastilles de jour, cards) inspirés de l'application **peppy.cool**.
+
+L'habillage graphique (logo, couleurs) suit en revanche l'identité réelle du Garage, de style street-workout/graffiti :
+- Noir : `#201e1f`
+- Vert accent : `#80b048`
