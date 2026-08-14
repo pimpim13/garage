@@ -1,0 +1,93 @@
+:root {
+  --ps-black: #201e1f;
+  --ps-white: #ffffff;
+  --ps-gray-light: #f1f1f2;
+  --ps-gray: #6c6c6c;
+  --ps-green: #80b048;
+  --ps-green-dark: #6a9339;
+
+  --bs-border-radius: 0.75rem;
+  --bs-border-radius-lg: 1rem;
+  --bs-border-radius-pill: 50rem;
+  --bs-body-font-family: 'Inter', system-ui, sans-serif;
+  --bs-primary: var(--ps-black);
+  --bs-primary-rgb: 32, 30, 31;
+  --bs-link-color: var(--ps-black);
+}
+
+body {
+  color: var(--ps-black);
+}
+
+h1, h2, h3, .display-font {
+  font-family: 'Poppins', 'Inter', sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.navbar {
+  background-color: var(--ps-black) !important;
+}
+
+.navbar-brand img {
+  height: 40px;
+}
+
+.btn {
+  border-radius: var(--bs-border-radius-pill);
+  font-weight: 600;
+}
+
+.btn-dark {
+  background-color: var(--ps-black);
+  border-color: var(--ps-black);
+}
+
+.btn-accent {
+  background-color: var(--ps-green);
+  border-color: var(--ps-green);
+  color: var(--ps-black);
+}
+
+.btn-accent:hover,
+.btn-accent:focus {
+  background-color: var(--ps-green-dark);
+  border-color: var(--ps-green-dark);
+  color: var(--ps-black);
+}
+
+.card {
+  border: none;
+  border-radius: var(--bs-border-radius-lg);
+  background-color: var(--ps-gray-light);
+}
+
+.nav-pills .nav-link {
+  border-radius: var(--bs-border-radius-pill);
+  color: var(--ps-black);
+  font-weight: 600;
+}
+
+.nav-pills .nav-link.active {
+  background-color: var(--ps-green);
+  color: var(--ps-black);
+}
+
+.hero {
+  background-color: var(--ps-black);
+  color: var(--ps-white);
+  border-radius: var(--bs-border-radius-lg);
+  padding: 3rem 2rem;
+}
+
+.text-accent {
+  color: var(--ps-green);
+}
+
+a {
+  color: var(--ps-black);
+}
+
+a:hover {
+  color: var(--ps-green-dark);
+}
