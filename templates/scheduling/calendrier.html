@@ -12,9 +12,14 @@
   <ul class="nav nav-pills mb-4 flex-nowrap overflow-auto gap-1">
     {% for jour in jours %}
       <li class="nav-item">
-        <a class="nav-link text-center {% if jour == jour_selectionne %}active{% endif %}"
-           href="{% url 'scheduling:calendrier_semaine' semaine=lundi|date:'Y-m-d' %}?jour={{ jour|date:'Y-m-d' }}">
-          {{ jour|date:'D' }}<br>{{ jour|date:'d' }}
+        <a class="nav-link text-center {% if jour.date == jour_selectionne %}active{% endif %}"
+           href="{% url 'scheduling:calendrier_semaine' semaine=lundi|date:'Y-m-d' %}?jour={{ jour.date|date:'Y-m-d' }}">
+          {{ jour.date|date:'D' }}<br>{{ jour.date|date:'d' }}
+          <span class="d-block">
+            {% if jour.statut == 'vert' %}<span class="dot dot-vert"></span>
+            {% elif jour.statut == 'rouge' %}<span class="dot dot-rouge"></span>
+            {% endif %}
+          </span>
         </a>
       </li>
     {% endfor %}

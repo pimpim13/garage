@@ -1,5 +1,8 @@
 import datetime
+from collections import defaultdict
+from types import SimpleNamespace
 
+from django.db.models import Count, Q
 from django.shortcuts import render
 from django.utils import timezone
 from django.views.generic import DetailView
@@ -11,6 +14,29 @@ from .models import Seance
 
 def _lundi(date):
     return date - datetime.timedelta(days=date.weekday())
+
+
+def _occupation_par_jour(jours):
+    """Pour chaque jour, indique s'il y a des séances et si elles sont toutes complètes."""
+    seances_semaine = Seance.objects.filter(debut__date__in=jours).annotate(
+        nb_inscrits=Count('inscriptions', filter=Q(inscriptions__statut=Inscription.Statut.INSCRIT))
+    )
+
+    places_par_jour = defaultdict(list)
+    for seance in seances_semaine:
+        jour = timezone.localtime(seance.debut).date()
+        places_par_jour[jour].append(seance.capacite_max - seance.nb_inscrits)
+
+    statuts = {}
+    for jour in jours:
+        places = places_par_jour.get(jour)
+        if not places:
+            statuts[jour] = None
+        elif any(p > 0 for p in places):
+            statuts[jour] = 'vert'
+        else:
+            statuts[jour] = 'rouge'
+    return statuts
 
 
 def calendrier(request, semaine=None):
@@ -44,9 +70,12 @@ def calendrier(request, semaine=None):
             ).values_list('seance_id', flat=True)
         )
 
+    statuts_jours = _occupation_par_jour(jours)
+    jours_info = [SimpleNamespace(date=jour, statut=statuts_jours[jour]) for jour in jours]
+
     context = {
         'lundi': lundi,
-        'jours': jours,
+        'jours': jours_info,
         'jour_selectionne': jour_selectionne,
         'semaine_precedente': lundi - datetime.timedelta(days=7),
         'semaine_suivante': lundi + datetime.timedelta(days=7),
