@@ -26,25 +26,23 @@
   </ul>
 
   {% if seances_du_jour %}
-    <div class="row g-3">
+    <div class="liste-seances">
       {% for seance in seances_du_jour %}
-        <div class="col-12 col-md-6 col-lg-4">
-          <a href="{% url 'scheduling:seance_detail' pk=seance.pk %}" class="text-decoration-none text-reset">
-            <div class="card p-3 h-100">
-              <div class="d-flex justify-content-between align-items-start">
-                <h5 class="mb-1">{{ seance.nom }}</h5>
-                <span class="badge {% if seance.places_restantes > 0 %}bg-success{% else %}bg-secondary{% endif %}">
-                  {{ seance.places_restantes }}/{{ seance.capacite_max }}
-                </span>
-              </div>
-              <p class="mb-1">{{ seance.debut|date:'H:i' }} – {{ seance.fin|date:'H:i' }}</p>
-              {% if seance.coach %}<p class="text-muted mb-0">Coach : {{ seance.coach }}</p>{% endif %}
-              {% if seance.pk in inscriptions_membre %}
-                <span class="badge bg-dark mt-2 align-self-start">Vous êtes inscrit(e)</span>
-              {% endif %}
+        <a href="{% url 'scheduling:seance_detail' pk=seance.pk %}" class="text-decoration-none text-reset d-block">
+          <div class="card p-3">
+            <div class="d-flex justify-content-between align-items-start">
+              <h5 class="mb-1">{{ seance.nom }}</h5>
+              <span class="badge {% if seance.places_restantes > 0 %}bg-success{% else %}bg-secondary{% endif %}">
+                {{ seance.places_restantes }}/{{ seance.capacite_max }}
+              </span>
             </div>
-          </a>
-        </div>
+            <p class="mb-1">{{ seance.debut|date:'H:i' }} – {{ seance.fin|date:'H:i' }}</p>
+            {% if seance.coach %}<p class="text-muted mb-0">Coach : {{ seance.coach }}</p>{% endif %}
+            {% if seance.pk in inscriptions_membre %}
+              <span class="badge bg-dark mt-2 align-self-start">Vous êtes inscrit(e)</span>
+            {% endif %}
+          </div>
+        </a>
       {% endfor %}
     </div>
   {% else %}

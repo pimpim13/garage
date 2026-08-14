@@ -94,6 +94,10 @@ h1, h2, h3, .display-font {
   background-color: var(--ps-black);
 }
 
+.liste-seances .card {
+  margin-bottom: 1rem;
+}
+
 .hero {
   background-color: var(--ps-black);
   color: var(--ps-white);
