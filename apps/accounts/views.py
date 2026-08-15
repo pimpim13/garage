@@ -7,7 +7,5 @@ class HomeView(TemplateView):
 
     def get(self, request, *args, **kwargs):
         if request.user.is_authenticated:
-            if request.user.is_staff_or_manager:
-                return redirect('admin:index')
             return redirect('scheduling:calendrier')
         return super().get(request, *args, **kwargs)
