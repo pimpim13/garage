@@ -25,7 +25,12 @@
           <li class="nav-item"><a class="nav-link" href="{% url 'scheduling:calendrier' %}">Calendrier</a></li>
           <li class="nav-item"><a class="nav-link" href="{% url 'offers:catalogue' %}">Offres</a></li>
           {% if user.is_authenticated %}
-            <li class="nav-item"><a class="btn btn-outline-light btn-sm" href="{% url 'accounts:logout' %}">Déconnexion</a></li>
+            <li class="nav-item">
+              <form method="post" action="{% url 'accounts:logout' %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-light btn-sm">Déconnexion</button>
+              </form>
+            </li>
           {% else %}
             <li class="nav-item"><a class="btn btn-accent btn-sm" href="{% url 'accounts:login' %}">Connexion</a></li>
           {% endif %}
