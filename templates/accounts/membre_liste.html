@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">Membres</h2>
+    <a href="{% url 'accounts:membre_creer' %}" class="btn btn-accent btn-sm">+ Nouveau membre</a>
+  </div>
+
+  {% if membres %}
+    <div class="liste-seances">
+      {% for membre in membres %}
+        <div class="card p-3">
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div>
+              <h5 class="mb-1">
+                {{ membre.get_full_name|default:membre.username }}
+                {% if not membre.is_active %}<span class="badge bg-secondary">Inactif</span>{% endif %}
+              </h5>
+              <p class="text-muted mb-0">
+                {{ membre.username }}
+                {% if membre.telephone %} &middot; {{ membre.telephone }}{% endif %}
+              </p>
+            </div>
+            <form method="post" action="{% url 'accounts:membre_toggle_actif' pk=membre.pk %}">
+              {% csrf_token %}
+              {% if membre.is_active %}
+                <button type="submit" class="btn btn-outline-danger btn-sm">Désactiver</button>
+              {% else %}
+                <button type="submit" class="btn btn-outline-dark btn-sm">Réactiver</button>
+              {% endif %}
+            </form>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-muted">Aucun membre pour le moment.</p>
+  {% endif %}
+{% endblock %}
