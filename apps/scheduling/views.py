@@ -2,14 +2,18 @@ import datetime
 from collections import defaultdict
 from types import SimpleNamespace
 
+from django.contrib import messages
 from django.db.models import Count, Q
 from django.shortcuts import render
+from django.urls import reverse
 from django.utils import timezone
-from django.views.generic import DetailView
+from django.views.generic import CreateView, DetailView, ListView
 
+from apps.accounts.mixins import GestionnaireRequiredMixin
 from apps.bookings.models import Inscription
 
-from .models import Seance
+from .forms import ModeleSeanceForm, SeanceForm
+from .models import ModeleSeance, Seance
 
 
 def _lundi(date):
@@ -104,3 +108,58 @@ class SeanceDetailView(DetailView):
                 membre=self.request.user, statut=Inscription.Statut.INSCRIT
             ).exists()
         return context
+
+
+class SeanceCreateView(GestionnaireRequiredMixin, CreateView):
+    model = Seance
+    form_class = SeanceForm
+    template_name = 'scheduling/seance_form.html'
+
+    def get_initial(self):
+        initial = super().get_initial()
+        jour = self.request.GET.get('jour')
+        if jour:
+            initial['debut'] = f"{jour}T09:00"
+        return initial
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['modeles_data'] = {
+            str(modele.pk): {
+                'nom': modele.nom,
+                'duree_minutes': modele.duree_minutes,
+                'capacite_max': modele.capacite_max_defaut,
+                'delai_annulation_heures': modele.delai_annulation_defaut_heures,
+            }
+            for modele in ModeleSeance.objects.all()
+        }
+        return context
+
+    def form_valid(self, form):
+        messages.success(self.request, "Séance programmée.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        jour = timezone.localtime(self.object.debut).date()
+        lundi = _lundi(jour)
+        url = reverse('scheduling:calendrier_semaine', kwargs={'semaine': lundi.isoformat()})
+        return f"{url}?jour={jour.isoformat()}"
+
+
+class ModeleSeanceListView(GestionnaireRequiredMixin, ListView):
+    model = ModeleSeance
+    template_name = 'scheduling/modele_liste.html'
+    context_object_name = 'modeles'
+
+
+class ModeleSeanceCreateView(GestionnaireRequiredMixin, CreateView):
+    model = ModeleSeance
+    form_class = ModeleSeanceForm
+    template_name = 'scheduling/modele_form.html'
+
+    def get_success_url(self):
+        return reverse('scheduling:modele_liste')
+
+    def form_valid(self, form):
+        messages.success(self.request, "Séance type créée.")
+        return super().form_valid(form)

@@ -1,3 +1,5 @@
+import datetime
+
 from django.conf import settings
 from django.db import models
 
@@ -25,9 +27,9 @@ class Seance(models.Model):
     )
     nom = models.CharField(max_length=100)
     debut = models.DateTimeField()
-    fin = models.DateTimeField()
-    capacite_max = models.PositiveIntegerField()
-    delai_annulation_heures = models.PositiveIntegerField()
+    duree_minutes = models.PositiveIntegerField(default=60)
+    capacite_max = models.PositiveIntegerField(default=12)
+    delai_annulation_heures = models.PositiveIntegerField(default=24)
     coach = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='seances_animees'
     )
@@ -38,6 +40,10 @@ class Seance(models.Model):
 
     def __str__(self):
         return f"{self.nom} — {self.debut:%d/%m/%Y %H:%M}"
+
+    @property
+    def fin(self):
+        return self.debut + datetime.timedelta(minutes=self.duree_minutes)
 
     @property
     def places_restantes(self):
