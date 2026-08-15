@@ -7,7 +7,7 @@ from django.db.models import Count, Q
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils import timezone
-from django.views.generic import CreateView, DetailView, ListView
+from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
 
 from apps.accounts.mixins import GestionnaireRequiredMixin
 from apps.bookings.models import Inscription
@@ -18,6 +18,25 @@ from .models import ModeleSeance, Seance
 
 def _lundi(date):
     return date - datetime.timedelta(days=date.weekday())
+
+
+def _calendrier_url_pour(debut):
+    jour = timezone.localtime(debut).date()
+    lundi = _lundi(jour)
+    url = reverse('scheduling:calendrier_semaine', kwargs={'semaine': lundi.isoformat()})
+    return f"{url}?jour={jour.isoformat()}"
+
+
+def _modeles_data():
+    return {
+        str(modele.pk): {
+            'nom': modele.nom,
+            'duree_minutes': modele.duree_minutes,
+            'capacite_max': modele.capacite_max_defaut,
+            'delai_annulation_heures': modele.delai_annulation_defaut_heures,
+        }
+        for modele in ModeleSeance.objects.all()
+    }
 
 
 def _occupation_par_jour(jours):
@@ -124,15 +143,7 @@ class SeanceCreateView(GestionnaireRequiredMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['modeles_data'] = {
-            str(modele.pk): {
-                'nom': modele.nom,
-                'duree_minutes': modele.duree_minutes,
-                'capacite_max': modele.capacite_max_defaut,
-                'delai_annulation_heures': modele.delai_annulation_defaut_heures,
-            }
-            for modele in ModeleSeance.objects.all()
-        }
+        context['modeles_data'] = _modeles_data()
         return context
 
     def form_valid(self, form):
@@ -140,10 +151,45 @@ class SeanceCreateView(GestionnaireRequiredMixin, CreateView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        jour = timezone.localtime(self.object.debut).date()
-        lundi = _lundi(jour)
-        url = reverse('scheduling:calendrier_semaine', kwargs={'semaine': lundi.isoformat()})
-        return f"{url}?jour={jour.isoformat()}"
+        return _calendrier_url_pour(self.object.debut)
+
+
+class SeanceUpdateView(GestionnaireRequiredMixin, UpdateView):
+    model = Seance
+    form_class = SeanceForm
+    template_name = 'scheduling/seance_form.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['modeles_data'] = _modeles_data()
+        return context
+
+    def form_valid(self, form):
+        messages.success(self.request, "Séance modifiée.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('scheduling:seance_detail', kwargs={'pk': self.object.pk})
+
+
+class SeanceDeleteView(GestionnaireRequiredMixin, DeleteView):
+    model = Seance
+    template_name = 'scheduling/seance_confirm_delete.html'
+    context_object_name = 'seance'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['nb_participants'] = self.object.inscriptions.filter(
+            statut=Inscription.Statut.INSCRIT
+        ).count()
+        return context
+
+    def get_success_url(self):
+        return _calendrier_url_pour(self.object.debut)
+
+    def form_valid(self, form):
+        messages.success(self.request, "Séance supprimée.")
+        return super().form_valid(form)
 
 
 class ModeleSeanceListView(GestionnaireRequiredMixin, ListView):
