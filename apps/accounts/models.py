@@ -12,6 +12,7 @@ class User(AbstractUser):
     telephone = models.CharField(
         max_length=20,
         blank=True,
+        verbose_name='téléphone',
         help_text="Utilisé pour les notifications par SMS/WhatsApp (à venir).",
     )
     tolerance_seances_negatives = models.PositiveIntegerField(
