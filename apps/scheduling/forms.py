@@ -17,7 +17,7 @@ class SeanceForm(forms.ModelForm):
         model = Seance
         fields = ['modele', 'nom', 'debut', 'duree_minutes', 'capacite_max', 'coach', 'delai_annulation_heures']
         widgets = {
-            'debut': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'debut': forms.DateTimeInput(attrs={'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M'),
         }
         labels = {
             'nom': 'Titre de la séance',
