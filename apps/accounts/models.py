@@ -9,6 +9,11 @@ class User(AbstractUser):
         MEMBRE = 'membre', 'Membre'
 
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.MEMBRE)
+    telephone = models.CharField(
+        max_length=20,
+        blank=True,
+        help_text="Utilisé pour les notifications par SMS/WhatsApp (à venir).",
+    )
     tolerance_seances_negatives = models.PositiveIntegerField(
         default=0,
         help_text="Nombre de séances que ce membre peut avoir en négatif avant blocage de l'inscription.",
