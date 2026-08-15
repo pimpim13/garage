@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+  <h2 class="mb-4">Programmer une séance</h2>
+
+  <div class="card p-4" style="max-width: 640px;">
+    <form method="post">
+      {% csrf_token %}
+      {{ form|crispy }}
+      <button type="submit" class="btn btn-accent mt-2">Enregistrer</button>
+    </form>
+  </div>
+
+  {{ modeles_data|json_script:"modeles-data" }}
+{% endblock %}
+
+{% block extra_js %}
+  <script>
+    const modeles = JSON.parse(document.getElementById('modeles-data').textContent);
+    const modeleSelect = document.getElementById('id_modele');
+    if (modeleSelect) {
+      modeleSelect.addEventListener('change', function () {
+        const donnees = modeles[this.value];
+        if (!donnees) return;
+        document.getElementById('id_nom').value = donnees.nom;
+        document.getElementById('id_duree_minutes').value = donnees.duree_minutes;
+        document.getElementById('id_capacite_max').value = donnees.capacite_max;
+        document.getElementById('id_delai_annulation_heures').value = donnees.delai_annulation_heures;
+      });
+    }
+  </script>
+{% endblock %}
