@@ -2,7 +2,7 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
-  <h2 class="mb-4">Nouvelle séance type</h2>
+  <h2 class="mb-4">{% if object %}Modifier la séance type{% else %}Nouvelle séance type{% endif %}</h2>
 
   <div class="card p-4" style="max-width: 640px;">
     <form method="post">
