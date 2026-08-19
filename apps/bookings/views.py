@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from apps.accounts.models import User
+from apps.notifications.ntfy import envoyer_push
 from apps.scheduling.models import Seance
 
 from .models import Inscription
@@ -36,6 +37,7 @@ def inscrire(request, seance_id):
     else:
         Inscription.objects.create(membre=request.user, seance=seance, auteur=request.user)
         messages.success(request, "Inscription confirmée.")
+        envoyer_push(f"{request.user} inscrit(e) à « {seance.nom} » le {seance.debut:%d/%m à %H:%M}.")
     return redirect(_retour(request, seance))
 
 

@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -134,6 +135,11 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 LOGIN_URL = 'accounts:login'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'home'
+
+# Notifications push via ntfy.sh (https://ntfy.sh) — spike/test, un seul topic partagé
+# pour l'instant, pas encore de topic par membre.
+NTFY_BASE_URL = os.environ.get('NTFY_BASE_URL', 'https://ntfy.sh')
+NTFY_TOPIC = os.environ.get('NTFY_TOPIC', 'legarage-test-9f3ka72xu')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
