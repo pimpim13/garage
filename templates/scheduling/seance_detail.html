@@ -20,7 +20,9 @@
     {% if seance.coach %}<p>Coach : <strong>{{ seance.coach }}</strong></p>{% endif %}
     <p>Places : {{ seance.places_restantes }} / {{ seance.capacite_max }}</p>
 
-    {% if user.is_authenticated %}
+    {% if seance.est_passee %}
+      <p class="text-muted mt-3">Cette séance est déjà passée.</p>
+    {% elif user.is_authenticated %}
       {% if inscrit %}
         <form method="post" action="{% url 'bookings:desinscrire' seance_id=seance.pk %}" class="mt-3">
           {% csrf_token %}
@@ -71,17 +73,19 @@
   </ul>
 
   {% if user.is_staff_or_manager %}
-    <form method="post" action="{% url 'bookings:inscrire_membre' seance_id=seance.pk %}" class="d-flex gap-2 mt-3">
-      {% csrf_token %}
-      <input type="hidden" name="next" value="{% url 'scheduling:seance_detail' pk=seance.pk %}">
-      <select name="membre_id" class="form-select" required>
-        <option value="">Inscrire un membre…</option>
-        {% for m in membres_disponibles %}
-          <option value="{{ m.pk }}">{{ m }}</option>
-        {% endfor %}
-      </select>
-      <button type="submit" class="btn btn-accent text-nowrap">Inscrire</button>
-    </form>
+    {% if not seance.est_passee %}
+      <form method="post" action="{% url 'bookings:inscrire_membre' seance_id=seance.pk %}" class="d-flex gap-2 mt-3">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{% url 'scheduling:seance_detail' pk=seance.pk %}">
+        <select name="membre_id" class="form-select" required>
+          <option value="">Inscrire un membre…</option>
+          {% for m in membres_disponibles %}
+            <option value="{{ m.pk }}">{{ m }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-accent text-nowrap">Inscrire</button>
+      </form>
+    {% endif %}
 
     <h4 class="mt-4">Liste d'attente ({{ liste_attente|length }})</h4>
     <ul class="list-group">
