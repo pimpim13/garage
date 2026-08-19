@@ -122,10 +122,22 @@ class SeanceDetailView(DetailView):
         context['participants'] = self.object.inscriptions.filter(
             statut=Inscription.Statut.INSCRIT
         ).select_related('membre')
+
+        liste_attente = list(
+            self.object.inscriptions.filter(statut=Inscription.Statut.EN_ATTENTE)
+            .select_related('membre')
+            .order_by('inscrit_le')
+        )
+        context['liste_attente'] = liste_attente
+
         if self.request.user.is_authenticated:
             context['inscrit'] = self.object.inscriptions.filter(
                 membre=self.request.user, statut=Inscription.Statut.INSCRIT
             ).exists()
+            for rang, inscription in enumerate(liste_attente, start=1):
+                if inscription.membre_id == self.request.user.id:
+                    context['rang_liste_attente'] = rang
+                    break
         return context
 
 

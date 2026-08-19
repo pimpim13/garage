@@ -43,3 +43,39 @@ def desinscrire(request, seance_id):
         inscription.save(update_fields=['statut', 'desinscrit_le'])
         messages.success(request, "Désinscription confirmée.")
     return redirect(_retour(request, seance))
+
+
+@login_required
+@require_POST
+def liste_attente_rejoindre(request, seance_id):
+    seance = get_object_or_404(Seance, pk=seance_id)
+    deja_actif = request.user.inscriptions.filter(
+        seance=seance, statut__in=[Inscription.Statut.INSCRIT, Inscription.Statut.EN_ATTENTE]
+    ).exists()
+    if deja_actif:
+        messages.info(request, "Vous êtes déjà inscrit(e) ou en liste d'attente pour cette séance.")
+    elif seance.places_restantes > 0:
+        messages.info(request, "Cette séance a encore de la place, vous pouvez vous inscrire directement.")
+    else:
+        Inscription.objects.create(
+            membre=request.user, seance=seance, auteur=request.user, statut=Inscription.Statut.EN_ATTENTE
+        )
+        messages.success(request, "Vous êtes positionné(e) en liste d'attente.")
+    return redirect(_retour(request, seance))
+
+
+@login_required
+@require_POST
+def liste_attente_quitter(request, seance_id):
+    seance = get_object_or_404(Seance, pk=seance_id)
+    inscription = request.user.inscriptions.filter(
+        seance=seance, statut=Inscription.Statut.EN_ATTENTE
+    ).first()
+    if inscription is None:
+        messages.info(request, "Vous n'étiez pas en liste d'attente pour cette séance.")
+    else:
+        inscription.statut = Inscription.Statut.DESINSCRIT
+        inscription.desinscrit_le = timezone.now()
+        inscription.save(update_fields=['statut', 'desinscrit_le'])
+        messages.success(request, "Vous avez quitté la liste d'attente.")
+    return redirect(_retour(request, seance))
