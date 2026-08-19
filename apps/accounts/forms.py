@@ -3,7 +3,7 @@ from django.contrib.auth.forms import UserCreationForm
 
 from .models import User
 
-MEMBRE_FIELDS = ['username', 'first_name', 'last_name', 'telephone', 'famille', 'tolerance_seances_negatives']
+MEMBRE_FIELDS = ['username', 'first_name', 'last_name', 'email', 'telephone', 'famille', 'tolerance_seances_negatives']
 MEMBRE_LABELS = {
     'tolerance_seances_negatives': 'Tolérance de séances négatives',
 }
