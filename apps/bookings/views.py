@@ -27,7 +27,9 @@ def _desinscrire(inscription, auteur):
 @require_POST
 def inscrire(request, seance_id):
     seance = get_object_or_404(Seance, pk=seance_id)
-    if request.user.inscriptions.filter(seance=seance, statut=Inscription.Statut.INSCRIT).exists():
+    if seance.est_passee:
+        messages.error(request, "Cette séance est déjà passée.")
+    elif request.user.inscriptions.filter(seance=seance, statut=Inscription.Statut.INSCRIT).exists():
         messages.info(request, "Vous êtes déjà inscrit(e) à cette séance.")
     elif seance.places_restantes <= 0:
         messages.error(request, "Cette séance est complète.")
@@ -59,7 +61,9 @@ def liste_attente_rejoindre(request, seance_id):
     deja_actif = request.user.inscriptions.filter(
         seance=seance, statut__in=[Inscription.Statut.INSCRIT, Inscription.Statut.EN_ATTENTE]
     ).exists()
-    if deja_actif:
+    if seance.est_passee:
+        messages.error(request, "Cette séance est déjà passée.")
+    elif deja_actif:
         messages.info(request, "Vous êtes déjà inscrit(e) ou en liste d'attente pour cette séance.")
     elif seance.places_restantes > 0:
         messages.info(request, "Cette séance a encore de la place, vous pouvez vous inscrire directement.")
@@ -93,7 +97,9 @@ def inscrire_membre(request, seance_id):
         raise PermissionDenied
     seance = get_object_or_404(Seance, pk=seance_id)
     membre = get_object_or_404(User, pk=request.POST.get('membre_id'), role=User.Role.MEMBRE)
-    if Inscription.objects.filter(membre=membre, seance=seance, statut=Inscription.Statut.INSCRIT).exists():
+    if seance.est_passee:
+        messages.error(request, "Cette séance est déjà passée.")
+    elif Inscription.objects.filter(membre=membre, seance=seance, statut=Inscription.Statut.INSCRIT).exists():
         messages.info(request, f"{membre} est déjà inscrit(e) à cette séance.")
     elif seance.places_restantes <= 0:
         messages.error(request, "Cette séance est complète.")

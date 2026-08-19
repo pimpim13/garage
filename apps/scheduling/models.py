@@ -2,6 +2,7 @@ import datetime
 
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 
 class ModeleSeance(models.Model):
@@ -44,6 +45,10 @@ class Seance(models.Model):
     @property
     def fin(self):
         return self.debut + datetime.timedelta(minutes=self.duree_minutes)
+
+    @property
+    def est_passee(self):
+        return self.debut < timezone.now()
 
     @property
     def places_restantes(self):
