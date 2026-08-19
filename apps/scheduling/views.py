@@ -12,6 +12,7 @@ from django.views.generic import CreateView, DeleteView, DetailView, ListView, U
 from apps.accounts.mixins import GestionnaireRequiredMixin
 from apps.accounts.models import User
 from apps.bookings.models import Inscription
+from apps.notifications.ntfy import notifier_membres
 
 from .forms import ModeleSeanceForm, SeanceForm
 from .models import ModeleSeance, Seance
@@ -168,8 +169,11 @@ class SeanceCreateView(GestionnaireRequiredMixin, CreateView):
         return context
 
     def form_valid(self, form):
+        response = super().form_valid(form)
         messages.success(self.request, "Séance programmée.")
-        return super().form_valid(form)
+        debut = timezone.localtime(self.object.debut)
+        notifier_membres(f"Nouvelle séance : « {self.object.nom} » le {debut:%d/%m à %H:%M}.")
+        return response
 
     def get_success_url(self):
         return _calendrier_url_pour(self.object.debut)
@@ -209,8 +213,11 @@ class SeanceDeleteView(GestionnaireRequiredMixin, DeleteView):
         return _calendrier_url_pour(self.object.debut)
 
     def form_valid(self, form):
+        nom, debut = self.object.nom, timezone.localtime(self.object.debut)
+        response = super().form_valid(form)
         messages.success(self.request, "Séance supprimée.")
-        return super().form_valid(form)
+        notifier_membres(f"Séance annulée : « {nom} » le {debut:%d/%m à %H:%M}.")
+        return response
 
 
 class ModeleSeanceListView(GestionnaireRequiredMixin, ListView):

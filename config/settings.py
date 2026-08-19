@@ -136,10 +136,13 @@ LOGIN_URL = 'accounts:login'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'home'
 
-# Notifications push via ntfy.sh (https://ntfy.sh) — spike/test, un seul topic partagé
-# pour l'instant, pas encore de topic par membre.
+# Notifications push via ntfy.sh (https://ntfy.sh) — spike/test.
+# Deux canaux partagés (pas encore de préférences configurables par membre) :
+# - membres : nouvelles séances, annulations
+# - coachs/gestionnaires : inscriptions, séances pleines
 NTFY_BASE_URL = os.environ.get('NTFY_BASE_URL', 'https://ntfy.sh')
-NTFY_TOPIC = os.environ.get('NTFY_TOPIC', 'legarage-test-9f3ka72xu')
+NTFY_TOPIC_MEMBRES = os.environ.get('NTFY_TOPIC_MEMBRES', 'legarage-membres-9f3ka72xu')
+NTFY_TOPIC_COACHS = os.environ.get('NTFY_TOPIC_COACHS', 'legarage-coachs-9f3ka72xu')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
