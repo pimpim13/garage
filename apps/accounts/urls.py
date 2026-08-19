@@ -10,5 +10,6 @@ urlpatterns = [
     path('deconnexion/', auth_views.LogoutView.as_view(), name='logout'),
     path('membres/', views.MembreListView.as_view(), name='membre_liste'),
     path('membres/nouveau/', views.MembreCreateView.as_view(), name='membre_creer'),
+    path('membres/<int:pk>/modifier/', views.MembreUpdateView.as_view(), name='membre_modifier'),
     path('membres/<int:pk>/toggle-actif/', views.membre_toggle_actif, name='membre_toggle_actif'),
 ]

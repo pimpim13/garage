@@ -19,16 +19,20 @@
               <p class="text-muted mb-0">
                 {{ membre.username }}
                 {% if membre.telephone %} &middot; {{ membre.telephone }}{% endif %}
+                {% if membre.famille %} &middot; {{ membre.famille }}{% endif %}
               </p>
             </div>
-            <form method="post" action="{% url 'accounts:membre_toggle_actif' pk=membre.pk %}">
-              {% csrf_token %}
-              {% if membre.is_active %}
-                <button type="submit" class="btn btn-outline-danger btn-sm">Désactiver</button>
-              {% else %}
-                <button type="submit" class="btn btn-outline-dark btn-sm">Réactiver</button>
-              {% endif %}
-            </form>
+            <div class="d-flex gap-2">
+              <a href="{% url 'accounts:membre_modifier' pk=membre.pk %}" class="btn btn-outline-dark btn-sm">Modifier</a>
+              <form method="post" action="{% url 'accounts:membre_toggle_actif' pk=membre.pk %}">
+                {% csrf_token %}
+                {% if membre.is_active %}
+                  <button type="submit" class="btn btn-outline-danger btn-sm">Désactiver</button>
+                {% else %}
+                  <button type="submit" class="btn btn-outline-dark btn-sm">Réactiver</button>
+                {% endif %}
+              </form>
+            </div>
           </div>
         </div>
       {% endfor %}
