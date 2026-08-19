@@ -22,7 +22,8 @@ class Inscription(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         related_name='inscriptions_effectuees',
-        help_text="Utilisateur à l'origine de l'action (le membre lui-même ou un gestionnaire/admin agissant pour lui).",
+        help_text="Utilisateur à l'origine de la dernière action sur cette inscription "
+        "(le membre lui-même, ou un gestionnaire/admin agissant pour lui).",
     )
 
     class Meta:
