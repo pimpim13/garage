@@ -2,13 +2,15 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
-  <h2 class="mb-4">Nouveau membre</h2>
+  <h2 class="mb-4">{% if object %}Modifier le membre{% else %}Nouveau membre{% endif %}</h2>
 
   <div class="card p-4" style="max-width: 640px;">
     <form method="post">
       {% csrf_token %}
       {{ form|crispy }}
-      <button type="submit" class="btn btn-accent mt-2">Créer le membre</button>
+      <button type="submit" class="btn btn-accent mt-2">
+        {% if object %}Enregistrer{% else %}Créer le membre{% endif %}
+      </button>
     </form>
   </div>
 {% endblock %}
