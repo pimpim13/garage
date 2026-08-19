@@ -10,6 +10,7 @@ from django.utils import timezone
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
 
 from apps.accounts.mixins import GestionnaireRequiredMixin
+from apps.accounts.models import User
 from apps.bookings.models import Inscription
 
 from .forms import ModeleSeanceForm, SeanceForm
@@ -138,6 +139,14 @@ class SeanceDetailView(DetailView):
                 if inscription.membre_id == self.request.user.id:
                     context['rang_liste_attente'] = rang
                     break
+
+        if self.request.user.is_authenticated and self.request.user.is_staff_or_manager:
+            deja_ids = [i.membre_id for i in context['participants']] + [i.membre_id for i in liste_attente]
+            context['membres_disponibles'] = (
+                User.objects.filter(role=User.Role.MEMBRE, is_active=True)
+                .exclude(pk__in=deja_ids)
+                .order_by('first_name', 'username')
+            )
         return context
 
 

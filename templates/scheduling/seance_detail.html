@@ -55,13 +55,34 @@
   <h4 class="mt-4">Participants inscrits ({{ participants.count }})</h4>
   <ul class="list-group">
     {% for inscription in participants %}
-      <li class="list-group-item">{{ inscription.membre }}</li>
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+        {{ inscription.membre }}
+        {% if user.is_staff_or_manager %}
+          <form method="post" action="{% url 'bookings:desinscrire_membre' seance_id=seance.pk membre_id=inscription.membre.pk %}">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{% url 'scheduling:seance_detail' pk=seance.pk %}">
+            <button type="submit" class="btn btn-outline-danger btn-sm">Désinscrire</button>
+          </form>
+        {% endif %}
+      </li>
     {% empty %}
       <li class="list-group-item text-muted">Aucun participant inscrit pour le moment.</li>
     {% endfor %}
   </ul>
 
   {% if user.is_staff_or_manager %}
+    <form method="post" action="{% url 'bookings:inscrire_membre' seance_id=seance.pk %}" class="d-flex gap-2 mt-3">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{% url 'scheduling:seance_detail' pk=seance.pk %}">
+      <select name="membre_id" class="form-select" required>
+        <option value="">Inscrire un membre…</option>
+        {% for m in membres_disponibles %}
+          <option value="{{ m.pk }}">{{ m }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-accent text-nowrap">Inscrire</button>
+    </form>
+
     <h4 class="mt-4">Liste d'attente ({{ liste_attente|length }})</h4>
     <ul class="list-group">
       {% for inscription in liste_attente %}
