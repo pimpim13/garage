@@ -7,6 +7,7 @@ from apps.scheduling.models import Seance
 class Inscription(models.Model):
     class Statut(models.TextChoices):
         INSCRIT = 'inscrit', 'Inscrit'
+        EN_ATTENTE = 'en_attente', "En liste d'attente"
         DESINSCRIT = 'desinscrit', 'Désinscrit'
         DESINSCRIT_TARDIF_JOKER = 'desinscrit_tardif_joker', 'Désinscrit tardivement (joker utilisé)'
         DESINSCRIT_TARDIF_SANS_JOKER = 'desinscrit_tardif_sans_joker', 'Désinscrit tardivement (séance perdue)'
@@ -29,7 +30,7 @@ class Inscription(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=['membre', 'seance'],
-                condition=models.Q(statut='inscrit'),
+                condition=models.Q(statut__in=['inscrit', 'en_attente']),
                 name='unique_inscription_active_par_membre_et_seance',
             ),
         ]

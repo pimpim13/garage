@@ -21,19 +21,32 @@
     <p>Places : {{ seance.places_restantes }} / {{ seance.capacite_max }}</p>
 
     {% if user.is_authenticated %}
-      <form method="post"
-            action="{% if inscrit %}{% url 'bookings:desinscrire' seance_id=seance.pk %}{% else %}{% url 'bookings:inscrire' seance_id=seance.pk %}{% endif %}"
-            class="mt-3">
-        {% csrf_token %}
-        <input type="hidden" name="next" value="{% url 'scheduling:seance_detail' pk=seance.pk %}">
-        {% if inscrit %}
+      {% if inscrit %}
+        <form method="post" action="{% url 'bookings:desinscrire' seance_id=seance.pk %}" class="mt-3">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{% url 'scheduling:seance_detail' pk=seance.pk %}">
           <button type="submit" class="btn btn-outline-dark">Se désinscrire</button>
-        {% elif seance.places_restantes > 0 %}
+        </form>
+      {% elif rang_liste_attente %}
+        <p class="mt-3 mb-2">Vous êtes en position <strong>{{ rang_liste_attente }}</strong> sur la liste d'attente.</p>
+        <form method="post" action="{% url 'bookings:liste_attente_quitter' seance_id=seance.pk %}">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{% url 'scheduling:seance_detail' pk=seance.pk %}">
+          <button type="submit" class="btn btn-outline-dark">Quitter la liste d'attente</button>
+        </form>
+      {% elif seance.places_restantes > 0 %}
+        <form method="post" action="{% url 'bookings:inscrire' seance_id=seance.pk %}" class="mt-3">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{% url 'scheduling:seance_detail' pk=seance.pk %}">
           <button type="submit" class="btn btn-accent">S'inscrire</button>
-        {% else %}
-          <button type="submit" class="btn btn-secondary" disabled>Séance complète</button>
-        {% endif %}
-      </form>
+        </form>
+      {% else %}
+        <form method="post" action="{% url 'bookings:liste_attente_rejoindre' seance_id=seance.pk %}" class="mt-3">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{% url 'scheduling:seance_detail' pk=seance.pk %}">
+          <button type="submit" class="btn btn-accent">Se positionner en liste d'attente</button>
+        </form>
+      {% endif %}
     {% else %}
       <a href="{% url 'accounts:login' %}" class="btn btn-accent mt-3">Se connecter pour s'inscrire</a>
     {% endif %}
@@ -47,4 +60,18 @@
       <li class="list-group-item text-muted">Aucun participant inscrit pour le moment.</li>
     {% endfor %}
   </ul>
+
+  {% if user.is_staff_or_manager %}
+    <h4 class="mt-4">Liste d'attente ({{ liste_attente|length }})</h4>
+    <ul class="list-group">
+      {% for inscription in liste_attente %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          {{ inscription.membre }}
+          <span class="badge bg-dark">{{ forloop.counter }}</span>
+        </li>
+      {% empty %}
+        <li class="list-group-item text-muted">Personne en liste d'attente.</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
 {% endblock %}
