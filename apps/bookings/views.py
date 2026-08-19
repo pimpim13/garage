@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from apps.accounts.models import User
-from apps.notifications.ntfy import envoyer_push
+from apps.notifications.ntfy import notifier_coachs
 from apps.scheduling.models import Seance
 
 from .models import Inscription
@@ -24,6 +24,13 @@ def _desinscrire(inscription, auteur):
     inscription.save(update_fields=['statut', 'desinscrit_le', 'auteur'])
 
 
+def _notifier_inscription(seance, membre):
+    debut = timezone.localtime(seance.debut)
+    notifier_coachs(f"{membre} inscrit(e) à « {seance.nom} » le {debut:%d/%m à %H:%M}.")
+    if seance.places_restantes == 0:
+        notifier_coachs(f"Séance « {seance.nom} » du {debut:%d/%m %H:%M} complète.")
+
+
 @login_required
 @require_POST
 def inscrire(request, seance_id):
@@ -37,7 +44,7 @@ def inscrire(request, seance_id):
     else:
         Inscription.objects.create(membre=request.user, seance=seance, auteur=request.user)
         messages.success(request, "Inscription confirmée.")
-        envoyer_push(f"{request.user} inscrit(e) à « {seance.nom} » le {seance.debut:%d/%m à %H:%M}.")
+        _notifier_inscription(seance, request.user)
     return redirect(_retour(request, seance))
 
 
@@ -108,6 +115,7 @@ def inscrire_membre(request, seance_id):
     else:
         Inscription.objects.create(membre=membre, seance=seance, auteur=request.user)
         messages.success(request, f"{membre} a été inscrit(e).")
+        _notifier_inscription(seance, membre)
     return redirect(_retour(request, seance))
 
 

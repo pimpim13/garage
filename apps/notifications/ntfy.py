@@ -6,9 +6,8 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 
-def envoyer_push(message, titre="Le Garage", topic=None):
-    """Envoie une notification push via ntfy.sh. Best-effort : ne lève jamais d'exception."""
-    topic = topic or settings.NTFY_TOPIC
+def _envoyer(topic, message, titre):
+    """Best-effort : ne lève jamais d'exception, n'interrompt jamais l'appelant."""
     if not topic:
         return
     try:
@@ -20,3 +19,13 @@ def envoyer_push(message, titre="Le Garage", topic=None):
         )
     except requests.RequestException:
         logger.warning("Échec de l'envoi de la notification push ntfy.sh", exc_info=True)
+
+
+def notifier_membres(message, titre="Le Garage"):
+    """Canal membres : nouvelles séances, annulations."""
+    _envoyer(settings.NTFY_TOPIC_MEMBRES, message, titre)
+
+
+def notifier_coachs(message, titre="Le Garage"):
+    """Canal coachs/gestionnaires : inscriptions, séances pleines."""
+    _envoyer(settings.NTFY_TOPIC_COACHS, message, titre)
