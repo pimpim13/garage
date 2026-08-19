@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h2 class="mb-4">Supprimer la séance type</h2>
+
+  <div class="card p-4" style="max-width: 640px;">
+    <p>Voulez-vous vraiment supprimer <strong>{{ modele.nom }}</strong> ?</p>
+
+    {% if nb_seances %}
+      <p class="text-danger">
+        {{ nb_seances }} séance{{ nb_seances|pluralize }} programmée{{ nb_seances|pluralize }} référence{{ nb_seances|pluralize }}
+        ce modèle et ne sera{{ nb_seances|pluralize }} pas supprimée{{ nb_seances|pluralize }}, seul le lien vers le modèle sera retiré.
+      </p>
+    {% endif %}
+
+    <form method="post" class="d-flex gap-2 mt-3">
+      {% csrf_token %}
+      <a href="{% url 'scheduling:modele_liste' %}" class="btn btn-outline-dark">Annuler</a>
+      <button type="submit" class="btn btn-danger">Supprimer définitivement</button>
+    </form>
+  </div>
+{% endblock %}

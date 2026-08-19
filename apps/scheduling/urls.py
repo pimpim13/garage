@@ -13,4 +13,6 @@ urlpatterns = [
     path('nouvelle-seance/', views.SeanceCreateView.as_view(), name='seance_creer'),
     path('modeles/', views.ModeleSeanceListView.as_view(), name='modele_liste'),
     path('modeles/nouveau/', views.ModeleSeanceCreateView.as_view(), name='modele_creer'),
+    path('modeles/<int:pk>/modifier/', views.ModeleSeanceUpdateView.as_view(), name='modele_modifier'),
+    path('modeles/<int:pk>/supprimer/', views.ModeleSeanceDeleteView.as_view(), name='modele_supprimer'),
 ]
