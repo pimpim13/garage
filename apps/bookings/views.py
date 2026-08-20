@@ -37,6 +37,11 @@ def inscrire(request, seance_id):
     seance = get_object_or_404(Seance, pk=seance_id)
     if seance.est_passee:
         messages.error(request, "Cette séance est déjà passée.")
+    elif not seance.inscriptions_ouvertes:
+        messages.error(
+            request,
+            f"Les inscriptions ouvrent le {seance.date_ouverture_inscriptions:%d/%m} pour cette séance.",
+        )
     elif request.user.inscriptions.filter(seance=seance, statut=Inscription.Statut.INSCRIT).exists():
         messages.info(request, "Vous êtes déjà inscrit(e) à cette séance.")
     elif seance.places_restantes <= 0:
@@ -72,6 +77,11 @@ def liste_attente_rejoindre(request, seance_id):
     ).exists()
     if seance.est_passee:
         messages.error(request, "Cette séance est déjà passée.")
+    elif not seance.inscriptions_ouvertes:
+        messages.error(
+            request,
+            f"Les inscriptions ouvrent le {seance.date_ouverture_inscriptions:%d/%m} pour cette séance.",
+        )
     elif deja_actif:
         messages.info(request, "Vous êtes déjà inscrit(e) ou en liste d'attente pour cette séance.")
     elif seance.places_restantes > 0:
@@ -108,6 +118,11 @@ def inscrire_membre(request, seance_id):
     membre = get_object_or_404(User, pk=request.POST.get('membre_id'), role=User.Role.MEMBRE)
     if seance.est_passee:
         messages.error(request, "Cette séance est déjà passée.")
+    elif not seance.inscriptions_ouvertes:
+        messages.error(
+            request,
+            f"Les inscriptions ouvrent le {seance.date_ouverture_inscriptions:%d/%m} pour cette séance.",
+        )
     elif Inscription.objects.filter(membre=membre, seance=seance, statut=Inscription.Statut.INSCRIT).exists():
         messages.info(request, f"{membre} est déjà inscrit(e) à cette séance.")
     elif seance.places_restantes <= 0:

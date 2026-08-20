@@ -41,6 +41,12 @@ Un membre peut être rattaché à une **famille**, qui regroupe plusieurs membre
 - Nombre maximum de participants fixé par le créateur de la séance (gestionnaire/coach ou admin)
 - Des **modèles de séance type** disponibles
 
+### Ouverture des inscriptions
+
+- Les inscriptions à une séance n'ouvrent qu'à partir du **mercredi de la semaine précédant** celle de la séance
+- Avant cette date, la séance est visible sur le calendrier mais l'inscription (et la liste d'attente) n'est pas possible
+- Les membres sont notifiés à l'**ouverture des inscriptions** (et non à la création de la séance par le gestionnaire, qui peut avoir lieu bien avant)
+
 ### Vue calendrier
 
 - Représentation graphique de l'occupation des séances, en vue **calendrier hebdomadaire**
@@ -91,7 +97,7 @@ Un membre peut être rattaché à une **famille**, qui regroupe plusieurs membre
 ### Liste d'attente
 
 - Quand une séance est complète, un membre peut se positionner en **liste d'attente**
-- En cas de désistement, le membre le plus haut dans la file est **automatiquement inscrit**
+- En cas de désistement, le membre le plus haut dans la file est **automatiquement inscrit** — mais uniquement si la séance a lieu dans **plus de 24 h** ; passé ce délai, un désistement ne déclenche plus de promotion automatique
 - Il est alerté par notification (email pour l'instant)
 - Une fois inscrit automatiquement, il devient un membre inscrit à part entière : les règles communes s'appliquent, y compris la règle de désinscription tardive — s'il ne peut plus assister, il doit se désinscrire dans les délais, sous peine d'entamer son crédit joker
 
