@@ -1,3 +1,4 @@
+import calendar
 import datetime
 from collections import defaultdict
 from types import SimpleNamespace
@@ -109,6 +110,49 @@ def calendrier(request, semaine=None):
         'aujourdhui': aujourdhui,
     }
     return render(request, 'scheduling/calendrier.html', context)
+
+
+def calendrier_mois(request, mois=None):
+    aujourdhui = timezone.localdate()
+    if mois:
+        annee, num_mois = (int(p) for p in mois.split('-'))
+        premier_jour = datetime.date(annee, num_mois, 1)
+    else:
+        premier_jour = aujourdhui.replace(day=1)
+
+    dernier_jour_num = calendar.monthrange(premier_jour.year, premier_jour.month)[1]
+    dernier_jour = premier_jour.replace(day=dernier_jour_num)
+    mois_precedent = (premier_jour - datetime.timedelta(days=1)).replace(day=1)
+    mois_suivant = dernier_jour + datetime.timedelta(days=1)
+
+    debut_grille = _lundi(premier_jour)
+    fin_grille = dernier_jour + datetime.timedelta(days=6 - dernier_jour.weekday())
+    jours = []
+    jour = debut_grille
+    while jour <= fin_grille:
+        jours.append(jour)
+        jour += datetime.timedelta(days=1)
+
+    statuts_jours = _occupation_par_jour(jours)
+    jours_info = [
+        SimpleNamespace(
+            date=jour,
+            statut=statuts_jours[jour],
+            dans_mois=(jour.month == premier_jour.month),
+            lundi_semaine=_lundi(jour),
+        )
+        for jour in jours
+    ]
+    semaines = [jours_info[i : i + 7] for i in range(0, len(jours_info), 7)]
+
+    context = {
+        'premier_jour': premier_jour,
+        'mois_precedent': mois_precedent,
+        'mois_suivant': mois_suivant,
+        'semaines': semaines,
+        'aujourdhui': aujourdhui,
+    }
+    return render(request, 'scheduling/calendrier_mois.html', context)
 
 
 class SeanceDetailView(DetailView):

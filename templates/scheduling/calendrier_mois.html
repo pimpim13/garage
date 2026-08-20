@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <h2 class="mb-0">Calendrier — vue mensuelle</h2>
+    <a href="{% url 'scheduling:calendrier' %}" class="btn btn-outline-dark btn-sm">Vue hebdomadaire</a>
+  </div>
+
+  <div class="semaine-nav mb-3">
+    <a href="{% url 'scheduling:calendrier_mois_precis' mois=mois_precedent|date:'Y-m' %}" class="btn btn-outline-dark btn-sm">&laquo; Mois préc.</a>
+    <span class="fw-semibold text-center text-capitalize">{{ premier_jour|date:'F Y' }}</span>
+    <a href="{% url 'scheduling:calendrier_mois_precis' mois=mois_suivant|date:'Y-m' %}" class="btn btn-outline-dark btn-sm text-end">Mois suiv. &raquo;</a>
+  </div>
+
+  <div class="mois-grille">
+    <div class="mois-entete">
+      <span>lun</span><span>mar</span><span>mer</span><span>jeu</span><span>ven</span><span>sam</span><span>dim</span>
+    </div>
+    {% for semaine in semaines %}
+      <div class="mois-ligne">
+        {% for jour in semaine %}
+          <a href="{% url 'scheduling:calendrier_semaine' semaine=jour.lundi_semaine|date:'Y-m-d' %}?jour={{ jour.date|date:'Y-m-d' }}"
+             class="mois-jour {% if not jour.dans_mois %}mois-jour-hors{% endif %} {% if jour.date == aujourdhui %}mois-jour-aujourdhui{% endif %}">
+            <span class="mois-jour-num">{{ jour.date|date:'d' }}</span>
+            {% if jour.statut == 'vert' %}<span class="dot dot-vert"></span>
+            {% elif jour.statut == 'rouge' %}<span class="dot dot-rouge"></span>
+            {% endif %}
+          </a>
+        {% endfor %}
+      </div>
+    {% endfor %}
+  </div>
+{% endblock %}
