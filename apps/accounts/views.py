@@ -7,6 +7,7 @@ from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, ListView, TemplateView, UpdateView
 
 from apps.purchases.services import solde_seances, statut_solde
+from apps.purchases.views import AJUSTEMENTS_AUTORISES as AJUSTEMENTS_POSSIBLES
 
 from .forms import MembreCreateForm, MembreUpdateForm
 from .mixins import GestionnaireRequiredMixin
@@ -34,6 +35,7 @@ class MembreListView(GestionnaireRequiredMixin, ListView):
         for membre in context['membres']:
             membre.solde = solde_seances(membre)
             membre.statut_solde = statut_solde(membre)
+        context['ajustements_possibles'] = AJUSTEMENTS_POSSIBLES
         return context
 
 
@@ -54,6 +56,13 @@ class MembreUpdateView(GestionnaireRequiredMixin, UpdateView):
 
     def get_queryset(self):
         return User.objects.filter(role=User.Role.MEMBRE)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['solde'] = solde_seances(self.object)
+        context['statut_solde'] = statut_solde(self.object)
+        context['ajustements_possibles'] = AJUSTEMENTS_POSSIBLES
+        return context
 
     def form_valid(self, form):
         messages.success(self.request, "Membre modifié.")
