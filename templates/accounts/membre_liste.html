@@ -43,7 +43,7 @@
                   <button type="submit" class="btn btn-outline-dark btn-sm">{{ delta|stringformat:'+d' }}</button>
                 </form>
               {% endfor %}
-              <form method="post" action="{% url 'accounts:membre_toggle_actif' pk=membre.pk %}">
+              <form method="post" action="{% url 'accounts:membre_toggle_actif' pk=membre.pk %}" class="ms-auto">
                 {% csrf_token %}
                 {% if membre.is_active %}
                   <button type="submit" class="btn btn-outline-danger btn-sm">Désactiver</button>
