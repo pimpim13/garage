@@ -113,6 +113,53 @@ h1, h2, h3, .display-font {
   justify-self: end;
 }
 
+.mois-grille {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mois-entete,
+.mois-ligne {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.mois-entete span {
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--ps-gray);
+  text-transform: uppercase;
+}
+
+.mois-jour {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 3rem;
+  padding: 0.4rem 0;
+  border-radius: var(--bs-border-radius);
+  background-color: var(--ps-gray-light);
+  text-decoration: none;
+}
+
+.mois-jour-num {
+  font-weight: 600;
+  color: var(--ps-black);
+}
+
+.mois-jour-hors {
+  opacity: 0.35;
+}
+
+.mois-jour-aujourdhui {
+  border: 2px solid var(--ps-green);
+}
+
 .hero {
   background-color: var(--ps-black);
   color: var(--ps-white);
