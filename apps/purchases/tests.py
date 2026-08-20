@@ -1,13 +1,15 @@
 import datetime
 
+from dateutil.relativedelta import relativedelta
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.utils import timezone
 
 from apps.accounts.models import Famille
+from apps.offers.models import Offre
 
-from .models import MouvementSeance
-from .services import solde_seances
+from .models import Achat, MouvementSeance
+from .services import enregistrer_achat, solde_seances
 
 User = get_user_model()
 
@@ -41,3 +43,63 @@ class SoldeSeancesTests(TestCase):
         MouvementSeance.objects.create(membre=membre, delta=11, motif=MouvementSeance.Motif.ACHAT)
 
         self.assertEqual(solde_seances(membre), 0)
+
+
+class EnregistrerAchatTests(TestCase):
+    def setUp(self):
+        self.offre = Offre.objects.create(
+            nom='Carnet 11 séances',
+            type_offre=Offre.TypeOffre.CARNET,
+            prix=100,
+            nombre_seances=11,
+        )
+        self.gestionnaire = User.objects.create(username='gestionnaire_test')
+
+    def test_enregistrer_achat_credite_le_solde(self):
+        membre = User.objects.create(username='acheteur')
+
+        enregistrer_achat(membre=membre, offre=self.offre, prix_paye=100, saisi_par=self.gestionnaire)
+
+        self.assertEqual(solde_seances(membre), 11)
+
+    def test_enregistrer_achat_cree_un_achat_paye(self):
+        membre = User.objects.create(username='acheteur2')
+
+        enregistrer_achat(membre=membre, offre=self.offre, prix_paye=100, saisi_par=self.gestionnaire)
+
+        achat = Achat.objects.get(membre=membre)
+        self.assertEqual(achat.statut_paiement, Achat.StatutPaiement.PAYE)
+        self.assertEqual(achat.nombre_seances, 11)
+        self.assertEqual(achat.saisi_par, self.gestionnaire)
+
+    def test_premier_achat_fixe_expiration_a_6_mois(self):
+        membre = User.objects.create(username='premier_achat')
+        aujourdhui = timezone.localdate()
+
+        enregistrer_achat(membre=membre, offre=self.offre, prix_paye=100, saisi_par=self.gestionnaire)
+
+        membre.refresh_from_db()
+        annee, mois = aujourdhui.year, aujourdhui.month + 6
+        if mois > 12:
+            annee, mois = annee + 1, mois - 12
+        self.assertEqual(membre.date_expiration_solde, aujourdhui.replace(year=annee, month=mois))
+
+    def test_achat_sur_pool_familial_prolonge_expiration_de_la_famille(self):
+        famille = Famille.objects.create(nom='Martin')
+        membre = User.objects.create(username='membre_famille_achat', famille=famille)
+
+        enregistrer_achat(membre=membre, offre=self.offre, prix_paye=100, saisi_par=self.gestionnaire)
+
+        famille.refresh_from_db()
+        membre.refresh_from_db()
+        self.assertIsNotNone(famille.date_expiration_solde)
+        self.assertIsNone(membre.date_expiration_solde)
+
+    def test_second_achat_prolonge_depuis_expiration_existante_pas_depuis_aujourdhui(self):
+        dans_5_mois = timezone.localdate() + relativedelta(months=5)
+        membre = User.objects.create(username='deja_actif', date_expiration_solde=dans_5_mois)
+
+        enregistrer_achat(membre=membre, offre=self.offre, prix_paye=100, saisi_par=self.gestionnaire)
+
+        membre.refresh_from_db()
+        self.assertEqual(membre.date_expiration_solde, dans_5_mois + relativedelta(months=6))
