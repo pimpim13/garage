@@ -17,9 +17,14 @@
       <a class="navbar-brand" href="{% url 'home' %}">
         <img src="{% static 'img/logo-le-garage-card.jpg' %}" alt="Le Garage">
       </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
-        <span class="navbar-toggler-icon"></span>
-      </button>
+      <div class="d-flex align-items-center gap-2">
+        {% if user.is_authenticated %}
+          <span class="avatar-cercle d-lg-none">{{ user.get_full_name|default:user.username|first|upper }}</span>
+        {% endif %}
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+      </div>
       <div class="collapse navbar-collapse" id="nav">
         <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
           <li class="nav-item"><a class="nav-link" href="{% url 'scheduling:calendrier' %}">Calendrier</a></li>
@@ -32,7 +37,7 @@
           {% endif %}
           {% if user.is_authenticated %}
             <li class="nav-item"><a class="nav-link" href="{% url 'accounts:password_change' %}">Mot de passe</a></li>
-            <li class="nav-item d-flex flex-column align-items-center text-light small">
+            <li class="nav-item d-none d-lg-flex flex-column align-items-center text-light small">
               <span class="avatar-cercle">{{ user.get_full_name|default:user.username|first|upper }}</span>
               <span class="mt-1">{{ user.get_full_name|default:user.username }}</span>
             </li>
