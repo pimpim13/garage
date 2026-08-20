@@ -13,6 +13,26 @@
   </div>
 
   {{ modeles_data|json_script:"modeles-data" }}
+
+  {% if object %}
+    <div class="modal fade" id="modal-capacite" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Capacité insuffisante</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+          </div>
+          <div class="modal-body">
+            <p id="modal-capacite-texte" class="mb-0"></p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Annuler</button>
+            <button type="button" class="btn btn-accent" id="modal-capacite-ajuster">Ajuster</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
 {% endblock %}
 
 {% block extra_js %}
@@ -29,5 +49,28 @@
         document.getElementById('id_delai_annulation_heures').value = donnees.delai_annulation_heures;
       });
     }
+
+    {% if object %}
+      const nbInscrits = {{ nb_inscrits|default:0 }};
+      const champCapacite = document.getElementById('id_capacite_max');
+      const modalEl = document.getElementById('modal-capacite');
+      const modalCapacite = new bootstrap.Modal(modalEl);
+
+      champCapacite.closest('form').addEventListener('submit', function (event) {
+        const valeur = parseInt(champCapacite.value, 10);
+        if (nbInscrits > 0 && valeur < nbInscrits) {
+          event.preventDefault();
+          document.getElementById('modal-capacite-texte').textContent =
+            `${nbInscrits} participant(s) déjà inscrit(s) à cette séance. ` +
+            `La capacité ne peut pas être inférieure à ${nbInscrits}.`;
+          modalCapacite.show();
+        }
+      });
+
+      document.getElementById('modal-capacite-ajuster').addEventListener('click', function () {
+        champCapacite.value = nbInscrits;
+        modalCapacite.hide();
+      });
+    {% endif %}
   </script>
 {% endblock %}

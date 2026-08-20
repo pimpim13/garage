@@ -228,6 +228,7 @@ class SeanceUpdateView(GestionnaireRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['modeles_data'] = _modeles_data()
+        context['nb_inscrits'] = self.object.inscriptions.filter(statut=Inscription.Statut.INSCRIT).count()
         return context
 
     def form_valid(self, form):
