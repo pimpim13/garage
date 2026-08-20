@@ -4,6 +4,27 @@
 {% block content %}
   <h2 class="mb-4">{% if object %}Modifier le membre{% else %}Nouveau membre{% endif %}</h2>
 
+  {% if object %}
+    <div class="card p-4 mb-3" style="max-width: 640px;">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div class="d-flex align-items-center gap-2">
+          <span class="dot dot-{{ statut_solde }}"></span>
+          <span class="fw-bold">Solde : {{ solde }}</span>
+        </div>
+        <div class="d-flex gap-1">
+          {% for delta in ajustements_possibles %}
+            <form method="post" action="{% url 'purchases:ajuster_solde' membre_id=object.pk %}">
+              {% csrf_token %}
+              <input type="hidden" name="delta" value="{{ delta }}">
+              <input type="hidden" name="next" value="{% url 'accounts:membre_modifier' pk=object.pk %}">
+              <button type="submit" class="btn btn-outline-dark btn-sm">{{ delta|stringformat:'+d' }}</button>
+            </form>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
   <div class="card p-4" style="max-width: 640px;">
     <form method="post">
       {% csrf_token %}
