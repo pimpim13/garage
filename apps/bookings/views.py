@@ -11,17 +11,11 @@ from apps.notifications.ntfy import notifier_coachs
 from apps.scheduling.models import Seance
 
 from .models import Inscription
+from .services import enregistrer_desinscription, enregistrer_inscription, peut_s_inscrire
 
 
 def _retour(request, seance):
     return request.POST.get('next') or reverse('scheduling:seance_detail', kwargs={'pk': seance.pk})
-
-
-def _desinscrire(inscription, auteur):
-    inscription.statut = Inscription.Statut.DESINSCRIT
-    inscription.desinscrit_le = timezone.now()
-    inscription.auteur = auteur
-    inscription.save(update_fields=['statut', 'desinscrit_le', 'auteur'])
 
 
 def _notifier_inscription(seance, membre):
@@ -46,8 +40,10 @@ def inscrire(request, seance_id):
         messages.info(request, "Vous êtes déjà inscrit(e) à cette séance.")
     elif seance.places_restantes <= 0:
         messages.error(request, "Cette séance est complète.")
+    elif not peut_s_inscrire(request.user):
+        messages.error(request, "Votre solde de séances est insuffisant pour vous inscrire.")
     else:
-        Inscription.objects.create(membre=request.user, seance=seance, auteur=request.user)
+        enregistrer_inscription(membre=request.user, seance=seance, auteur=request.user)
         messages.success(request, "Inscription confirmée.")
         _notifier_inscription(seance, request.user)
     return redirect(_retour(request, seance))
@@ -63,7 +59,7 @@ def desinscrire(request, seance_id):
     if inscription is None:
         messages.info(request, "Vous n'étiez pas inscrit(e) à cette séance.")
     else:
-        _desinscrire(inscription, request.user)
+        enregistrer_desinscription(inscription, request.user)
         messages.success(request, "Désinscription confirmée.")
     return redirect(_retour(request, seance))
 
@@ -86,6 +82,8 @@ def liste_attente_rejoindre(request, seance_id):
         messages.info(request, "Vous êtes déjà inscrit(e) ou en liste d'attente pour cette séance.")
     elif seance.places_restantes > 0:
         messages.info(request, "Cette séance a encore de la place, vous pouvez vous inscrire directement.")
+    elif not peut_s_inscrire(request.user):
+        messages.error(request, "Votre solde de séances est insuffisant pour vous positionner en liste d'attente.")
     else:
         Inscription.objects.create(
             membre=request.user, seance=seance, auteur=request.user, statut=Inscription.Statut.EN_ATTENTE
@@ -104,7 +102,10 @@ def liste_attente_quitter(request, seance_id):
     if inscription is None:
         messages.info(request, "Vous n'étiez pas en liste d'attente pour cette séance.")
     else:
-        _desinscrire(inscription, request.user)
+        inscription.statut = Inscription.Statut.DESINSCRIT
+        inscription.desinscrit_le = timezone.now()
+        inscription.auteur = request.user
+        inscription.save(update_fields=['statut', 'desinscrit_le', 'auteur'])
         messages.success(request, "Vous avez quitté la liste d'attente.")
     return redirect(_retour(request, seance))
 
@@ -127,8 +128,10 @@ def inscrire_membre(request, seance_id):
         messages.info(request, f"{membre} est déjà inscrit(e) à cette séance.")
     elif seance.places_restantes <= 0:
         messages.error(request, "Cette séance est complète.")
+    elif not peut_s_inscrire(membre):
+        messages.error(request, f"Le solde de séances de {membre} est insuffisant.")
     else:
-        Inscription.objects.create(membre=membre, seance=seance, auteur=request.user)
+        enregistrer_inscription(membre=membre, seance=seance, auteur=request.user)
         messages.success(request, f"{membre} a été inscrit(e).")
         _notifier_inscription(seance, membre)
     return redirect(_retour(request, seance))
@@ -147,6 +150,6 @@ def desinscrire_membre(request, seance_id, membre_id):
         messages.info(request, "Ce membre n'était pas inscrit à cette séance.")
     else:
         membre = inscription.membre
-        _desinscrire(inscription, request.user)
+        enregistrer_desinscription(inscription, request.user)
         messages.success(request, f"{membre} a été désinscrit(e).")
     return redirect(_retour(request, seance))
