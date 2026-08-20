@@ -6,6 +6,13 @@
     <a href="{% url 'scheduling:calendrier' %}" class="btn btn-outline-dark btn-sm">Vue hebdomadaire</a>
   </div>
 
+  {% if statut_solde_membre %}
+    <div class="d-flex align-items-center gap-2 mb-3">
+      <span class="dot dot-{{ statut_solde_membre }}"></span>
+      <span>Solde : <strong>{{ solde_membre }}</strong> séance{{ solde_membre|pluralize }} restante{{ solde_membre|pluralize }}</span>
+    </div>
+  {% endif %}
+
   <div class="semaine-nav mb-3">
     <a href="{% url 'scheduling:calendrier_mois_precis' mois=mois_precedent|date:'Y-m' %}" class="btn btn-outline-dark btn-sm">&laquo; Mois préc.</a>
     <span class="fw-semibold text-center text-capitalize">{{ premier_jour|date:'F Y' }}</span>

@@ -110,6 +110,9 @@ def calendrier(request, semaine=None):
         'inscriptions_membre': inscriptions_membre,
         'aujourdhui': aujourdhui,
     }
+    if request.user.is_authenticated and request.user.is_membre:
+        context['solde_membre'] = solde_seances(request.user)
+        context['statut_solde_membre'] = statut_solde(request.user)
     return render(request, 'scheduling/calendrier.html', context)
 
 
@@ -153,6 +156,9 @@ def calendrier_mois(request, mois=None):
         'semaines': semaines,
         'aujourdhui': aujourdhui,
     }
+    if request.user.is_authenticated and request.user.is_membre:
+        context['solde_membre'] = solde_seances(request.user)
+        context['statut_solde_membre'] = statut_solde(request.user)
     return render(request, 'scheduling/calendrier_mois.html', context)
 
 
@@ -187,6 +193,9 @@ class SeanceDetailView(DetailView):
             context['inscrit'] = self.object.inscriptions.filter(
                 membre=self.request.user, statut=Inscription.Statut.INSCRIT
             ).exists()
+            if self.request.user.is_membre:
+                context['solde_membre'] = solde_seances(self.request.user)
+                context['statut_solde_membre'] = statut_solde(self.request.user)
             for rang, inscription in enumerate(liste_attente, start=1):
                 if inscription.membre_id == self.request.user.id:
                     context['rang_liste_attente'] = rang
