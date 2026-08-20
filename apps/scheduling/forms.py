@@ -34,6 +34,19 @@ class SeanceForm(forms.ModelForm):
             role__in=[User.Role.ADMIN, User.Role.GESTIONNAIRE]
         ).order_by('first_name', 'username')
 
+    def clean_capacite_max(self):
+        capacite_max = self.cleaned_data['capacite_max']
+        if self.instance.pk:
+            from apps.bookings.models import Inscription
+
+            nb_inscrits = self.instance.inscriptions.filter(statut=Inscription.Statut.INSCRIT).count()
+            if capacite_max < nb_inscrits:
+                raise forms.ValidationError(
+                    f"Impossible : {nb_inscrits} participant(s) déjà inscrit(s) à cette séance. "
+                    f"La capacité ne peut pas être inférieure à {nb_inscrits}."
+                )
+        return capacite_max
+
 
 class ModeleSeanceForm(forms.ModelForm):
     class Meta:
