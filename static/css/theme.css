@@ -86,6 +86,10 @@ h1, h2, h3, .display-font {
   background-color: var(--ps-green-dark);
 }
 
+.dot-orange {
+  background-color: #e08e0b;
+}
+
 .dot-rouge {
   background-color: #c0392b;
 }

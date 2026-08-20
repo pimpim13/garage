@@ -6,6 +6,8 @@ from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, ListView, TemplateView, UpdateView
 
+from apps.purchases.services import solde_seances, statut_solde
+
 from .forms import MembreCreateForm, MembreUpdateForm
 from .mixins import GestionnaireRequiredMixin
 from .models import User
@@ -26,6 +28,13 @@ class MembreListView(GestionnaireRequiredMixin, ListView):
 
     def get_queryset(self):
         return User.objects.filter(role=User.Role.MEMBRE).order_by('first_name', 'username')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        for membre in context['membres']:
+            membre.solde = solde_seances(membre)
+            membre.statut_solde = statut_solde(membre)
+        return context
 
 
 class MembreCreateView(GestionnaireRequiredMixin, CreateView):

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h2 class="mb-4">Mon solde de séances</h2>
+
+  <div class="card p-4 mb-4">
+    <div class="d-flex align-items-center gap-2">
+      <span class="dot dot-{{ statut_solde }}"></span>
+      <span class="fs-3 fw-bold">{{ solde }}</span>
+      <span class="text-muted">séance{{ solde|pluralize }} restante{{ solde|pluralize }}</span>
+    </div>
+  </div>
+
+  <h4 class="mb-3">Historique</h4>
+  {% if historique %}
+    <ul class="list-group">
+      {% for mouvement in historique %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <div>
+            <div>{{ mouvement.get_motif_display }}</div>
+            <div class="text-muted small">{{ mouvement.horodatage|date:'d/m/Y H:i' }}</div>
+          </div>
+          <span class="badge {% if mouvement.delta > 0 %}bg-success{% else %}bg-secondary{% endif %}">
+            {{ mouvement.delta|stringformat:'+d' }}
+          </span>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="text-muted">Aucun mouvement pour le moment.</p>
+  {% endif %}
+{% endblock %}

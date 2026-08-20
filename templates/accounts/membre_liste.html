@@ -5,15 +5,16 @@
     <h2 class="mb-0">Membres</h2>
     <a href="{% url 'accounts:membre_creer' %}" class="btn btn-accent btn-sm">+ Nouveau membre</a>
   </div>
-
   {% if membres %}
     <div class="liste-seances">
       {% for membre in membres %}
         <div class="card p-3">
           <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
             <div>
-              <h5 class="mb-1">
+              <h5 class="mb-1 d-flex align-items-center gap-2">
+                <span class="dot dot-{{ membre.statut_solde }}"></span>
                 {{ membre.get_full_name|default:membre.username }}
+                <span class="text-muted small fw-normal">(solde {{ membre.solde }})</span>
                 {% if not membre.is_active %}<span class="badge bg-secondary">Inactif</span>{% endif %}
               </h5>
               <p class="text-muted mb-0">

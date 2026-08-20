@@ -27,6 +27,9 @@
           {% if user.is_staff_or_manager %}
             <li class="nav-item"><a class="nav-link" href="{% url 'accounts:membre_liste' %}">Membres</a></li>
           {% endif %}
+          {% if user.is_membre %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'purchases:mon_solde' %}">Mon solde</a></li>
+          {% endif %}
           {% if user.is_authenticated %}
             <li class="nav-item d-flex align-items-center gap-1 text-light small">
               <span class="dot dot-rouge" style="margin-top: 0;"></span>
