@@ -86,6 +86,20 @@ h1, h2, h3, .display-font {
   background-color: var(--ps-green-dark);
 }
 
+.avatar-cercle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--ps-green);
+  color: var(--ps-black);
+  font-weight: 700;
+  font-size: 0.85rem;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+}
+
 .dot-orange {
   background-color: #e08e0b;
 }

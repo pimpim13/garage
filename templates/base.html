@@ -31,11 +31,11 @@
             <li class="nav-item"><a class="nav-link" href="{% url 'purchases:mon_solde' %}">Mon solde</a></li>
           {% endif %}
           {% if user.is_authenticated %}
-            <li class="nav-item d-flex align-items-center gap-1 text-light small">
-              <span class="dot dot-rouge" style="margin-top: 0;"></span>
-              {{ user.get_full_name|default:user.username }}
-            </li>
             <li class="nav-item"><a class="nav-link" href="{% url 'accounts:password_change' %}">Mot de passe</a></li>
+            <li class="nav-item d-flex flex-column align-items-center text-light small">
+              <span class="avatar-cercle">{{ user.get_full_name|default:user.username|first|upper }}</span>
+              <span class="mt-1">{{ user.get_full_name|default:user.username }}</span>
+            </li>
             <li class="nav-item">
               <form method="post" action="{% url 'accounts:logout' %}" class="d-inline">
                 {% csrf_token %}
