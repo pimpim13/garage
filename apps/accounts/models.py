@@ -8,6 +8,12 @@ class Famille(models.Model):
         default=0,
         help_text="Tolérance de séances négatives appliquée au pool partagé, pour tous les membres liés.",
     )
+    date_expiration_solde = models.DateField(
+        null=True,
+        blank=True,
+        help_text="Au-delà de cette date, le solde de séances du pool est considéré à zéro. "
+        "Prolongée de 6 mois à chaque achat.",
+    )
     cree_le = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -46,6 +52,12 @@ class User(AbstractUser):
         help_text="Nombre de séances que ce membre peut avoir en négatif avant blocage de l'inscription. "
         "Ignoré si le membre appartient à une famille (voir Famille.tolerance_seances_negatives).",
     )
+    date_expiration_solde = models.DateField(
+        null=True,
+        blank=True,
+        help_text="Au-delà de cette date, le solde de séances est considéré à zéro. Prolongée de 6 mois "
+        "à chaque achat. Ignorée si le membre appartient à une famille (voir Famille.date_expiration_solde).",
+    )
 
     @property
     def is_admin(self):
@@ -66,6 +78,10 @@ class User(AbstractUser):
     @property
     def tolerance_applicable(self):
         return self.famille.tolerance_seances_negatives if self.famille_id else self.tolerance_seances_negatives
+
+    @property
+    def date_expiration_applicable(self):
+        return self.famille.date_expiration_solde if self.famille_id else self.date_expiration_solde
 
     def __str__(self):
         return self.get_full_name() or self.username
