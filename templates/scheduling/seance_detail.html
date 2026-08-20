@@ -22,6 +22,8 @@
 
     {% if seance.est_passee %}
       <p class="text-muted mt-3">Cette séance est déjà passée.</p>
+    {% elif not seance.inscriptions_ouvertes %}
+      <p class="text-muted mt-3">Les inscriptions ouvrent le {{ seance.date_ouverture_inscriptions|date:'d/m' }}.</p>
     {% elif user.is_authenticated %}
       {% if inscrit %}
         <form method="post" action="{% url 'bookings:desinscrire' seance_id=seance.pk %}" class="mt-3">
@@ -73,7 +75,7 @@
   </ul>
 
   {% if user.is_staff_or_manager %}
-    {% if not seance.est_passee %}
+    {% if not seance.est_passee and seance.inscriptions_ouvertes %}
       <form method="post" action="{% url 'bookings:inscrire_membre' seance_id=seance.pk %}" class="d-flex gap-2 mt-3">
         {% csrf_token %}
         <input type="hidden" name="next" value="{% url 'scheduling:seance_detail' pk=seance.pk %}">

@@ -35,6 +35,10 @@ class Seance(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='seances_animees'
     )
     cree_le = models.DateTimeField(auto_now_add=True)
+    notification_ouverture_envoyee = models.BooleanField(
+        default=False,
+        help_text="Empêche de renotifier plusieurs fois l'ouverture des inscriptions pour cette séance.",
+    )
 
     class Meta:
         ordering = ['debut']
@@ -49,6 +53,17 @@ class Seance(models.Model):
     @property
     def est_passee(self):
         return self.debut < timezone.now()
+
+    @property
+    def date_ouverture_inscriptions(self):
+        """Mercredi de la semaine précédant celle de la séance."""
+        jour = timezone.localtime(self.debut).date()
+        lundi_semaine_seance = jour - datetime.timedelta(days=jour.weekday())
+        return lundi_semaine_seance - datetime.timedelta(days=5)
+
+    @property
+    def inscriptions_ouvertes(self):
+        return timezone.localdate() >= self.date_ouverture_inscriptions
 
     @property
     def places_restantes(self):

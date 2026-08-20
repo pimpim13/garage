@@ -169,11 +169,8 @@ class SeanceCreateView(GestionnaireRequiredMixin, CreateView):
         return context
 
     def form_valid(self, form):
-        response = super().form_valid(form)
         messages.success(self.request, "Séance programmée.")
-        debut = timezone.localtime(self.object.debut)
-        notifier_membres(f"Nouvelle séance : « {self.object.nom} » le {debut:%d/%m à %H:%M}.")
-        return response
+        return super().form_valid(form)
 
     def get_success_url(self):
         return _calendrier_url_pour(self.object.debut)
