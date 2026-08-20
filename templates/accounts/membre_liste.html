@@ -13,7 +13,7 @@
             <div>
               <h5 class="mb-1 d-flex align-items-center gap-2">
                 <span class="dot dot-{{ membre.statut_solde }}"></span>
-                {{ membre.get_full_name|default:membre.username }}
+                <a href="{% url 'accounts:membre_modifier' pk=membre.pk %}" class="text-decoration-none text-reset">{{ membre.get_full_name|default:membre.username }}</a>
                 <span class="text-muted small fw-normal">(solde {{ membre.solde }})</span>
                 {% if not membre.is_active %}<span class="badge bg-secondary">Inactif</span>{% endif %}
               </h5>
@@ -33,7 +33,6 @@
                   <button type="submit" class="btn btn-outline-dark btn-sm">{{ delta|stringformat:'+d' }}</button>
                 </form>
               {% endfor %}
-              <a href="{% url 'accounts:membre_modifier' pk=membre.pk %}" class="btn btn-outline-dark btn-sm">Modifier</a>
               <form method="post" action="{% url 'accounts:membre_toggle_actif' pk=membre.pk %}">
                 {% csrf_token %}
                 {% if membre.is_active %}
