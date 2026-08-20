@@ -56,17 +56,35 @@
     {% endif %}
   </div>
 
-  <h4 class="mt-4">Participants inscrits ({{ participants.count }})</h4>
+  <h4 class="mt-4">Participants inscrits ({{ participants|length }})</h4>
   <ul class="list-group">
     {% for inscription in participants %}
-      <li class="list-group-item d-flex justify-content-between align-items-center">
-        {{ inscription.membre }}
+      <li class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div class="d-flex align-items-center gap-2">
+          {% if user.is_staff_or_manager %}
+            <span class="dot dot-{{ inscription.statut_solde }}"></span>
+            <span>{{ inscription.membre }}</span>
+            <span class="text-muted small">(solde {{ inscription.solde }})</span>
+          {% else %}
+            {{ inscription.membre }}
+          {% endif %}
+        </div>
         {% if user.is_staff_or_manager %}
-          <form method="post" action="{% url 'bookings:desinscrire_membre' seance_id=seance.pk membre_id=inscription.membre.pk %}">
-            {% csrf_token %}
-            <input type="hidden" name="next" value="{% url 'scheduling:seance_detail' pk=seance.pk %}">
-            <button type="submit" class="btn btn-outline-danger btn-sm">Désinscrire</button>
-          </form>
+          <div class="d-flex gap-1">
+            {% for delta in ajustements_possibles %}
+              <form method="post" action="{% url 'purchases:ajuster_solde' membre_id=inscription.membre.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="delta" value="{{ delta }}">
+                <input type="hidden" name="next" value="{% url 'scheduling:seance_detail' pk=seance.pk %}">
+                <button type="submit" class="btn btn-outline-dark btn-sm">{{ delta|stringformat:'+d' }}</button>
+              </form>
+            {% endfor %}
+            <form method="post" action="{% url 'bookings:desinscrire_membre' seance_id=seance.pk membre_id=inscription.membre.pk %}">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{% url 'scheduling:seance_detail' pk=seance.pk %}">
+              <button type="submit" class="btn btn-outline-danger btn-sm">Désinscrire</button>
+            </form>
+          </div>
         {% endif %}
       </li>
     {% empty %}

@@ -14,6 +14,7 @@ from apps.accounts.mixins import GestionnaireRequiredMixin
 from apps.accounts.models import User
 from apps.bookings.models import Inscription
 from apps.notifications.ntfy import notifier_membres
+from apps.purchases.services import solde_seances, statut_solde
 
 from .forms import ModeleSeanceForm, SeanceForm
 from .models import ModeleSeance, Seance
@@ -165,9 +166,15 @@ class SeanceDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['participants'] = self.object.inscriptions.filter(
-            statut=Inscription.Statut.INSCRIT
-        ).select_related('membre')
+        participants = list(
+            self.object.inscriptions.filter(statut=Inscription.Statut.INSCRIT).select_related('membre')
+        )
+        if self.request.user.is_authenticated and self.request.user.is_staff_or_manager:
+            for inscription in participants:
+                inscription.solde = solde_seances(inscription.membre)
+                inscription.statut_solde = statut_solde(inscription.membre)
+            context['ajustements_possibles'] = (10, 1, -1)
+        context['participants'] = participants
 
         liste_attente = list(
             self.object.inscriptions.filter(statut=Inscription.Statut.EN_ATTENTE)

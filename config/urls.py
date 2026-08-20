@@ -10,4 +10,5 @@ urlpatterns = [
     path('calendrier/', include('apps.scheduling.urls')),
     path('reservations/', include('apps.bookings.urls')),
     path('offres/', include('apps.offers.urls')),
+    path('solde/', include('apps.purchases.urls')),
 ]

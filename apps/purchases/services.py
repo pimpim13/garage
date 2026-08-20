@@ -5,17 +5,42 @@ from django.utils import timezone
 from .models import Achat, MouvementSeance
 
 
+def _mouvements_pour(membre):
+    if membre.famille_id:
+        return MouvementSeance.objects.filter(membre__famille=membre.famille)
+    return MouvementSeance.objects.filter(membre=membre)
+
+
 def solde_seances(membre):
     date_expiration = membre.date_expiration_applicable
     if date_expiration and date_expiration < timezone.localdate():
         return 0
 
-    if membre.famille_id:
-        mouvements = MouvementSeance.objects.filter(membre__famille=membre.famille)
-    else:
-        mouvements = MouvementSeance.objects.filter(membre=membre)
-    total = mouvements.aggregate(total=Sum('delta'))['total']
+    total = _mouvements_pour(membre).aggregate(total=Sum('delta'))['total']
     return total or 0
+
+
+def statut_solde(membre):
+    solde = solde_seances(membre)
+    tolerance = membre.tolerance_applicable
+    if solde > 0:
+        return 'vert'
+    if solde <= -tolerance:
+        return 'rouge'
+    return 'orange'
+
+
+def historique_seances(membre):
+    return _mouvements_pour(membre).select_related('membre').order_by('-horodatage')
+
+
+def ajuster_solde(membre, delta, auteur):
+    return MouvementSeance.objects.create(
+        membre=membre,
+        delta=delta,
+        motif=MouvementSeance.Motif.AJUSTEMENT,
+        auteur=auteur,
+    )
 
 
 def _prolonger_expiration(membre):

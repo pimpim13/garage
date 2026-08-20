@@ -9,7 +9,7 @@ from apps.accounts.models import Famille
 from apps.offers.models import Offre
 
 from .models import Achat, MouvementSeance
-from .services import enregistrer_achat, solde_seances
+from .services import ajuster_solde, enregistrer_achat, historique_seances, solde_seances, statut_solde
 
 User = get_user_model()
 
@@ -103,3 +103,75 @@ class EnregistrerAchatTests(TestCase):
 
         membre.refresh_from_db()
         self.assertEqual(membre.date_expiration_solde, dans_5_mois + relativedelta(months=6))
+
+
+class StatutSoldeTests(TestCase):
+    def test_solde_positif_est_vert(self):
+        membre = User.objects.create(username='positif', tolerance_seances_negatives=2)
+        MouvementSeance.objects.create(membre=membre, delta=1, motif=MouvementSeance.Motif.ACHAT)
+
+        self.assertEqual(statut_solde(membre), 'vert')
+
+    def test_solde_nul_est_orange(self):
+        membre = User.objects.create(username='nul', tolerance_seances_negatives=2)
+
+        self.assertEqual(statut_solde(membre), 'orange')
+
+    def test_solde_negatif_sous_la_tolerance_est_orange(self):
+        membre = User.objects.create(username='entame', tolerance_seances_negatives=2)
+        MouvementSeance.objects.create(membre=membre, delta=-1, motif=MouvementSeance.Motif.AJUSTEMENT)
+
+        self.assertEqual(statut_solde(membre), 'orange')
+
+    def test_solde_a_la_tolerance_est_rouge(self):
+        membre = User.objects.create(username='limite', tolerance_seances_negatives=2)
+        MouvementSeance.objects.create(membre=membre, delta=-2, motif=MouvementSeance.Motif.AJUSTEMENT)
+
+        self.assertEqual(statut_solde(membre), 'rouge')
+
+
+class AjusterSoldeTests(TestCase):
+    def test_ajuster_solde_credite_le_membre(self):
+        membre = User.objects.create(username='a_crediter')
+        gestionnaire = User.objects.create(username='gestionnaire_ajust')
+
+        ajuster_solde(membre=membre, delta=10, auteur=gestionnaire)
+
+        self.assertEqual(solde_seances(membre), 10)
+
+    def test_ajuster_solde_cree_un_mouvement_ajustement_trace(self):
+        membre = User.objects.create(username='a_tracer')
+        gestionnaire = User.objects.create(username='gestionnaire_trace')
+
+        ajuster_solde(membre=membre, delta=-1, auteur=gestionnaire)
+
+        mouvement = MouvementSeance.objects.get(membre=membre)
+        self.assertEqual(mouvement.delta, -1)
+        self.assertEqual(mouvement.motif, MouvementSeance.Motif.AJUSTEMENT)
+        self.assertEqual(mouvement.auteur, gestionnaire)
+
+
+class HistoriqueSeancesTests(TestCase):
+    def test_historique_trie_du_plus_recent_au_plus_ancien(self):
+        membre = User.objects.create(username='historique')
+        premier = MouvementSeance.objects.create(membre=membre, delta=11, motif=MouvementSeance.Motif.ACHAT)
+        second = MouvementSeance.objects.create(membre=membre, delta=-1, motif=MouvementSeance.Motif.INSCRIPTION)
+
+        resultat = list(historique_seances(membre))
+
+        self.assertEqual(resultat, [second, premier])
+
+    def test_historique_inclut_les_mouvements_de_toute_la_famille(self):
+        famille = Famille.objects.create(nom='Bernard')
+        parent = User.objects.create(username='parent_bernard', famille=famille)
+        enfant = User.objects.create(username='enfant_bernard', famille=famille)
+        mouvement_parent = MouvementSeance.objects.create(
+            membre=parent, delta=11, motif=MouvementSeance.Motif.ACHAT
+        )
+        mouvement_enfant = MouvementSeance.objects.create(
+            membre=enfant, delta=-1, motif=MouvementSeance.Motif.INSCRIPTION
+        )
+
+        resultat = set(historique_seances(parent))
+
+        self.assertEqual(resultat, {mouvement_parent, mouvement_enfant})
