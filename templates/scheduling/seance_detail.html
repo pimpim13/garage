@@ -20,6 +20,13 @@
     {% if seance.coach %}<p>Coach : <strong>{{ seance.coach }}</strong></p>{% endif %}
     <p>Places : {{ seance.places_restantes }} / {{ seance.capacite_max }}</p>
 
+    {% if statut_solde_membre %}
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <span class="dot dot-{{ statut_solde_membre }}"></span>
+        <span>Votre solde : <strong>{{ solde_membre }}</strong> séance{{ solde_membre|pluralize }} restante{{ solde_membre|pluralize }}</span>
+      </div>
+    {% endif %}
+
     {% if seance.est_passee %}
       <p class="text-muted mt-3">Cette séance est déjà passée.</p>
     {% elif not seance.inscriptions_ouvertes %}
