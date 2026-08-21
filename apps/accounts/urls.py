@@ -21,6 +21,7 @@ urlpatterns = [
         auth_views.PasswordChangeDoneView.as_view(template_name='accounts/password_change_done.html'),
         name='password_change_done',
     ),
+    path('preferences/', views.PreferencesView.as_view(), name='preferences'),
     path('membres/', views.MembreListView.as_view(), name='membre_liste'),
     path('membres/nouveau/', views.MembreCreateView.as_view(), name='membre_creer'),
     path('membres/<int:pk>/modifier/', views.MembreUpdateView.as_view(), name='membre_modifier'),
