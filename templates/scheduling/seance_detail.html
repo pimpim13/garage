@@ -63,41 +63,48 @@
     {% endif %}
   </div>
 
-  <h4 class="mt-4">Participants inscrits ({{ participants|length }})</h4>
-  <ul class="list-group">
-    {% for inscription in participants %}
-      <li class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2">
-        <div class="d-flex align-items-center gap-2">
-          {% if user.is_staff_or_manager %}
-            <span class="dot dot-{{ inscription.statut_solde }}"></span>
-            <span>{{ inscription.membre }}</span>
-            <span class="text-muted small">(solde {{ inscription.solde }})</span>
-          {% else %}
-            {{ inscription.membre }}
-          {% endif %}
-        </div>
-        {% if user.is_staff_or_manager %}
-          <div class="d-flex gap-1">
-            {% for delta in ajustements_possibles %}
-              <form method="post" action="{% url 'purchases:ajuster_solde' membre_id=inscription.membre.pk %}">
-                {% csrf_token %}
-                <input type="hidden" name="delta" value="{{ delta }}">
-                <input type="hidden" name="next" value="{% url 'scheduling:seance_detail' pk=seance.pk %}">
-                <button type="submit" class="btn btn-outline-dark btn-sm">{{ delta|stringformat:'+d' }}</button>
-              </form>
-            {% endfor %}
-            <form method="post" action="{% url 'bookings:desinscrire_membre' seance_id=seance.pk membre_id=inscription.membre.pk %}">
-              {% csrf_token %}
-              <input type="hidden" name="next" value="{% url 'scheduling:seance_detail' pk=seance.pk %}">
-              <button type="submit" class="btn btn-outline-danger btn-sm">Désinscrire</button>
-            </form>
+  <h4 class="mt-4 mb-3">Participants inscrits ({{ participants|length }})</h4>
+  {% if participants %}
+    <div class="liste-seances">
+      {% for inscription in participants %}
+        <div class="card p-3">
+          <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center gap-2">
+            <div class="d-flex align-items-center gap-2">
+              <span class="avatar-cercle">{{ inscription.membre.get_full_name|default:inscription.membre.username|first|upper }}</span>
+              <div>
+                <div class="d-flex align-items-center gap-2">
+                  {% if user.is_staff_or_manager %}<span class="dot dot-{{ inscription.statut_solde }}"></span>{% endif %}
+                  <span class="fw-semibold">{{ inscription.membre }}</span>
+                </div>
+                {% if user.is_staff_or_manager %}
+                  <span class="text-muted small">Solde : {{ inscription.solde }}</span>
+                {% endif %}
+              </div>
+            </div>
+            {% if user.is_staff_or_manager %}
+              <div class="d-flex flex-wrap gap-2">
+                {% for delta in ajustements_possibles %}
+                  <form method="post" action="{% url 'purchases:ajuster_solde' membre_id=inscription.membre.pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="delta" value="{{ delta }}">
+                    <input type="hidden" name="next" value="{% url 'scheduling:seance_detail' pk=seance.pk %}">
+                    <button type="submit" class="btn btn-outline-dark btn-sm">{{ delta|stringformat:'+d' }}</button>
+                  </form>
+                {% endfor %}
+                <form method="post" action="{% url 'bookings:desinscrire_membre' seance_id=seance.pk membre_id=inscription.membre.pk %}" class="ms-auto">
+                  {% csrf_token %}
+                  <input type="hidden" name="next" value="{% url 'scheduling:seance_detail' pk=seance.pk %}">
+                  <button type="submit" class="btn btn-outline-danger btn-sm">Désinscrire</button>
+                </form>
+              </div>
+            {% endif %}
           </div>
-        {% endif %}
-      </li>
-    {% empty %}
-      <li class="list-group-item text-muted">Aucun participant inscrit pour le moment.</li>
-    {% endfor %}
-  </ul>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-muted">Aucun participant inscrit pour le moment.</p>
+  {% endif %}
 
   {% if user.is_staff_or_manager %}
     {% if not seance.est_passee and seance.inscriptions_ouvertes %}
@@ -114,16 +121,21 @@
       </form>
     {% endif %}
 
-    <h4 class="mt-4">Liste d'attente ({{ liste_attente|length }})</h4>
-    <ul class="list-group">
-      {% for inscription in liste_attente %}
-        <li class="list-group-item d-flex justify-content-between align-items-center">
-          {{ inscription.membre }}
-          <span class="badge bg-dark">{{ forloop.counter }}</span>
-        </li>
-      {% empty %}
-        <li class="list-group-item text-muted">Personne en liste d'attente.</li>
-      {% endfor %}
-    </ul>
+    <h4 class="mt-4 mb-3">Liste d'attente ({{ liste_attente|length }})</h4>
+    {% if liste_attente %}
+      <div class="liste-seances">
+        {% for inscription in liste_attente %}
+          <div class="card p-3 d-flex flex-row justify-content-between align-items-center gap-2">
+            <div class="d-flex align-items-center gap-2">
+              <span class="avatar-cercle">{{ inscription.membre.get_full_name|default:inscription.membre.username|first|upper }}</span>
+              <span class="fw-semibold">{{ inscription.membre }}</span>
+            </div>
+            <span class="badge bg-dark">{{ forloop.counter }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-muted">Personne en liste d'attente.</p>
+    {% endif %}
   {% endif %}
 {% endblock %}
