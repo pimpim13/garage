@@ -108,6 +108,30 @@ h1, h2, h3, .display-font {
   background-color: #c0392b;
 }
 
+.badge-solde {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 3rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 0.5rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--ps-white);
+}
+
+.badge-solde-vert {
+  background-color: var(--ps-green-dark);
+}
+
+.badge-solde-orange {
+  background-color: #e08e0b;
+}
+
+.badge-solde-rouge {
+  background-color: #c0392b;
+}
+
 .nav-link.active .dot-vert {
   background-color: var(--ps-black);
 }
