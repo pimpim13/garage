@@ -7,6 +7,7 @@ Nom de la salle : **le Garage** (coaching : Loïc Fitness Coaching).
 - Langage : **Python**, framework **Django 5.2**, **Bootstrap 5** (via django-crispy-forms)
 - Application **responsive**, utilisable sur smartphone
 - Dépôt GitHub : `pimpim13/garage`
+- Configuration sensible (clé secrète Django, hosts autorisés, identifiants ntfy.sh) isolée dans un fichier `.env` local (non versionné, voir `.env.example` pour la liste des variables attendues)
 
 ## Profils utilisateurs
 
