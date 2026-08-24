@@ -66,6 +66,10 @@ class Seance(models.Model):
         return timezone.localdate() >= self.date_ouverture_inscriptions
 
     @property
+    def promotion_liste_attente_possible(self):
+        return self.debut - timezone.now() > datetime.timedelta(hours=24)
+
+    @property
     def places_restantes(self):
         from apps.bookings.models import Inscription
 
