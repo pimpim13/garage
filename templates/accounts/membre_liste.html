@@ -32,8 +32,8 @@
                 {% if membre.famille %} &middot; {{ membre.famille }}{% endif %}
               </p>
             </div>
-            <span class="badge-solde badge-solde-{{ membre.statut_solde }} flex-shrink-0">{{ membre.solde }}</span>
-            <div class="d-flex flex-wrap gap-2">
+            <div class="d-flex flex-wrap align-items-center gap-2">
+              <span class="badge-solde badge-solde-{{ membre.statut_solde }} flex-shrink-0">{{ membre.solde }}</span>
               {% for delta in ajustements_possibles %}
                 <form method="post" action="{% url 'purchases:ajuster_solde' membre_id=membre.pk %}">
                   {% csrf_token %}
