@@ -82,6 +82,10 @@ def liste_attente_rejoindre(request, seance_id):
         messages.info(request, "Vous êtes déjà inscrit(e) ou en liste d'attente pour cette séance.")
     elif seance.places_restantes > 0:
         messages.info(request, "Cette séance a encore de la place, vous pouvez vous inscrire directement.")
+    elif not seance.promotion_liste_attente_possible:
+        messages.error(
+            request, "Vous ne pouvez plus rejoindre la liste d'attente à moins de 24h du début de la séance."
+        )
     elif not peut_s_inscrire(request.user):
         messages.error(request, "Votre solde de séances est insuffisant pour vous positionner en liste d'attente.")
     else:
