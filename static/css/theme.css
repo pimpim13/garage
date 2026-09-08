@@ -155,6 +155,10 @@ h1, h2, h3, .display-font {
   justify-self: end;
 }
 
+.semaine-nav > a {
+  white-space: nowrap;
+}
+
 .mois-grille {
   display: flex;
   flex-direction: column;
