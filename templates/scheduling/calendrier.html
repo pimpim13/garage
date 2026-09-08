@@ -20,9 +20,9 @@
   {% endif %}
 
   <div class="semaine-nav mb-3">
-    <a href="{% url 'scheduling:calendrier_semaine' semaine=semaine_precedente|date:'Y-m-d' %}" class="btn btn-outline-dark btn-sm">&laquo; <span class="d-none d-sm-inline">Semaine </span>préc.</a>
+    <a href="{% url 'scheduling:calendrier_semaine' semaine=semaine_precedente|date:'Y-m-d' %}" class="btn btn-outline-dark btn-sm">&laquo; Préc.</a>
     <span class="fw-semibold text-center">Semaine du {{ lundi|date:'d/m/Y' }}</span>
-    <a href="{% url 'scheduling:calendrier_semaine' semaine=semaine_suivante|date:'Y-m-d' %}" class="btn btn-outline-dark btn-sm"><span class="d-none d-sm-inline">Semaine </span>suiv. &raquo;</a>
+    <a href="{% url 'scheduling:calendrier_semaine' semaine=semaine_suivante|date:'Y-m-d' %}" class="btn btn-outline-dark btn-sm">Suiv. &raquo;</a>
   </div>
 
   <ul class="nav nav-pills mb-4 flex-nowrap overflow-auto gap-1">
