@@ -60,6 +60,7 @@ class MembreUpdateView(GestionnaireRequiredMixin, UpdateView):
     form_class = MembreUpdateForm
     template_name = 'accounts/membre_form.html'
     success_url = reverse_lazy('accounts:membre_liste')
+    context_object_name = 'membre'
 
     def get_queryset(self):
         return User.objects.filter(role__in=[User.Role.MEMBRE, User.Role.GESTIONNAIRE])

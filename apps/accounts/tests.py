@@ -67,6 +67,18 @@ class MembreUpdateFormTests(TestCase):
         self.assertTrue(user.is_gestionnaire)
 
 
+class MembreUpdateViewTests(TestCase):
+    def test_consulter_une_fiche_ne_change_pas_l_utilisateur_connecte_dans_le_contexte(self):
+        gestionnaire = creer_gestionnaire()
+        membre = User.objects.create(username='membre_consulte', role=User.Role.MEMBRE)
+        self.client.force_login(gestionnaire)
+
+        response = self.client.get(reverse('accounts:membre_modifier', args=[membre.pk]))
+
+        self.assertEqual(response.context['user'], gestionnaire)
+        self.assertEqual(response.context['membre'], membre)
+
+
 class MembreListViewTests(TestCase):
     def test_les_comptes_coach_apparaissent_dans_la_liste(self):
         gestionnaire = creer_gestionnaire()
