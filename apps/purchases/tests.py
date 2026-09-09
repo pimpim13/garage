@@ -3,10 +3,13 @@ import datetime
 from dateutil.relativedelta import relativedelta
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.models import Famille
+from apps.bookings.models import Inscription
 from apps.offers.models import Offre
+from apps.scheduling.models import Seance
 
 from .models import Achat, MouvementSeance
 from .services import ajuster_solde, enregistrer_achat, historique_seances, solde_seances, statut_solde
@@ -175,3 +178,66 @@ class HistoriqueSeancesTests(TestCase):
         resultat = set(historique_seances(parent))
 
         self.assertEqual(resultat, {mouvement_parent, mouvement_enfant})
+
+
+class HistoriqueMembreViewTests(TestCase):
+    def test_un_gestionnaire_voit_l_historique_d_un_membre(self):
+        gestionnaire = User.objects.create_user(username='gestionnaire_vue', password='motdepasse123', role=User.Role.GESTIONNAIRE)
+        membre = User.objects.create(username='membre_vue', role=User.Role.MEMBRE)
+        MouvementSeance.objects.create(membre=membre, delta=11, motif=MouvementSeance.Motif.ACHAT)
+        self.client.force_login(gestionnaire)
+
+        response = self.client.get(reverse('purchases:historique_membre', args=[membre.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Achat')
+
+    def test_un_membre_ne_peut_pas_voir_l_historique_d_un_autre(self):
+        membre = User.objects.create_user(username='intrus', password='motdepasse123', role=User.Role.MEMBRE)
+        autre = User.objects.create(username='autre_membre', role=User.Role.MEMBRE)
+        self.client.force_login(membre)
+
+        response = self.client.get(reverse('purchases:historique_membre', args=[autre.pk]))
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_l_historique_d_un_coach_est_accessible(self):
+        gestionnaire = User.objects.create_user(username='gestionnaire_vue2', password='motdepasse123', role=User.Role.GESTIONNAIRE)
+        coach = User.objects.create(username='coach_vue', role=User.Role.GESTIONNAIRE)
+        self.client.force_login(gestionnaire)
+
+        response = self.client.get(reverse('purchases:historique_membre', args=[coach.pk]))
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_mouvement_inscription_affiche_la_date_de_la_seance(self):
+        gestionnaire = User.objects.create_user(username='gestionnaire_detail', password='motdepasse123', role=User.Role.GESTIONNAIRE)
+        membre = User.objects.create(username='membre_detail', role=User.Role.MEMBRE)
+        seance = Seance.objects.create(
+            nom='Cross training',
+            debut=timezone.make_aware(datetime.datetime(2026, 9, 12, 18, 0)),
+            capacite_max=10,
+        )
+        inscription = Inscription.objects.create(membre=membre, seance=seance)
+        MouvementSeance.objects.create(
+            membre=membre, delta=-1, motif=MouvementSeance.Motif.INSCRIPTION, inscription=inscription
+        )
+        self.client.force_login(gestionnaire)
+
+        response = self.client.get(reverse('purchases:historique_membre', args=[membre.pk]))
+
+        self.assertContains(response, 'Inscription à la séance du 12/09/2026 18:00')
+
+    def test_mouvement_ajustement_affiche_l_auteur(self):
+        gestionnaire = User.objects.create_user(
+            username='gestionnaire_auteur', password='motdepasse123', role=User.Role.GESTIONNAIRE, first_name='Loic',
+        )
+        membre = User.objects.create(username='membre_auteur', role=User.Role.MEMBRE)
+        MouvementSeance.objects.create(
+            membre=membre, delta=1, motif=MouvementSeance.Motif.AJUSTEMENT, auteur=gestionnaire
+        )
+        self.client.force_login(gestionnaire)
+
+        response = self.client.get(reverse('purchases:historique_membre', args=[membre.pk]))
+
+        self.assertContains(response, 'par Loic')

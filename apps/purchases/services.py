@@ -31,7 +31,9 @@ def statut_solde(membre):
 
 
 def historique_seances(membre):
-    return _mouvements_pour(membre).select_related('membre').order_by('-horodatage')
+    return _mouvements_pour(membre).select_related(
+        'membre', 'auteur', 'inscription__seance'
+    ).order_by('-horodatage')
 
 
 def ajuster_solde(membre, delta, auteur):

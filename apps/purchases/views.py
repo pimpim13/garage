@@ -22,11 +22,26 @@ def mon_solde(request):
 
 
 @login_required
+def historique_membre(request, membre_id):
+    if not request.user.is_staff_or_manager:
+        raise PermissionDenied
+    membre = get_object_or_404(User, pk=membre_id, role__in=[User.Role.MEMBRE, User.Role.GESTIONNAIRE])
+    context = {
+        'membre': membre,
+        'titre': f"Historique de {membre}",
+        'solde': solde_seances(membre),
+        'statut_solde': statut_solde(membre),
+        'historique': historique_seances(membre),
+    }
+    return render(request, 'purchases/mon_solde.html', context)
+
+
+@login_required
 @require_POST
 def ajuster_solde_membre(request, membre_id):
     if not request.user.is_staff_or_manager:
         raise PermissionDenied
-    membre = get_object_or_404(User, pk=membre_id, role=User.Role.MEMBRE)
+    membre = get_object_or_404(User, pk=membre_id, role__in=[User.Role.MEMBRE, User.Role.GESTIONNAIRE])
     try:
         delta = int(request.POST.get('delta'))
     except (TypeError, ValueError):

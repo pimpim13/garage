@@ -16,6 +16,7 @@
             <button type="submit" class="btn btn-outline-dark btn-sm">{{ delta|stringformat:'+d' }}</button>
           </form>
         {% endfor %}
+        <a href="{% url 'purchases:historique_membre' membre_id=object.pk %}" class="btn btn-outline-dark btn-sm ms-auto">Historique</a>
       </div>
     </div>
   {% endif %}

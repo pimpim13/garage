@@ -1,7 +1,12 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <h2 class="mb-4">Mon solde de séances</h2>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">{{ titre|default:"Mon solde de séances" }}</h2>
+    {% if membre %}
+      <a href="{% url 'accounts:membre_modifier' pk=membre.pk %}" class="btn btn-outline-dark btn-sm">Retour à la fiche</a>
+    {% endif %}
+  </div>
 
   <div class="card p-4 mb-4">
     <div class="d-flex align-items-center gap-2">
@@ -17,7 +22,19 @@
       {% for mouvement in historique %}
         <li class="list-group-item d-flex justify-content-between align-items-center">
           <div>
-            <div>{{ mouvement.get_motif_display }}</div>
+            <div>
+              {% if mouvement.motif == 'inscription' and mouvement.inscription %}
+                Inscription à la séance du {{ mouvement.inscription.seance.debut|date:'d/m/Y H:i' }}
+              {% elif mouvement.motif == 'desinscription' and mouvement.inscription %}
+                Désinscription de la séance du {{ mouvement.inscription.seance.debut|date:'d/m/Y H:i' }}
+              {% elif mouvement.motif == 'desinscription_tardive_joker' and mouvement.inscription %}
+                Désinscription tardive (joker utilisé) de la séance du {{ mouvement.inscription.seance.debut|date:'d/m/Y H:i' }}
+              {% elif mouvement.motif == 'ajustement' %}
+                {{ mouvement.get_motif_display }}{% if mouvement.auteur %} — par {{ mouvement.auteur }}{% endif %}
+              {% else %}
+                {{ mouvement.get_motif_display }}
+              {% endif %}
+            </div>
             <div class="text-muted small">{{ mouvement.horodatage|date:'d/m/Y H:i' }}</div>
           </div>
           <span class="badge {% if mouvement.delta > 0 %}bg-success{% else %}bg-secondary{% endif %}">
