@@ -30,7 +30,7 @@
           <li class="nav-item"><a class="nav-link" href="{% url 'scheduling:calendrier' %}">Calendrier</a></li>
           <li class="nav-item"><a class="nav-link" href="{% url 'offers:catalogue' %}">Offres</a></li>
           {% if user.is_staff_or_manager %}
-            <li class="nav-item"><a class="nav-link" href="{% url 'accounts:membre_liste' %}">Membres</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'accounts:membre_liste' %}">Comptes</a></li>
           {% endif %}
           {% if user.is_membre %}
             <li class="nav-item"><a class="nav-link" href="{% url 'purchases:mon_solde' %}">Mon solde</a></li>

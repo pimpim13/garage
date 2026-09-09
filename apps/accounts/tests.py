@@ -1,3 +1,121 @@
 from django.test import TestCase
+from django.urls import reverse
 
-# Create your tests here.
+from .forms import MembreCreateForm, MembreUpdateForm
+from .models import User
+
+
+def creer_gestionnaire(**kwargs):
+    kwargs.setdefault('username', 'coach1')
+    kwargs.setdefault('role', User.Role.GESTIONNAIRE)
+    return User.objects.create_user(password='motdepasse123', **kwargs)
+
+
+class MembreCreateFormTests(TestCase):
+    def test_cree_un_membre_par_defaut(self):
+        form = MembreCreateForm(data={
+            'username': 'jdupont',
+            'role': User.Role.MEMBRE,
+            'password1': 'motdepasse123',
+            'password2': 'motdepasse123',
+            'tolerance_seances_negatives': 0,
+        })
+
+        self.assertTrue(form.is_valid(), form.errors)
+        user = form.save()
+        self.assertEqual(user.role, User.Role.MEMBRE)
+
+    def test_peut_creer_un_coach(self):
+        form = MembreCreateForm(data={
+            'username': 'jcoach',
+            'role': User.Role.GESTIONNAIRE,
+            'password1': 'motdepasse123',
+            'password2': 'motdepasse123',
+            'tolerance_seances_negatives': 0,
+        })
+
+        self.assertTrue(form.is_valid(), form.errors)
+        user = form.save()
+        self.assertEqual(user.role, User.Role.GESTIONNAIRE)
+        self.assertTrue(user.is_gestionnaire)
+
+    def test_refuse_le_role_admin(self):
+        form = MembreCreateForm(data={
+            'username': 'jadmin',
+            'role': User.Role.ADMIN,
+            'password1': 'motdepasse123',
+            'password2': 'motdepasse123',
+            'tolerance_seances_negatives': 0,
+        })
+
+        self.assertFalse(form.is_valid())
+        self.assertIn('role', form.errors)
+
+
+class MembreUpdateFormTests(TestCase):
+    def test_peut_changer_un_membre_en_coach(self):
+        membre = User.objects.create(username='futur_coach', role=User.Role.MEMBRE)
+
+        form = MembreUpdateForm(data={
+            'username': membre.username,
+            'role': User.Role.GESTIONNAIRE,
+            'tolerance_seances_negatives': 0,
+        }, instance=membre)
+
+        self.assertTrue(form.is_valid(), form.errors)
+        user = form.save()
+        self.assertTrue(user.is_gestionnaire)
+
+
+class MembreListViewTests(TestCase):
+    def test_les_comptes_coach_apparaissent_dans_la_liste(self):
+        gestionnaire = creer_gestionnaire()
+        coach = creer_gestionnaire(username='autre_coach')
+        self.client.force_login(gestionnaire)
+
+        response = self.client.get(reverse('accounts:membre_liste'))
+
+        self.assertContains(response, 'autre_coach')
+        self.assertContains(response, coach.get_role_display())
+
+
+class MembreToggleActifViewTests(TestCase):
+    def test_un_gestionnaire_peut_desactiver_un_compte_coach(self):
+        gestionnaire = creer_gestionnaire()
+        coach = creer_gestionnaire(username='coach_a_desactiver')
+        self.client.force_login(gestionnaire)
+
+        self.client.post(reverse('accounts:membre_toggle_actif', args=[coach.pk]))
+
+        coach.refresh_from_db()
+        self.assertFalse(coach.is_active)
+
+
+class AdminSiteAccessTests(TestCase):
+    def test_un_coach_meme_avec_is_staff_ne_peut_pas_acceder_a_l_admin(self):
+        coach = User.objects.create_user(
+            username='coach_admin_test',
+            password='motdepasse123',
+            role=User.Role.GESTIONNAIRE,
+            is_staff=True,
+            is_superuser=True,
+        )
+        self.client.force_login(coach)
+
+        response = self.client.get('/admin/')
+
+        self.assertNotEqual(response.status_code, 200)
+
+    def test_un_admin_peut_acceder_a_l_admin(self):
+        admin = User.objects.create_user(
+            username='admin_test',
+            password='motdepasse123',
+            role=User.Role.ADMIN,
+            is_staff=True,
+            is_superuser=True,
+        )
+        self.client.force_login(admin)
+
+        response = self.client.get('/admin/')
+
+        self.assertEqual(response.status_code, 200)

@@ -33,7 +33,9 @@ class MembreListView(GestionnaireRequiredMixin, ListView):
     context_object_name = 'membres'
 
     def get_queryset(self):
-        return User.objects.filter(role=User.Role.MEMBRE).order_by('first_name', 'username')
+        return User.objects.filter(
+            role__in=[User.Role.MEMBRE, User.Role.GESTIONNAIRE]
+        ).order_by('first_name', 'username')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -50,7 +52,7 @@ class MembreCreateView(GestionnaireRequiredMixin, CreateView):
     success_url = reverse_lazy('accounts:membre_liste')
 
     def form_valid(self, form):
-        messages.success(self.request, "Membre créé.")
+        messages.success(self.request, "Compte créé.")
         return super().form_valid(form)
 
 
@@ -60,7 +62,7 @@ class MembreUpdateView(GestionnaireRequiredMixin, UpdateView):
     success_url = reverse_lazy('accounts:membre_liste')
 
     def get_queryset(self):
-        return User.objects.filter(role=User.Role.MEMBRE)
+        return User.objects.filter(role__in=[User.Role.MEMBRE, User.Role.GESTIONNAIRE])
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -70,7 +72,7 @@ class MembreUpdateView(GestionnaireRequiredMixin, UpdateView):
         return context
 
     def form_valid(self, form):
-        messages.success(self.request, "Membre modifié.")
+        messages.success(self.request, "Compte modifié.")
         return super().form_valid(form)
 
 
@@ -79,7 +81,7 @@ class MembreUpdateView(GestionnaireRequiredMixin, UpdateView):
 def membre_toggle_actif(request, pk):
     if not request.user.is_staff_or_manager:
         raise PermissionDenied
-    membre = get_object_or_404(User, pk=pk, role=User.Role.MEMBRE)
+    membre = get_object_or_404(User, pk=pk, role__in=[User.Role.MEMBRE, User.Role.GESTIONNAIRE])
     membre.is_active = not membre.is_active
     membre.save(update_fields=['is_active'])
     if membre.is_active:
