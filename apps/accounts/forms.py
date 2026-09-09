@@ -1,6 +1,8 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 
+from apps.bookings.services import attribuer_joker_initial
+
 from .models import User
 
 ROLES_ASSIGNABLES = [User.Role.MEMBRE, User.Role.GESTIONNAIRE]
@@ -23,6 +25,12 @@ class MembreCreateForm(RoleAssignableMixin, UserCreationForm):
         model = User
         fields = MEMBRE_FIELDS
         labels = MEMBRE_LABELS
+
+    def save(self, commit=True):
+        user = super().save(commit=commit)
+        if commit and user.role == User.Role.MEMBRE:
+            attribuer_joker_initial(user)
+        return user
 
 
 class MembreUpdateForm(RoleAssignableMixin):

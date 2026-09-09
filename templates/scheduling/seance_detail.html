@@ -91,11 +91,20 @@
                     <button type="submit" class="btn btn-outline-dark btn-sm">{{ delta|stringformat:'+d' }}</button>
                   </form>
                 {% endfor %}
-                <form method="post" action="{% url 'bookings:desinscrire_membre' seance_id=seance.pk membre_id=inscription.membre.pk %}" class="ms-auto">
-                  {% csrf_token %}
-                  <input type="hidden" name="next" value="{% url 'scheduling:seance_detail' pk=seance.pk %}">
-                  <button type="submit" class="btn btn-outline-danger btn-sm">Désinscrire</button>
-                </form>
+                {% if seance.est_passee %}
+                  <form method="post" action="{% url 'bookings:marquer_non_presente' seance_id=seance.pk membre_id=inscription.membre.pk %}" class="d-flex gap-1 align-items-center ms-auto">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{% url 'scheduling:seance_detail' pk=seance.pk %}">
+                    <input type="text" name="commentaire" class="form-control form-control-sm" placeholder="Motif (facultatif)" style="width: 140px;">
+                    <button type="submit" class="btn btn-outline-dark btn-sm text-nowrap">Non présent(e)</button>
+                  </form>
+                {% else %}
+                  <form method="post" action="{% url 'bookings:desinscrire_membre' seance_id=seance.pk membre_id=inscription.membre.pk %}" class="ms-auto">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{% url 'scheduling:seance_detail' pk=seance.pk %}">
+                    <button type="submit" class="btn btn-outline-danger btn-sm">Désinscrire</button>
+                  </form>
+                {% endif %}
               </div>
             {% endif %}
           </div>

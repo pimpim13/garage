@@ -70,6 +70,10 @@ class Seance(models.Model):
         return self.debut - timezone.now() > datetime.timedelta(hours=24)
 
     @property
+    def desinscription_tardive(self):
+        return self.debut - timezone.now() < datetime.timedelta(hours=self.delai_annulation_heures)
+
+    @property
     def places_restantes(self):
         from apps.bookings.models import Inscription
 

@@ -16,6 +16,24 @@
     </div>
   </div>
 
+  {% if historique_jokers is not None %}
+    <div class="card p-4 mb-4">
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <span class="fw-semibold">Joker :</span>
+        {% if solde_jokers >= 1 %}
+          <span class="badge bg-success">Disponible</span>
+        {% else %}
+          <span class="badge bg-secondary">Aucun</span>
+          {% if date_reacquisition_joker %}
+            <span class="text-muted small">
+              Ré-attribution possible à partir du {{ date_reacquisition_joker|date:'d/m/Y' }}
+            </span>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
   <h4 class="mb-3">Historique</h4>
   {% if historique %}
     <ul class="list-group">
@@ -29,6 +47,8 @@
                 Désinscription de la séance du {{ mouvement.inscription.seance.debut|date:'d/m/Y H:i' }}
               {% elif mouvement.motif == 'desinscription_tardive_joker' and mouvement.inscription %}
                 Désinscription tardive (joker utilisé) de la séance du {{ mouvement.inscription.seance.debut|date:'d/m/Y H:i' }}
+              {% elif mouvement.motif == 'desinscription_tardive_sans_joker' and mouvement.inscription %}
+                Désinscription tardive (séance perdue) de la séance du {{ mouvement.inscription.seance.debut|date:'d/m/Y H:i' }}
               {% elif mouvement.motif == 'ajustement' %}
                 {{ mouvement.get_motif_display }}{% if mouvement.auteur %} — par {{ mouvement.auteur }}{% endif %}
               {% else %}
@@ -45,5 +65,33 @@
     </ul>
   {% else %}
     <p class="text-muted">Aucun mouvement pour le moment.</p>
+  {% endif %}
+
+  {% if historique_jokers is not None %}
+    <h4 class="mb-3 mt-4">Historique du joker</h4>
+    {% if historique_jokers %}
+      <ul class="list-group">
+        {% for mouvement in historique_jokers %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <div>
+                {{ mouvement.get_motif_display }}
+                {% if mouvement.inscription %}
+                  — séance du {{ mouvement.inscription.seance.debut|date:'d/m/Y H:i' }}
+                {% endif %}
+                {% if mouvement.commentaire %} — « {{ mouvement.commentaire }} »{% endif %}
+                {% if mouvement.auteur %} — par {{ mouvement.auteur }}{% endif %}
+              </div>
+              <div class="text-muted small">{{ mouvement.horodatage|date:'d/m/Y H:i' }}</div>
+            </div>
+            <span class="badge {% if mouvement.delta > 0 %}bg-success{% else %}bg-secondary{% endif %}">
+              {{ mouvement.delta|stringformat:'+d' }}
+            </span>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="text-muted">Aucun mouvement de joker pour le moment.</p>
+    {% endif %}
   {% endif %}
 {% endblock %}

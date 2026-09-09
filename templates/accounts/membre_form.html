@@ -19,6 +19,38 @@
         <a href="{% url 'purchases:historique_membre' membre_id=object.pk %}" class="btn btn-outline-dark btn-sm ms-auto">Historique</a>
       </div>
     </div>
+
+    {% if object.is_membre %}
+      <div class="card p-4 mb-3" style="max-width: 640px;">
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+          <span class="fw-semibold">Joker :</span>
+          {% if solde_jokers >= 1 %}
+            <span class="badge bg-success">Disponible</span>
+          {% else %}
+            <span class="badge bg-secondary">Aucun</span>
+            {% if object.date_reacquisition_joker %}
+              <span class="text-muted small">
+                Ré-attribution possible à partir du {{ object.date_reacquisition_joker|date:'d/m/Y' }}
+              </span>
+            {% endif %}
+          {% endif %}
+        </div>
+        <form
+          method="post"
+          action="{% if solde_jokers >= 1 %}{% url 'bookings:retirer_joker' membre_id=object.pk %}{% else %}{% url 'bookings:attribuer_joker' membre_id=object.pk %}{% endif %}"
+          class="d-flex gap-2 align-items-center"
+        >
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{% url 'accounts:membre_modifier' pk=object.pk %}">
+          {% if solde_jokers >= 1 %}
+            <input type="text" name="commentaire" class="form-control form-control-sm" placeholder="Motif du retrait (facultatif)">
+            <button type="submit" class="btn btn-outline-danger btn-sm text-nowrap">Retirer le joker</button>
+          {% else %}
+            <button type="submit" class="btn btn-outline-dark btn-sm">Attribuer un joker</button>
+          {% endif %}
+        </form>
+      </div>
+    {% endif %}
   {% endif %}
 
   <div class="card p-4" style="max-width: 640px;">

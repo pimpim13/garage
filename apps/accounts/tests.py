@@ -1,6 +1,8 @@
 from django.test import TestCase
 from django.urls import reverse
 
+from apps.bookings.services import solde_jokers
+
 from .forms import MembreCreateForm, MembreUpdateForm
 from .models import User
 
@@ -24,6 +26,32 @@ class MembreCreateFormTests(TestCase):
         self.assertTrue(form.is_valid(), form.errors)
         user = form.save()
         self.assertEqual(user.role, User.Role.MEMBRE)
+
+    def test_un_nouveau_membre_recoit_un_joker(self):
+        form = MembreCreateForm(data={
+            'username': 'jdupont2',
+            'role': User.Role.MEMBRE,
+            'password1': 'motdepasse123',
+            'password2': 'motdepasse123',
+            'tolerance_seances_negatives': 0,
+        })
+
+        self.assertTrue(form.is_valid(), form.errors)
+        user = form.save()
+        self.assertEqual(solde_jokers(user), 1)
+
+    def test_un_nouveau_coach_ne_recoit_pas_de_joker(self):
+        form = MembreCreateForm(data={
+            'username': 'jcoach2',
+            'role': User.Role.GESTIONNAIRE,
+            'password1': 'motdepasse123',
+            'password2': 'motdepasse123',
+            'tolerance_seances_negatives': 0,
+        })
+
+        self.assertTrue(form.is_valid(), form.errors)
+        user = form.save()
+        self.assertEqual(solde_jokers(user), 0)
 
     def test_peut_creer_un_coach(self):
         form = MembreCreateForm(data={
@@ -77,6 +105,36 @@ class MembreUpdateViewTests(TestCase):
 
         self.assertEqual(response.context['user'], gestionnaire)
         self.assertEqual(response.context['membre'], membre)
+
+    def test_expose_le_solde_de_jokers_du_membre(self):
+        gestionnaire = creer_gestionnaire()
+        membre = User.objects.create(username='membre_joker', role=User.Role.MEMBRE)
+        self.client.force_login(gestionnaire)
+
+        response = self.client.get(reverse('accounts:membre_modifier', args=[membre.pk]))
+
+        self.assertEqual(response.context['solde_jokers'], 0)
+
+    def test_propose_d_attribuer_un_joker_si_le_membre_n_en_a_pas(self):
+        gestionnaire = creer_gestionnaire()
+        membre = User.objects.create(username='sans_joker_fiche', role=User.Role.MEMBRE)
+        self.client.force_login(gestionnaire)
+
+        response = self.client.get(reverse('accounts:membre_modifier', args=[membre.pk]))
+
+        self.assertContains(response, 'Attribuer un joker')
+
+    def test_propose_de_retirer_le_joker_si_le_membre_en_a_un(self):
+        from apps.bookings.models import MouvementJoker
+
+        gestionnaire = creer_gestionnaire()
+        membre = User.objects.create(username='avec_joker_fiche', role=User.Role.MEMBRE)
+        MouvementJoker.objects.create(membre=membre, delta=1, motif=MouvementJoker.Motif.ATTRIBUTION)
+        self.client.force_login(gestionnaire)
+
+        response = self.client.get(reverse('accounts:membre_modifier', args=[membre.pk]))
+
+        self.assertContains(response, 'Retirer le joker')
 
 
 class MembreListViewTests(TestCase):

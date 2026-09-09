@@ -7,6 +7,7 @@ from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, ListView, TemplateView, UpdateView
 
+from apps.bookings.services import solde_jokers
 from apps.purchases.services import solde_seances, statut_solde
 from apps.purchases.views import AJUSTEMENTS_AUTORISES as AJUSTEMENTS_POSSIBLES
 
@@ -70,6 +71,7 @@ class MembreUpdateView(GestionnaireRequiredMixin, UpdateView):
         context['solde'] = solde_seances(self.object)
         context['statut_solde'] = statut_solde(self.object)
         context['ajustements_possibles'] = AJUSTEMENTS_POSSIBLES
+        context['solde_jokers'] = solde_jokers(self.object)
         return context
 
     def form_valid(self, form):

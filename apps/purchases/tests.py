@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.models import Famille
-from apps.bookings.models import Inscription
+from apps.bookings.models import Inscription, MouvementJoker
 from apps.offers.models import Offre
 from apps.scheduling.models import Seance
 
@@ -180,6 +180,29 @@ class HistoriqueSeancesTests(TestCase):
         self.assertEqual(resultat, {mouvement_parent, mouvement_enfant})
 
 
+class MonSoldeViewTests(TestCase):
+    def test_affiche_le_joker_disponible(self):
+        membre = User.objects.create_user(username='membre_solde_joker', password='motdepasse123')
+        MouvementJoker.objects.create(membre=membre, delta=1, motif=MouvementJoker.Motif.ATTRIBUTION)
+        self.client.force_login(membre)
+
+        response = self.client.get(reverse('purchases:mon_solde'))
+
+        self.assertContains(response, 'Disponible')
+
+    def test_affiche_la_date_de_reacquisition_si_pas_de_joker(self):
+        date_reacquisition = timezone.localdate() + relativedelta(months=2)
+        membre = User.objects.create_user(
+            username='membre_solde_sans_joker', password='motdepasse123',
+            date_reacquisition_joker=date_reacquisition,
+        )
+        self.client.force_login(membre)
+
+        response = self.client.get(reverse('purchases:mon_solde'))
+
+        self.assertContains(response, date_reacquisition.strftime('%d/%m/%Y'))
+
+
 class HistoriqueMembreViewTests(TestCase):
     def test_un_gestionnaire_voit_l_historique_d_un_membre(self):
         gestionnaire = User.objects.create_user(username='gestionnaire_vue', password='motdepasse123', role=User.Role.GESTIONNAIRE)
@@ -209,6 +232,28 @@ class HistoriqueMembreViewTests(TestCase):
         response = self.client.get(reverse('purchases:historique_membre', args=[coach.pk]))
 
         self.assertEqual(response.status_code, 200)
+
+    def test_affiche_le_statut_du_joker_du_membre(self):
+        gestionnaire = User.objects.create_user(username='gestionnaire_joker', password='motdepasse123', role=User.Role.GESTIONNAIRE)
+        membre = User.objects.create(username='membre_joker_fiche', role=User.Role.MEMBRE)
+        MouvementJoker.objects.create(membre=membre, delta=1, motif=MouvementJoker.Motif.ATTRIBUTION)
+        self.client.force_login(gestionnaire)
+
+        response = self.client.get(reverse('purchases:historique_membre', args=[membre.pk]))
+
+        self.assertContains(response, 'Disponible')
+
+    def test_affiche_les_mouvements_de_joker_dans_la_liste(self):
+        gestionnaire = User.objects.create_user(username='gestionnaire_joker2', password='motdepasse123', role=User.Role.GESTIONNAIRE)
+        membre = User.objects.create(username='membre_joker_liste', role=User.Role.MEMBRE)
+        MouvementJoker.objects.create(
+            membre=membre, delta=-1, motif=MouvementJoker.Motif.UTILISATION, commentaire='Absent sans prévenir'
+        )
+        self.client.force_login(gestionnaire)
+
+        response = self.client.get(reverse('purchases:historique_membre', args=[membre.pk]))
+
+        self.assertContains(response, 'Absent sans prévenir')
 
     def test_mouvement_inscription_affiche_la_date_de_la_seance(self):
         gestionnaire = User.objects.create_user(username='gestionnaire_detail', password='motdepasse123', role=User.Role.GESTIONNAIRE)

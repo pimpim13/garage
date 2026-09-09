@@ -58,6 +58,12 @@ class User(AbstractUser):
         help_text="Au-delà de cette date, le solde de séances est considéré à zéro. Prolongée de 6 mois "
         "à chaque achat. Ignorée si le membre appartient à une famille (voir Famille.date_expiration_solde).",
     )
+    date_reacquisition_joker = models.DateField(
+        null=True,
+        blank=True,
+        help_text="Date à partir de laquelle un nouveau joker peut être ré-attribué (3 mois après la "
+        "consommation du précédent). Effacée si un joker est attribué manuellement avant cette date.",
+    )
 
     @property
     def is_admin(self):

@@ -11,7 +11,14 @@ from apps.notifications.ntfy import notifier_coachs
 from apps.scheduling.models import Seance
 
 from .models import Inscription
-from .services import enregistrer_desinscription, enregistrer_inscription, peut_s_inscrire
+from .services import (
+    attribuer_joker,
+    enregistrer_desinscription,
+    enregistrer_inscription,
+    marquer_non_presente,
+    peut_s_inscrire,
+    retirer_joker,
+)
 
 
 def _retour(request, seance):
@@ -157,3 +164,52 @@ def desinscrire_membre(request, seance_id, membre_id):
         enregistrer_desinscription(inscription, request.user)
         messages.success(request, f"{membre} a été désinscrit(e).")
     return redirect(_retour(request, seance))
+
+
+@login_required
+@require_POST
+def marquer_non_presente_membre(request, seance_id, membre_id):
+    if not request.user.is_staff_or_manager:
+        raise PermissionDenied
+    seance = get_object_or_404(Seance, pk=seance_id)
+    if not seance.est_passee:
+        messages.error(request, "Impossible de marquer une absence avant le début de la séance.")
+        return redirect(_retour(request, seance))
+    inscription = Inscription.objects.filter(
+        membre_id=membre_id, seance=seance, statut=Inscription.Statut.INSCRIT
+    ).first()
+    if inscription is None:
+        messages.info(request, "Ce membre n'était pas inscrit à cette séance.")
+    else:
+        membre = inscription.membre
+        marquer_non_presente(inscription, request.user, commentaire=request.POST.get('commentaire', ''))
+        messages.success(request, f"{membre} marqué(e) non présent(e).")
+    return redirect(_retour(request, seance))
+
+
+@login_required
+@require_POST
+def attribuer_joker_membre(request, membre_id):
+    if not request.user.is_staff_or_manager:
+        raise PermissionDenied
+    membre = get_object_or_404(User, pk=membre_id, role=User.Role.MEMBRE)
+    try:
+        attribuer_joker(membre, auteur=request.user, commentaire=request.POST.get('commentaire', ''))
+        messages.success(request, f"Joker attribué à {membre}.")
+    except ValueError as erreur:
+        messages.error(request, str(erreur))
+    return redirect(request.POST.get('next') or 'accounts:membre_liste')
+
+
+@login_required
+@require_POST
+def retirer_joker_membre(request, membre_id):
+    if not request.user.is_staff_or_manager:
+        raise PermissionDenied
+    membre = get_object_or_404(User, pk=membre_id, role=User.Role.MEMBRE)
+    try:
+        retirer_joker(membre, auteur=request.user, commentaire=request.POST.get('commentaire', ''))
+        messages.success(request, f"Joker retiré à {membre}.")
+    except ValueError as erreur:
+        messages.error(request, str(erreur))
+    return redirect(request.POST.get('next') or 'accounts:membre_liste')

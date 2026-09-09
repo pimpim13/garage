@@ -5,10 +5,19 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from apps.accounts.models import User
+from apps.bookings.services import historique_jokers, solde_jokers
 
 from .services import ajuster_solde, historique_seances, solde_seances, statut_solde
 
 AJUSTEMENTS_AUTORISES = (10, 1, -1)
+
+
+def _contexte_jokers(membre):
+    return {
+        'solde_jokers': solde_jokers(membre),
+        'date_reacquisition_joker': membre.date_reacquisition_joker,
+        'historique_jokers': historique_jokers(membre) if membre.is_membre else None,
+    }
 
 
 @login_required
@@ -17,6 +26,7 @@ def mon_solde(request):
         'solde': solde_seances(request.user),
         'statut_solde': statut_solde(request.user),
         'historique': historique_seances(request.user),
+        **_contexte_jokers(request.user),
     }
     return render(request, 'purchases/mon_solde.html', context)
 
@@ -32,6 +42,7 @@ def historique_membre(request, membre_id):
         'solde': solde_seances(membre),
         'statut_solde': statut_solde(membre),
         'historique': historique_seances(membre),
+        **_contexte_jokers(membre),
     }
     return render(request, 'purchases/mon_solde.html', context)
 

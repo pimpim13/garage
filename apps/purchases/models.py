@@ -41,6 +41,9 @@ class MouvementSeance(models.Model):
         INSCRIPTION = 'inscription', 'Inscription à une séance'
         DESINSCRIPTION = 'desinscription', 'Désinscription'
         DESINSCRIPTION_TARDIVE_JOKER = 'desinscription_tardive_joker', 'Désinscription tardive (joker utilisé)'
+        DESINSCRIPTION_TARDIVE_SANS_JOKER = (
+            'desinscription_tardive_sans_joker', 'Désinscription tardive (séance perdue)'
+        )
         AJUSTEMENT = 'ajustement', 'Ajustement manuel'
 
     membre = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='mouvements_seances')

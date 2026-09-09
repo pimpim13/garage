@@ -11,6 +11,7 @@ class Inscription(models.Model):
         DESINSCRIT = 'desinscrit', 'Désinscrit'
         DESINSCRIT_TARDIF_JOKER = 'desinscrit_tardif_joker', 'Désinscrit tardivement (joker utilisé)'
         DESINSCRIT_TARDIF_SANS_JOKER = 'desinscrit_tardif_sans_joker', 'Désinscrit tardivement (séance perdue)'
+        NON_PRESENTE = 'non_presente', 'Non présenté(e)'
 
     membre = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='inscriptions')
     seance = models.ForeignKey(Seance, on_delete=models.CASCADE, related_name='inscriptions')
@@ -57,6 +58,11 @@ class MouvementJoker(models.Model):
         null=True,
         related_name='jokers_attribues',
         help_text="Gestionnaire/admin à l'origine de l'attribution, ou le système lors d'une utilisation automatique.",
+    )
+    commentaire = models.TextField(
+        blank=True,
+        help_text="Motif saisi par le coach lors d'une attribution/utilisation manuelle "
+        "(non renseigné pour une désinscription tardive automatique, déjà tracée via l'inscription liée).",
     )
     horodatage = models.DateTimeField(auto_now_add=True)
 
