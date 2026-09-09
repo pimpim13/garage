@@ -35,7 +35,7 @@ class MembreListView(GestionnaireRequiredMixin, ListView):
     def get_queryset(self):
         return User.objects.filter(
             role__in=[User.Role.MEMBRE, User.Role.GESTIONNAIRE]
-        ).order_by('first_name', 'username')
+        ).order_by('role', 'first_name', 'username')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

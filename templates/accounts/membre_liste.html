@@ -15,15 +15,19 @@
     >
     <div class="liste-seances">
       {% for membre in membres %}
+        {% ifchanged membre.role %}
+          {% if not forloop.first %}<hr class="my-4">{% endif %}
+          <h3 class="h6 text-muted text-uppercase mb-2">{{ membre.get_role_display }}s</h3>
+        {% endifchanged %}
         <div
-          class="card p-3"
+          class="card p-3 card-clickable {% if membre.is_gestionnaire %}card-coach{% endif %}"
           data-search="{{ membre.get_full_name|default:membre.username|lower }} {{ membre.username|lower }} {{ membre.email|default:''|lower }} {{ membre.telephone|default:''|lower }}"
+          data-href="{% url 'accounts:membre_modifier' pk=membre.pk %}"
         >
           <div class="d-flex flex-column flex-md-row align-items-md-center gap-2">
             <div class="flex-grow-1">
               <h5 class="mb-1 d-flex align-items-center gap-2">
                 <a href="{% url 'accounts:membre_modifier' pk=membre.pk %}" class="text-decoration-none text-reset">{{ membre.get_full_name|default:membre.username }}</a>
-                {% if membre.is_gestionnaire %}<span class="badge bg-dark">{{ membre.get_role_display }}</span>{% endif %}
                 {% if not membre.is_active %}<span class="badge bg-secondary">Inactif</span>{% endif %}
               </h5>
               <p class="text-muted mb-0">
@@ -78,6 +82,13 @@
           if (correspond) visibles++;
         });
         vide.style.display = visibles === 0 ? '' : 'none';
+      });
+
+      document.querySelectorAll('.liste-seances .card-clickable').forEach(function (carte) {
+        carte.addEventListener('click', function (event) {
+          if (event.target.closest('a, button, form, input')) return;
+          window.location = carte.dataset.href;
+        });
       });
     });
   </script>

@@ -140,6 +140,14 @@ h1, h2, h3, .display-font {
   margin-bottom: 1rem;
 }
 
+.card-coach {
+  background-color: #e9f1e2;
+}
+
+.card-clickable {
+  cursor: pointer;
+}
+
 .semaine-nav {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
