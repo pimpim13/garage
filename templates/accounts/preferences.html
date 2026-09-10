@@ -5,7 +5,10 @@
 
   <div class="card p-4 mb-3" style="max-width: 640px;">
     <h5 class="mb-3">Compte</h5>
-    <a href="{% url 'accounts:password_change' %}" class="btn btn-outline-dark btn-sm">Changer mon mot de passe</a>
+    <div class="d-flex flex-wrap gap-2">
+      <a href="{% url 'accounts:profil_modifier' %}" class="btn btn-outline-dark btn-sm">Modifier mon profil</a>
+      <a href="{% url 'accounts:password_change' %}" class="btn btn-outline-dark btn-sm">Changer mon mot de passe</a>
+    </div>
   </div>
 
   <div class="card p-4" style="max-width: 640px;">

@@ -50,6 +50,7 @@ urlpatterns = [
         name='password_reset_complete',
     ),
     path('preferences/', views.PreferencesView.as_view(), name='preferences'),
+    path('profil/', views.ProfilUpdateView.as_view(), name='profil_modifier'),
     path('membres/', views.MembreListView.as_view(), name='membre_liste'),
     path('membres/nouveau/', views.MembreCreateView.as_view(), name='membre_creer'),
     path('membres/<int:pk>/modifier/', views.MembreUpdateView.as_view(), name='membre_modifier'),

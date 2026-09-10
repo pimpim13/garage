@@ -38,3 +38,9 @@ class MembreUpdateForm(RoleAssignableMixin):
         model = User
         fields = MEMBRE_FIELDS
         labels = MEMBRE_LABELS
+
+
+class ProfilForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email', 'telephone']

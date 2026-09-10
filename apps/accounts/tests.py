@@ -7,7 +7,7 @@ from django.urls import reverse
 
 from apps.bookings.services import solde_jokers
 
-from .forms import MembreCreateForm, MembreUpdateForm
+from .forms import MembreCreateForm, MembreUpdateForm, ProfilForm
 from .models import User
 
 
@@ -235,3 +235,62 @@ class PasswordResetTests(TestCase):
         self.assertRedirects(reponse_post, reverse('accounts:password_reset_complete'))
         membre.refresh_from_db()
         self.assertTrue(membre.check_password('nouveaumdp123!'))
+
+
+class ProfilFormTests(TestCase):
+    def test_n_expose_pas_le_role_ni_la_tolerance(self):
+        form = ProfilForm()
+
+        self.assertEqual(set(form.fields), {'first_name', 'last_name', 'email', 'telephone'})
+
+
+class ProfilUpdateViewTests(TestCase):
+    def test_necessite_d_etre_connecte(self):
+        response = self.client.get(reverse('accounts:profil_modifier'))
+
+        self.assertNotEqual(response.status_code, 200)
+
+    def test_un_membre_peut_modifier_son_profil(self):
+        membre = User.objects.create_user(username='auto_edit', password='motdepasse123')
+        self.client.force_login(membre)
+
+        response = self.client.post(reverse('accounts:profil_modifier'), {
+            'first_name': 'Jean',
+            'last_name': 'Dupont',
+            'email': 'jean.dupont@example.com',
+            'telephone': '0612345678',
+        })
+
+        self.assertRedirects(response, reverse('accounts:preferences'))
+        membre.refresh_from_db()
+        self.assertEqual(membre.first_name, 'Jean')
+        self.assertEqual(membre.last_name, 'Dupont')
+        self.assertEqual(membre.email, 'jean.dupont@example.com')
+        self.assertEqual(membre.telephone, '0612345678')
+
+    def test_ne_peut_pas_changer_son_propre_role(self):
+        membre = User.objects.create_user(username='auto_edit_role', password='motdepasse123', role=User.Role.MEMBRE)
+        self.client.force_login(membre)
+
+        self.client.post(reverse('accounts:profil_modifier'), {
+            'first_name': 'Jean',
+            'last_name': 'Dupont',
+            'email': 'jean@example.com',
+            'telephone': '',
+            'role': User.Role.GESTIONNAIRE,
+        })
+
+        membre.refresh_from_db()
+        self.assertEqual(membre.role, User.Role.MEMBRE)
+
+    def test_ne_modifie_que_l_utilisateur_connecte(self):
+        membre = User.objects.create_user(username='auto_edit_self', password='motdepasse123')
+        autre = User.objects.create(username='intouche', first_name='Original')
+        self.client.force_login(membre)
+
+        self.client.post(reverse('accounts:profil_modifier'), {
+            'first_name': 'Jean', 'last_name': 'Dupont', 'email': 'jean@example.com', 'telephone': '',
+        })
+
+        autre.refresh_from_db()
+        self.assertEqual(autre.first_name, 'Original')

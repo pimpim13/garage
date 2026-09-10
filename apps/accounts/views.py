@@ -11,7 +11,7 @@ from apps.bookings.services import solde_jokers
 from apps.purchases.services import solde_seances, statut_solde
 from apps.purchases.views import AJUSTEMENTS_AUTORISES as AJUSTEMENTS_POSSIBLES
 
-from .forms import MembreCreateForm, MembreUpdateForm
+from .forms import MembreCreateForm, MembreUpdateForm, ProfilForm
 from .mixins import GestionnaireRequiredMixin
 from .models import User
 
@@ -27,6 +27,19 @@ class HomeView(TemplateView):
 
 class PreferencesView(LoginRequiredMixin, TemplateView):
     template_name = 'accounts/preferences.html'
+
+
+class ProfilUpdateView(LoginRequiredMixin, UpdateView):
+    form_class = ProfilForm
+    template_name = 'accounts/profil_form.html'
+    success_url = reverse_lazy('accounts:preferences')
+
+    def get_object(self, queryset=None):
+        return self.request.user
+
+    def form_valid(self, form):
+        messages.success(self.request, "Profil mis à jour.")
+        return super().form_valid(form)
 
 
 class MembreListView(GestionnaireRequiredMixin, ListView):
