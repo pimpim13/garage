@@ -8,3 +8,4 @@ media/
 .idea/
 .DS_Store
 *.log
+backups/
