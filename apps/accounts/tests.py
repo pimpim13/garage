@@ -7,6 +7,7 @@ from django.urls import reverse
 
 from apps.bookings.services import solde_jokers
 
+from .backends import CaseInsensitiveModelBackend
 from .forms import MembreCreateForm, MembreUpdateForm, ProfilForm
 from .models import User
 
@@ -294,3 +295,45 @@ class ProfilUpdateViewTests(TestCase):
 
         autre.refresh_from_db()
         self.assertEqual(autre.first_name, 'Original')
+
+
+class CaseInsensitiveModelBackendTests(TestCase):
+    def test_authenticate_reussit_avec_une_casse_differente(self):
+        User.objects.create_user(username='JeanDupont', password='motdepasse123')
+        backend = CaseInsensitiveModelBackend()
+
+        user = backend.authenticate(request=None, username='jeandupont', password='motdepasse123')
+
+        self.assertIsNotNone(user)
+        self.assertEqual(user.username, 'JeanDupont')
+
+    def test_authenticate_echoue_si_mot_de_passe_incorrect(self):
+        User.objects.create_user(username='JeanDupont', password='motdepasse123')
+        backend = CaseInsensitiveModelBackend()
+
+        user = backend.authenticate(request=None, username='jeandupont', password='mauvais')
+
+        self.assertIsNone(user)
+
+    def test_authenticate_echoue_si_username_inconnu(self):
+        backend = CaseInsensitiveModelBackend()
+
+        user = backend.authenticate(request=None, username='inconnu', password='motdepasse123')
+
+        self.assertIsNone(user)
+
+
+class ConnexionInsensibleCasseTests(TestCase):
+    def test_connexion_avec_une_casse_differente_fonctionne(self):
+        User.objects.create_user(username='JeanDupont', password='motdepasse123')
+
+        connecte = self.client.login(username='jeandupont', password='motdepasse123')
+
+        self.assertTrue(connecte)
+
+    def test_connexion_avec_un_mauvais_mot_de_passe_echoue_toujours(self):
+        User.objects.create_user(username='JeanDupont', password='motdepasse123')
+
+        connecte = self.client.login(username='jeandupont', password='mauvais')
+
+        self.assertFalse(connecte)
