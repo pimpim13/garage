@@ -1,3 +1,7 @@
+import re
+from urllib.parse import urlparse
+
+from django.core import mail
 from django.test import TestCase
 from django.urls import reverse
 
@@ -189,3 +193,45 @@ class AdminSiteAccessTests(TestCase):
         response = self.client.get('/admin/')
 
         self.assertEqual(response.status_code, 200)
+
+
+class PasswordResetTests(TestCase):
+    def test_le_formulaire_de_demande_s_affiche(self):
+        response = self.client.get(reverse('accounts:password_reset'))
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_envoie_un_email_avec_un_lien_de_reinitialisation(self):
+        User.objects.create_user(username='oubli', password='ancien123', email='oubli@example.com')
+
+        response = self.client.post(reverse('accounts:password_reset'), {'email': 'oubli@example.com'})
+
+        self.assertRedirects(response, reverse('accounts:password_reset_done'))
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn('Le Garage', mail.outbox[0].subject)
+        self.assertIn('/comptes/mot-de-passe/reinitialiser/', mail.outbox[0].body)
+
+    def test_aucun_email_envoye_si_l_adresse_est_inconnue(self):
+        response = self.client.post(reverse('accounts:password_reset'), {'email': 'inconnu@example.com'})
+
+        self.assertRedirects(response, reverse('accounts:password_reset_done'))
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_le_lien_recu_permet_de_definir_un_nouveau_mot_de_passe(self):
+        membre = User.objects.create_user(username='oubli2', password='ancien123', email='oubli2@example.com')
+
+        self.client.post(reverse('accounts:password_reset'), {'email': 'oubli2@example.com'})
+        lien = re.search(r'https?://\S+/comptes/mot-de-passe/reinitialiser/\S+', mail.outbox[0].body).group(0)
+        chemin = urlparse(lien).path
+
+        reponse_lien = self.client.get(chemin, follow=True)
+        self.assertTrue(reponse_lien.context['validlink'])
+
+        reponse_post = self.client.post(reponse_lien.request['PATH_INFO'], {
+            'new_password1': 'nouveaumdp123!',
+            'new_password2': 'nouveaumdp123!',
+        })
+
+        self.assertRedirects(reponse_post, reverse('accounts:password_reset_complete'))
+        membre.refresh_from_db()
+        self.assertTrue(membre.check_password('nouveaumdp123!'))
