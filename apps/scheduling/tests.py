@@ -5,7 +5,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from apps.bookings.services import enregistrer_inscription
+from apps.bookings.services import enregistrer_inscription, marquer_non_presente
 from apps.purchases.models import MouvementSeance
 
 from .models import Seance
@@ -72,3 +72,61 @@ class SeanceDetailBoutonAbsenceTests(TestCase):
 
         self.assertContains(response, 'Désinscrire')
         self.assertNotContains(response, 'Non présent(e)')
+
+
+class SeanceDetailParticipantCliquableTests(TestCase):
+    def setUp(self):
+        self.coach = User.objects.create_user(
+            username='coach_participant_clic', password='motdepasse123', role=User.Role.GESTIONNAIRE
+        )
+        self.membre = User.objects.create(username='membre_participant_clic')
+        MouvementSeance.objects.create(membre=self.membre, delta=5, motif=MouvementSeance.Motif.ACHAT)
+        self.seance = Seance.objects.create(
+            nom='WOD', debut=timezone.now() + datetime.timedelta(days=2), coach=self.coach,
+        )
+        enregistrer_inscription(membre=self.membre, seance=self.seance, auteur=self.membre)
+
+    def test_le_gestionnaire_peut_cliquer_sur_un_participant(self):
+        self.client.force_login(self.coach)
+
+        response = self.client.get(reverse('scheduling:seance_detail', kwargs={'pk': self.seance.pk}))
+
+        self.assertContains(response, 'card-clickable')
+        self.assertContains(
+            response, f'data-href="{reverse("accounts:membre_modifier", kwargs={"pk": self.membre.pk})}"'
+        )
+
+    def test_un_membre_ne_peut_pas_cliquer_sur_un_participant(self):
+        self.client.force_login(self.membre)
+
+        response = self.client.get(reverse('scheduling:seance_detail', kwargs={'pk': self.seance.pk}))
+
+        self.assertNotContains(response, 'data-href="/comptes/membres/')
+        self.assertNotContains(
+            response, reverse('accounts:membre_modifier', kwargs={'pk': self.membre.pk})
+        )
+
+
+class SeanceDetailNonPresenteTests(TestCase):
+    def setUp(self):
+        self.coach = User.objects.create_user(
+            username='coach_non_presente_liste', password='motdepasse123', role=User.Role.GESTIONNAIRE
+        )
+        self.membre = User.objects.create(username='membre_non_presente_liste')
+        MouvementSeance.objects.create(membre=self.membre, delta=5, motif=MouvementSeance.Motif.ACHAT)
+        self.seance = Seance.objects.create(
+            nom='WOD', debut=timezone.now() - datetime.timedelta(hours=1), coach=self.coach,
+        )
+        self.inscription = enregistrer_inscription(membre=self.membre, seance=self.seance, auteur=self.membre)
+        marquer_non_presente(self.inscription, auteur=self.coach)
+        self.client.force_login(self.coach)
+
+    def test_le_membre_non_presente_reste_dans_la_liste(self):
+        response = self.client.get(reverse('scheduling:seance_detail', kwargs={'pk': self.seance.pk}))
+
+        self.assertContains(response, self.membre.username)
+
+    def test_la_card_du_membre_non_presente_a_un_fond_rouge(self):
+        response = self.client.get(reverse('scheduling:seance_detail', kwargs={'pk': self.seance.pk}))
+
+        self.assertContains(response, 'card-non-presente')

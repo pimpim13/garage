@@ -44,6 +44,7 @@ class MouvementSeance(models.Model):
         DESINSCRIPTION_TARDIVE_SANS_JOKER = (
             'desinscription_tardive_sans_joker', 'Désinscription tardive (séance perdue)'
         )
+        NON_PRESENTATION = 'non_presentation', 'Non présenté(e) (séance due)'
         AJUSTEMENT = 'ajustement', 'Ajustement manuel'
 
     membre = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='mouvements_seances')

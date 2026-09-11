@@ -49,6 +49,8 @@
                 Désinscription tardive (joker utilisé) de la séance du {{ mouvement.inscription.seance.debut|date:'d/m/Y H:i' }}
               {% elif mouvement.motif == 'desinscription_tardive_sans_joker' and mouvement.inscription %}
                 Désinscription tardive (séance perdue) de la séance du {{ mouvement.inscription.seance.debut|date:'d/m/Y H:i' }}
+              {% elif mouvement.motif == 'non_presentation' and mouvement.inscription %}
+                Non présenté(e) à la séance du {{ mouvement.inscription.seance.debut|date:'d/m/Y H:i' }} (séance due)
               {% elif mouvement.motif == 'ajustement' %}
                 {{ mouvement.get_motif_display }}{% if mouvement.auteur %} — par {{ mouvement.auteur }}{% endif %}
               {% else %}

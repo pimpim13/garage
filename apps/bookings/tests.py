@@ -295,6 +295,27 @@ class MarquerNonPresenteTests(TestCase):
 
         self.assertEqual(solde_seances(self.membre), 4)
 
+    def test_trace_la_seance_due_meme_sans_joker(self):
+        marquer_non_presente(self.inscription, auteur=self.coach)
+
+        mouvement = MouvementSeance.objects.get(
+            membre=self.membre, motif=MouvementSeance.Motif.NON_PRESENTATION
+        )
+        self.assertEqual(mouvement.delta, 0)
+        self.assertEqual(mouvement.inscription, self.inscription)
+        self.assertEqual(mouvement.auteur, self.coach)
+
+    def test_trace_aussi_la_non_presentation_quand_un_joker_est_consomme(self):
+        MouvementJoker.objects.create(membre=self.membre, delta=1, motif=MouvementJoker.Motif.ATTRIBUTION)
+
+        marquer_non_presente(self.inscription, auteur=self.coach)
+
+        self.assertTrue(
+            MouvementSeance.objects.filter(
+                membre=self.membre, motif=MouvementSeance.Motif.NON_PRESENTATION
+            ).exists()
+        )
+
 
 class PromouvoirListeAttenteTests(TestCase):
     def setUp(self):

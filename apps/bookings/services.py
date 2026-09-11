@@ -70,6 +70,13 @@ def marquer_non_presente(inscription, auteur, commentaire=''):
     inscription.save(update_fields=['statut'])
     if solde_jokers(membre) >= 1:
         _consommer_joker(membre, auteur, inscription=inscription, commentaire=commentaire)
+    MouvementSeance.objects.create(
+        membre=membre,
+        delta=0,
+        motif=MouvementSeance.Motif.NON_PRESENTATION,
+        inscription=inscription,
+        auteur=auteur,
+    )
 
 
 def enregistrer_inscription(membre, seance, auteur):

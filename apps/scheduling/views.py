@@ -173,7 +173,9 @@ class SeanceDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         participants = list(
-            self.object.inscriptions.filter(statut=Inscription.Statut.INSCRIT).select_related('membre')
+            self.object.inscriptions.filter(
+                statut__in=[Inscription.Statut.INSCRIT, Inscription.Statut.NON_PRESENTE]
+            ).select_related('membre')
         )
         if self.request.user.is_authenticated and self.request.user.is_staff_or_manager:
             for inscription in participants:
