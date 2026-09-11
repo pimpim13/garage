@@ -17,6 +17,13 @@
 
 body {
   color: var(--ps-black);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+body > main {
+  flex: 1;
 }
 
 h1, h2, h3, .display-font {
@@ -214,11 +221,27 @@ h1, h2, h3, .display-font {
   border: 2px solid var(--ps-green);
 }
 
+.page-fond-calendrier {
+  background-color: var(--ps-black);
+  background-image: linear-gradient(rgba(32, 30, 31, 0.3), rgba(32, 30, 31, 0.45)), url('../img/calendrier-fond.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.card-semi-transparente {
+  background-color: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(3px);
+  border-radius: var(--bs-border-radius-lg);
+  padding: 1.5rem;
+}
+
 .hero {
   background-color: var(--ps-black);
-  background-image: linear-gradient(180deg, rgba(32, 30, 31, 0.55), rgba(32, 30, 31, 0.85)), url('../img/hero-fond.jpg');
+  background-image: linear-gradient(180deg, rgba(32, 30, 31, 0.35), rgba(32, 30, 31, 0.65)), url('../img/hero-fond.jpg');
   background-size: cover;
   background-position: center 20%;
+  background-repeat: no-repeat;
   color: var(--ps-white);
   width: 100vw;
   margin-left: calc(50% - 50vw);

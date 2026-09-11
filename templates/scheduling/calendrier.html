@@ -1,6 +1,9 @@
 {% extends "base.html" %}
 
+{% block body_class %}page-fond-calendrier{% endblock %}
+
 {% block content %}
+  <div class="card-semi-transparente">
   <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
     <h2 class="mb-0">Calendrier des séances</h2>
     <div class="d-flex gap-2">
@@ -67,4 +70,5 @@
       <a href="{% url 'scheduling:seance_creer' %}?jour={{ jour_selectionne|date:'Y-m-d' }}" class="btn btn-accent btn-sm">+ Programmer une séance ce jour-là</a>
     {% endif %}
   {% endif %}
+  </div>
 {% endblock %}
