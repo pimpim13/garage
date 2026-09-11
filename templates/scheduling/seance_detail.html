@@ -85,31 +85,47 @@
                 {% endif %}
               </div>
             </div>
-            {% if user.is_staff_or_manager and inscription.statut != 'non_presente' %}
-              <div class="d-flex flex-wrap gap-2">
-                {% for delta in ajustements_possibles %}
-                  <form method="post" action="{% url 'purchases:ajuster_solde' membre_id=inscription.membre.pk %}">
-                    {% csrf_token %}
-                    <input type="hidden" name="delta" value="{{ delta }}">
-                    <input type="hidden" name="next" value="{% url 'scheduling:seance_detail' pk=seance.pk %}">
-                    <button type="submit" class="btn btn-outline-dark btn-sm">{{ delta|stringformat:'+d' }}</button>
-                  </form>
-                {% endfor %}
-                {% if seance.est_passee %}
-                  <form method="post" action="{% url 'bookings:marquer_non_presente' seance_id=seance.pk membre_id=inscription.membre.pk %}" class="d-flex gap-1 align-items-center ms-auto">
-                    {% csrf_token %}
-                    <input type="hidden" name="next" value="{% url 'scheduling:seance_detail' pk=seance.pk %}">
-                    <input type="text" name="commentaire" class="form-control form-control-sm" placeholder="Motif (facultatif)" style="width: 140px;">
-                    <button type="submit" class="btn btn-outline-dark btn-sm text-nowrap">Non présent(e)</button>
-                  </form>
-                {% else %}
-                  <form method="post" action="{% url 'bookings:desinscrire_membre' seance_id=seance.pk membre_id=inscription.membre.pk %}" class="ms-auto">
-                    {% csrf_token %}
-                    <input type="hidden" name="next" value="{% url 'scheduling:seance_detail' pk=seance.pk %}">
-                    <button type="submit" class="btn btn-outline-danger btn-sm">Désinscrire</button>
-                  </form>
+            {% if inscription.statut != 'non_presente' %}
+              {% if seance.est_passee %}
+                {% if user.peut_marquer_absence %}
+                  <div class="d-flex flex-wrap gap-2">
+                    {% if user.is_staff_or_manager %}
+                      {% for delta in ajustements_possibles %}
+                        <form method="post" action="{% url 'purchases:ajuster_solde' membre_id=inscription.membre.pk %}">
+                          {% csrf_token %}
+                          <input type="hidden" name="delta" value="{{ delta }}">
+                          <input type="hidden" name="next" value="{% url 'scheduling:seance_detail' pk=seance.pk %}">
+                          <button type="submit" class="btn btn-outline-dark btn-sm">{{ delta|stringformat:'+d' }}</button>
+                        </form>
+                      {% endfor %}
+                    {% endif %}
+                    <form method="post" action="{% url 'bookings:marquer_non_presente' seance_id=seance.pk membre_id=inscription.membre.pk %}" class="d-flex gap-1 align-items-center ms-auto">
+                      {% csrf_token %}
+                      <input type="hidden" name="next" value="{% url 'scheduling:seance_detail' pk=seance.pk %}">
+                      <input type="text" name="commentaire" class="form-control form-control-sm" placeholder="Motif (facultatif)" style="width: 140px;">
+                      <button type="submit" class="btn btn-outline-dark btn-sm text-nowrap">Non présent(e)</button>
+                    </form>
+                  </div>
                 {% endif %}
-              </div>
+              {% else %}
+                {% if user.is_staff_or_manager %}
+                  <div class="d-flex flex-wrap gap-2">
+                    {% for delta in ajustements_possibles %}
+                      <form method="post" action="{% url 'purchases:ajuster_solde' membre_id=inscription.membre.pk %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="delta" value="{{ delta }}">
+                        <input type="hidden" name="next" value="{% url 'scheduling:seance_detail' pk=seance.pk %}">
+                        <button type="submit" class="btn btn-outline-dark btn-sm">{{ delta|stringformat:'+d' }}</button>
+                      </form>
+                    {% endfor %}
+                    <form method="post" action="{% url 'bookings:desinscrire_membre' seance_id=seance.pk membre_id=inscription.membre.pk %}" class="ms-auto">
+                      {% csrf_token %}
+                      <input type="hidden" name="next" value="{% url 'scheduling:seance_detail' pk=seance.pk %}">
+                      <button type="submit" class="btn btn-outline-danger btn-sm">Désinscrire</button>
+                    </form>
+                  </div>
+                {% endif %}
+              {% endif %}
             {% endif %}
           </div>
         </div>

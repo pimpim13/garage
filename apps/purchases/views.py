@@ -10,6 +10,7 @@ from apps.bookings.services import historique_jokers, solde_jokers
 from .services import ajuster_solde, historique_seances, solde_seances, statut_solde
 
 AJUSTEMENTS_AUTORISES = (10, 1, -1)
+ROLES_GERES = [User.Role.MEMBRE, User.Role.COACH, User.Role.GESTIONNAIRE]
 
 
 def _contexte_jokers(membre):
@@ -35,7 +36,7 @@ def mon_solde(request):
 def historique_membre(request, membre_id):
     if not request.user.is_staff_or_manager:
         raise PermissionDenied
-    membre = get_object_or_404(User, pk=membre_id, role__in=[User.Role.MEMBRE, User.Role.GESTIONNAIRE])
+    membre = get_object_or_404(User, pk=membre_id, role__in=ROLES_GERES)
     context = {
         'membre': membre,
         'titre': f"Historique de {membre}",
@@ -52,7 +53,7 @@ def historique_membre(request, membre_id):
 def ajuster_solde_membre(request, membre_id):
     if not request.user.is_staff_or_manager:
         raise PermissionDenied
-    membre = get_object_or_404(User, pk=membre_id, role__in=[User.Role.MEMBRE, User.Role.GESTIONNAIRE])
+    membre = get_object_or_404(User, pk=membre_id, role__in=ROLES_GERES)
     try:
         delta = int(request.POST.get('delta'))
     except (TypeError, ValueError):

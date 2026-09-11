@@ -20,7 +20,7 @@
           <h3 class="h6 text-muted text-uppercase mb-2">{{ membre.get_role_display }}s</h3>
         {% endifchanged %}
         <div
-          class="card p-3 card-clickable {% if membre.is_gestionnaire %}card-coach{% endif %}"
+          class="card p-3 card-clickable {% if membre.is_gestionnaire or membre.is_coach %}card-coach{% endif %}"
           data-search="{{ membre.get_full_name|default:membre.username|lower }} {{ membre.username|lower }} {{ membre.email|default:''|lower }} {{ membre.telephone|default:''|lower }}"
           data-href="{% url 'accounts:membre_modifier' pk=membre.pk %}"
         >

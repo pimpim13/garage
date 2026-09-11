@@ -468,6 +468,19 @@ class MarquerNonPresenteVueTests(TestCase):
 
         self.assertEqual(response.status_code, 403)
 
+    def test_un_coach_simple_peut_marquer_une_absence(self):
+        coach_simple = User.objects.create_user(
+            username='coach_simple_absence', password='motdepasse123', role=User.Role.COACH
+        )
+        self.client.force_login(coach_simple)
+
+        self.client.post(
+            reverse('bookings:marquer_non_presente', args=[self.seance.pk, self.membre.pk])
+        )
+
+        self.inscription.refresh_from_db()
+        self.assertEqual(self.inscription.statut, Inscription.Statut.NON_PRESENTE)
+
     def test_refuse_si_la_seance_n_est_pas_encore_passee(self):
         self.seance.debut = timezone.now() + datetime.timedelta(hours=1)
         self.seance.save(update_fields=['debut'])
@@ -477,6 +490,20 @@ class MarquerNonPresenteVueTests(TestCase):
 
         self.inscription.refresh_from_db()
         self.assertEqual(self.inscription.statut, Inscription.Statut.INSCRIT)
+
+    def test_un_coach_simple_ne_peut_pas_desinscrire_un_membre(self):
+        coach_simple = User.objects.create_user(
+            username='coach_simple_desinscrire', password='motdepasse123', role=User.Role.COACH
+        )
+        self.seance.debut = timezone.now() + datetime.timedelta(days=1)
+        self.seance.save(update_fields=['debut'])
+        self.client.force_login(coach_simple)
+
+        response = self.client.post(
+            reverse('bookings:desinscrire_membre', args=[self.seance.pk, self.membre.pk])
+        )
+
+        self.assertEqual(response.status_code, 403)
 
 
 class JokerVueTests(TestCase):
@@ -495,6 +522,16 @@ class JokerVueTests(TestCase):
 
     def test_un_membre_ne_peut_pas_attribuer_de_joker(self):
         self.client.force_login(self.membre)
+
+        response = self.client.post(reverse('bookings:attribuer_joker', args=[self.membre.pk]))
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_un_coach_simple_ne_peut_pas_attribuer_de_joker(self):
+        coach_simple = User.objects.create_user(
+            username='coach_simple_joker', password='motdepasse123', role=User.Role.COACH
+        )
+        self.client.force_login(coach_simple)
 
         response = self.client.post(reverse('bookings:attribuer_joker', args=[self.membre.pk]))
 

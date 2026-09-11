@@ -31,7 +31,7 @@ class SeanceForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['debut'].input_formats = ['%Y-%m-%dT%H:%M']
         self.fields['coach'].queryset = User.objects.filter(
-            role=User.Role.GESTIONNAIRE
+            role__in=[User.Role.GESTIONNAIRE, User.Role.COACH]
         ).order_by('first_name', 'username')
 
     def clean_capacite_max(self):

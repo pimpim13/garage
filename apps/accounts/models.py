@@ -28,7 +28,8 @@ class Famille(models.Model):
 class User(AbstractUser):
     class Role(models.TextChoices):
         ADMIN = 'admin', 'Administrateur'
-        GESTIONNAIRE = 'gestionnaire', 'Coach'
+        GESTIONNAIRE = 'gestionnaire', 'Coach gestionnaire'
+        COACH = 'coach', 'Coach'
         MEMBRE = 'membre', 'Membre'
 
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.MEMBRE)
@@ -74,12 +75,20 @@ class User(AbstractUser):
         return self.role == self.Role.GESTIONNAIRE
 
     @property
+    def is_coach(self):
+        return self.role == self.Role.COACH
+
+    @property
     def is_membre(self):
         return self.role == self.Role.MEMBRE
 
     @property
     def is_staff_or_manager(self):
         return self.role in (self.Role.ADMIN, self.Role.GESTIONNAIRE)
+
+    @property
+    def peut_marquer_absence(self):
+        return self.role in (self.Role.ADMIN, self.Role.GESTIONNAIRE, self.Role.COACH)
 
     @property
     def tolerance_applicable(self):

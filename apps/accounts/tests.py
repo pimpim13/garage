@@ -12,6 +12,36 @@ from .forms import MembreCreateForm, MembreUpdateForm, ProfilForm
 from .models import User
 
 
+class RoleCoachSimpleTests(TestCase):
+    def test_coach_gestionnaire_garde_les_droits_actuels(self):
+        gestionnaire = User(role=User.Role.GESTIONNAIRE)
+
+        self.assertTrue(gestionnaire.is_staff_or_manager)
+        self.assertTrue(gestionnaire.peut_marquer_absence)
+
+    def test_coach_simple_n_a_pas_les_droits_de_gestion(self):
+        coach = User(role=User.Role.COACH)
+
+        self.assertFalse(coach.is_staff_or_manager)
+        self.assertTrue(coach.is_coach)
+
+    def test_coach_simple_peut_marquer_une_absence(self):
+        coach = User(role=User.Role.COACH)
+
+        self.assertTrue(coach.peut_marquer_absence)
+
+    def test_membre_ne_peut_pas_marquer_une_absence(self):
+        membre = User(role=User.Role.MEMBRE)
+
+        self.assertFalse(membre.peut_marquer_absence)
+
+    def test_le_label_du_role_gestionnaire_est_coach_gestionnaire(self):
+        self.assertEqual(User.Role.GESTIONNAIRE.label, 'Coach gestionnaire')
+
+    def test_le_label_du_role_coach_est_coach(self):
+        self.assertEqual(User.Role.COACH.label, 'Coach')
+
+
 def creer_gestionnaire(**kwargs):
     kwargs.setdefault('username', 'coach1')
     kwargs.setdefault('role', User.Role.GESTIONNAIRE)
@@ -152,6 +182,38 @@ class MembreListViewTests(TestCase):
 
         self.assertContains(response, 'autre_coach')
         self.assertContains(response, coach.get_role_display())
+
+    def test_les_comptes_coach_simple_apparaissent_dans_la_liste(self):
+        gestionnaire = creer_gestionnaire()
+        coach_simple = User.objects.create_user(
+            username='coach_simple_liste', password='motdepasse123', role=User.Role.COACH
+        )
+        self.client.force_login(gestionnaire)
+
+        response = self.client.get(reverse('accounts:membre_liste'))
+
+        self.assertContains(response, 'coach_simple_liste')
+
+    def test_un_coach_simple_a_le_badge_visuel_coach(self):
+        admin = User.objects.create_user(username='admin_badge', password='motdepasse123', role=User.Role.ADMIN)
+        User.objects.create_user(
+            username='coach_simple_badge', password='motdepasse123', role=User.Role.COACH
+        )
+        self.client.force_login(admin)
+
+        response = self.client.get(reverse('accounts:membre_liste'))
+
+        self.assertContains(response, 'card p-3 card-clickable card-coach')
+
+    def test_un_coach_simple_ne_peut_pas_acceder_a_la_liste_des_comptes(self):
+        coach_simple = User.objects.create_user(
+            username='coach_simple_interdit', password='motdepasse123', role=User.Role.COACH
+        )
+        self.client.force_login(coach_simple)
+
+        response = self.client.get(reverse('accounts:membre_liste'))
+
+        self.assertEqual(response.status_code, 403)
 
 
 class MembreToggleActifViewTests(TestCase):

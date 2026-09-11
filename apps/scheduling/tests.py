@@ -8,6 +8,7 @@ from django.utils import timezone
 from apps.bookings.services import enregistrer_inscription, marquer_non_presente
 from apps.purchases.models import MouvementSeance
 
+from .forms import SeanceForm
 from .models import Seance
 
 User = get_user_model()
@@ -130,3 +131,69 @@ class SeanceDetailNonPresenteTests(TestCase):
         response = self.client.get(reverse('scheduling:seance_detail', kwargs={'pk': self.seance.pk}))
 
         self.assertContains(response, 'card-non-presente')
+
+
+class SeanceFormCoachQuerysetTests(TestCase):
+    def test_propose_les_coachs_gestionnaires_et_les_coachs_simples(self):
+        gestionnaire = User.objects.create(username='gestionnaire_form', role=User.Role.GESTIONNAIRE)
+        coach_simple = User.objects.create(username='coach_simple_form', role=User.Role.COACH)
+        User.objects.create(username='membre_form', role=User.Role.MEMBRE)
+
+        form = SeanceForm()
+
+        self.assertIn(gestionnaire, form.fields['coach'].queryset)
+        self.assertIn(coach_simple, form.fields['coach'].queryset)
+        self.assertEqual(form.fields['coach'].queryset.count(), 2)
+
+
+class SeanceDetailCoachSimpleTests(TestCase):
+    def setUp(self):
+        self.coach_simple = User.objects.create_user(
+            username='coach_simple_detail', password='motdepasse123', role=User.Role.COACH
+        )
+        self.membre = User.objects.create(username='membre_detail_coach_simple')
+        MouvementSeance.objects.create(membre=self.membre, delta=5, motif=MouvementSeance.Motif.ACHAT)
+        self.client.force_login(self.coach_simple)
+
+    def test_peut_marquer_non_presente_sur_une_seance_passee(self):
+        seance = Seance.objects.create(
+            nom='WOD', debut=timezone.now() - datetime.timedelta(hours=1),
+        )
+        enregistrer_inscription(membre=self.membre, seance=seance, auteur=self.membre)
+
+        response = self.client.get(reverse('scheduling:seance_detail', kwargs={'pk': seance.pk}))
+
+        self.assertContains(response, 'Non présent(e)')
+        self.assertNotContains(response, 'Désinscrire')
+
+    def test_ne_voit_pas_les_boutons_d_ajustement_de_solde(self):
+        seance = Seance.objects.create(
+            nom='WOD', debut=timezone.now() - datetime.timedelta(hours=1),
+        )
+        enregistrer_inscription(membre=self.membre, seance=seance, auteur=self.membre)
+
+        response = self.client.get(reverse('scheduling:seance_detail', kwargs={'pk': seance.pk}))
+
+        self.assertNotContains(response, 'purchases:ajuster_solde')
+        self.assertNotContains(response, '/solde/ajuster/')
+
+    def test_ne_voit_aucun_bouton_sur_une_seance_a_venir(self):
+        seance = Seance.objects.create(
+            nom='WOD', debut=timezone.now() + datetime.timedelta(days=2),
+        )
+        enregistrer_inscription(membre=self.membre, seance=seance, auteur=self.membre)
+
+        response = self.client.get(reverse('scheduling:seance_detail', kwargs={'pk': seance.pk}))
+
+        self.assertNotContains(response, 'Non présent(e)')
+        self.assertNotContains(response, 'Désinscrire')
+
+    def test_ne_peut_pas_cliquer_sur_la_fiche_d_un_participant(self):
+        seance = Seance.objects.create(
+            nom='WOD', debut=timezone.now() - datetime.timedelta(hours=1),
+        )
+        enregistrer_inscription(membre=self.membre, seance=seance, auteur=self.membre)
+
+        response = self.client.get(reverse('scheduling:seance_detail', kwargs={'pk': seance.pk}))
+
+        self.assertNotContains(response, 'data-href="/comptes/membres/')

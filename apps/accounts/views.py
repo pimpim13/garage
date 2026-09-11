@@ -15,6 +15,8 @@ from .forms import MembreCreateForm, MembreUpdateForm, ProfilForm
 from .mixins import GestionnaireRequiredMixin
 from .models import User
 
+ROLES_GERES = [User.Role.MEMBRE, User.Role.COACH, User.Role.GESTIONNAIRE]
+
 
 class HomeView(TemplateView):
     template_name = 'home.html'
@@ -47,9 +49,7 @@ class MembreListView(GestionnaireRequiredMixin, ListView):
     context_object_name = 'membres'
 
     def get_queryset(self):
-        return User.objects.filter(
-            role__in=[User.Role.MEMBRE, User.Role.GESTIONNAIRE]
-        ).order_by('role', 'first_name', 'username')
+        return User.objects.filter(role__in=ROLES_GERES).order_by('role', 'first_name', 'username')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -77,7 +77,7 @@ class MembreUpdateView(GestionnaireRequiredMixin, UpdateView):
     context_object_name = 'membre'
 
     def get_queryset(self):
-        return User.objects.filter(role__in=[User.Role.MEMBRE, User.Role.GESTIONNAIRE])
+        return User.objects.filter(role__in=ROLES_GERES)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -97,7 +97,7 @@ class MembreUpdateView(GestionnaireRequiredMixin, UpdateView):
 def membre_toggle_actif(request, pk):
     if not request.user.is_staff_or_manager:
         raise PermissionDenied
-    membre = get_object_or_404(User, pk=pk, role__in=[User.Role.MEMBRE, User.Role.GESTIONNAIRE])
+    membre = get_object_or_404(User, pk=pk, role__in=ROLES_GERES)
     membre.is_active = not membre.is_active
     membre.save(update_fields=['is_active'])
     if membre.is_active:

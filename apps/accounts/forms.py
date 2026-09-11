@@ -5,7 +5,7 @@ from apps.bookings.services import attribuer_joker_initial
 
 from .models import User
 
-ROLES_ASSIGNABLES = [User.Role.MEMBRE, User.Role.GESTIONNAIRE]
+ROLES_ASSIGNABLES = [User.Role.MEMBRE, User.Role.COACH, User.Role.GESTIONNAIRE]
 
 MEMBRE_FIELDS = [
     'username', 'first_name', 'last_name', 'role', 'email', 'telephone', 'famille', 'tolerance_seances_negatives',

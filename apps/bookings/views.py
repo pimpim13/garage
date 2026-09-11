@@ -169,7 +169,7 @@ def desinscrire_membre(request, seance_id, membre_id):
 @login_required
 @require_POST
 def marquer_non_presente_membre(request, seance_id, membre_id):
-    if not request.user.is_staff_or_manager:
+    if not request.user.peut_marquer_absence:
         raise PermissionDenied
     seance = get_object_or_404(Seance, pk=seance_id)
     if not seance.est_passee:

@@ -12,10 +12,11 @@ Nom de la salle : **le Garage** (coaching : Loïc Fitness Coaching).
 ## Profils utilisateurs
 
 - **Administrateur** (super utilisateur)
-- **Gestionnaire**
+- **Coach gestionnaire** — a tous les droits de gestion actuels (ex-« Gestionnaire »)
+- **Coach** — a les mêmes droits qu'un Membre, à l'exception de la possibilité de marquer un membre inscrit comme non présent à une séance
 - **Membre**
 
-Le **coach** n'est pas un rôle séparé : c'est un Gestionnaire (ou l'Admin) désigné comme animateur d'une séance donnée.
+Un « coach » au sens animateur d'une séance peut être soit un Coach gestionnaire, soit un Coach simple, soit l'Admin (champ `coach` de la séance).
 
 ## Paiement
 
