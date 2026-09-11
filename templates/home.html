@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
+{% block body_class %}page-fond-accueil{% endblock %}
+
 {% block content %}
   <div class="hero">
-    <div class="container">
-      <div class="hero-contenu">
-        <h1 class="display-4">RESTEZ EN FORME</h1>
-        <p class="lead mb-4">Venez pratiquer une activité sportive près de chez vous pour améliorer votre forme physique.</p>
-        <a href="{% url 'accounts:login' %}" class="btn btn-accent btn-lg">Connexion</a>
-      </div>
+    <div class="hero-contenu">
+      <h1 class="display-4">RESTEZ EN FORME</h1>
+      <p class="lead mb-4">Venez pratiquer une activité sportive près de chez vous pour améliorer votre forme physique.</p>
+      <a href="{% url 'accounts:login' %}" class="btn btn-accent btn-lg">Connexion</a>
     </div>
   </div>
 {% endblock %}
