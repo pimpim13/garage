@@ -88,7 +88,7 @@
 
         {% if est_gestionnaire_ou_admin %}
           <label class="form-label fw-semibold">Séances de :</label>
-          <p class="text-muted small mb-2">Ne rien cocher pour suivre tous les coachs.</p>
+          <p class="text-muted small mb-2">Coche les coachs dont tu veux recevoir les notifications (rien coché = aucun autre coach, seulement tes propres séances si tu en animes).</p>
           {% for coach in coachs_disponibles %}
             <div class="form-check">
               <input

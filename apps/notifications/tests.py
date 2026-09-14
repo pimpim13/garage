@@ -56,10 +56,10 @@ class NotifierEvenementSeanceTests(TestCase):
         self.assertTrue(any(self.coach.topic_ntfy_coach in url for url in self._urls_appelees(mock_post)))
 
     @patch('apps.notifications.ntfy.requests.post')
-    def test_notifie_aussi_le_gestionnaire_par_defaut(self, mock_post):
+    def test_le_gestionnaire_ne_recoit_rien_par_defaut_s_il_ne_suit_personne(self, mock_post):
         notifier_evenement_seance(self.seance, "Message", 'notifie_inscription')
 
-        self.assertTrue(any(self.gestionnaire.topic_ntfy_coach in url for url in self._urls_appelees(mock_post)))
+        self.assertFalse(any(self.gestionnaire.topic_ntfy_coach in url for url in self._urls_appelees(mock_post)))
 
     @patch('apps.notifications.ntfy.requests.post')
     def test_ne_notifie_pas_le_coach_si_sa_preference_est_desactivee(self, mock_post):
@@ -72,6 +72,7 @@ class NotifierEvenementSeanceTests(TestCase):
 
     @patch('apps.notifications.ntfy.requests.post')
     def test_ne_notifie_pas_le_gestionnaire_si_sa_preference_est_desactivee(self, mock_post):
+        self.gestionnaire.coachs_suivis.add(self.coach)
         self.gestionnaire.notifie_inscription = False
         self.gestionnaire.save(update_fields=['notifie_inscription'])
 

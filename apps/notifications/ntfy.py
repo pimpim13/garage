@@ -36,9 +36,9 @@ def notifier_coach(coach, message, titre="Le Garage"):
 def notifier_evenement_seance(seance, message, champ_preference, titre="Le Garage"):
     """Notifie individuellement chaque compte concerné par un événement de séance, selon ses préférences.
 
-    - Le coach animant la séance est notifié s'il a activé `champ_preference`.
-    - Un coach gestionnaire/admin est notifié s'il a activé `champ_preference` et qu'il suit ce coach
-      (`coachs_suivis` vide = il suit tout le monde).
+    - Le coach animant la séance est notifié s'il a activé `champ_preference` (pour ses propres séances).
+    - Un coach gestionnaire/admin est notifié s'il a activé `champ_preference` ET qu'il a explicitement
+      ajouté ce coach à `coachs_suivis` (vide = il ne suit personne d'autre que lui-même).
     """
     from apps.accounts.models import User
 
@@ -46,13 +46,13 @@ def notifier_evenement_seance(seance, message, champ_preference, titre="Le Garag
     if seance.coach and getattr(seance.coach, champ_preference):
         destinataires[seance.coach.pk] = seance.coach
 
-    gestionnaires = User.objects.filter(role__in=[User.Role.ADMIN, User.Role.GESTIONNAIRE])
-    for gestionnaire in gestionnaires:
-        if gestionnaire.pk in destinataires or not getattr(gestionnaire, champ_preference):
-            continue
-        suivis = gestionnaire.coachs_suivis.all()
-        if not suivis.exists() or (seance.coach and suivis.filter(pk=seance.coach.pk).exists()):
-            destinataires[gestionnaire.pk] = gestionnaire
+    if seance.coach:
+        gestionnaires = User.objects.filter(
+            role__in=[User.Role.ADMIN, User.Role.GESTIONNAIRE], coachs_suivis=seance.coach
+        )
+        for gestionnaire in gestionnaires:
+            if gestionnaire.pk not in destinataires and getattr(gestionnaire, champ_preference):
+                destinataires[gestionnaire.pk] = gestionnaire
 
     for destinataire in destinataires.values():
         notifier_coach(destinataire, message, titre)
