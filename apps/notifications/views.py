@@ -43,7 +43,7 @@ def preferences(request):
         if request.user.is_staff_or_manager:
             context['est_gestionnaire_ou_admin'] = True
             context['coachs_disponibles'] = User.objects.filter(
-                role__in=[User.Role.ADMIN, User.Role.GESTIONNAIRE, User.Role.COACH]
+                role__in=[User.Role.GESTIONNAIRE, User.Role.COACH]
             ).exclude(pk=request.user.pk)
             context['coachs_suivis_ids'] = set(request.user.coachs_suivis.values_list('pk', flat=True))
 

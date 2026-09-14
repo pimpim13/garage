@@ -247,6 +247,13 @@ class PreferencesViewGestionnaireEvenementsTests(TestCase):
         self.assertContains(response, 'coach_liste_a')
         self.assertContains(response, 'coach_liste_b')
 
+    def test_ne_propose_pas_l_admin_dans_la_liste(self):
+        admin = User.objects.create_user(username='admin_liste', password='motdepasse123', role=User.Role.ADMIN)
+
+        response = self.client.get(reverse('notifications:preferences'))
+
+        self.assertNotContains(response, f'value="{admin.pk}"')
+
     def test_ne_propose_pas_de_se_suivre_lui_meme(self):
         response = self.client.get(reverse('notifications:preferences'))
 
