@@ -16,7 +16,7 @@ Nom de la salle : **le Garage** (coaching : Loïc Fitness Coaching).
 - **Coach** — a les mêmes droits qu'un Membre, à l'exception de la possibilité de marquer un membre inscrit comme non présent à une séance
 - **Membre**
 
-Un « coach » au sens animateur d'une séance peut être soit un Coach gestionnaire, soit un Coach simple, soit l'Admin (champ `coach` de la séance).
+Un « coach » au sens animateur d'une séance peut être soit un Coach gestionnaire, soit un Coach simple (champ `coach` de la séance). L'Admin n'anime pas de séance et n'apparaît pas dans la liste des coachs proposés.
 
 ## Paiement
 
