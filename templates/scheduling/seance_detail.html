@@ -30,7 +30,7 @@
     {% if seance.est_passee %}
       <p class="text-muted mt-3">Cette séance est déjà passée.</p>
     {% elif not seance.inscriptions_ouvertes %}
-      <p class="text-muted mt-3">Les inscriptions ouvrent le {{ seance.date_ouverture_inscriptions|date:'d/m' }}.</p>
+      <p class="text-muted mt-3">Les inscriptions ouvrent le {{ seance.date_heure_ouverture_inscriptions|date:'d/m à H:i' }}.</p>
     {% elif user.is_authenticated %}
       {% if inscrit %}
         <form method="post" action="{% url 'bookings:desinscrire' seance_id=seance.pk %}" class="mt-3">
