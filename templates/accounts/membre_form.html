@@ -5,22 +5,22 @@
   <h2 class="mb-4">{% if object %}Modifier le compte{% else %}Nouveau compte{% endif %}</h2>
 
   {% if object %}
-    <div class="card p-4 mb-3" style="max-width: 640px;">
-      <div class="d-flex flex-wrap align-items-center gap-2">
-        <span class="badge-solde badge-solde-{{ statut_solde }}">{{ solde }}</span>
-        {% for delta in ajustements_possibles %}
-          <form method="post" action="{% url 'purchases:ajuster_solde' membre_id=object.pk %}">
-            {% csrf_token %}
-            <input type="hidden" name="delta" value="{{ delta }}">
-            <input type="hidden" name="next" value="{% url 'accounts:membre_modifier' pk=object.pk %}">
-            <button type="submit" class="btn btn-outline-dark btn-sm">{{ delta|stringformat:'+d' }}</button>
-          </form>
-        {% endfor %}
-        <a href="{% url 'purchases:historique_membre' membre_id=object.pk %}" class="btn btn-outline-dark btn-sm ms-auto">Historique</a>
-      </div>
-    </div>
-
     {% if object.is_membre %}
+      <div class="card p-4 mb-3" style="max-width: 640px;">
+        <div class="d-flex flex-wrap align-items-center gap-2">
+          <span class="badge-solde badge-solde-{{ statut_solde }}">{{ solde }}</span>
+          {% for delta in ajustements_possibles %}
+            <form method="post" action="{% url 'purchases:ajuster_solde' membre_id=object.pk %}">
+              {% csrf_token %}
+              <input type="hidden" name="delta" value="{{ delta }}">
+              <input type="hidden" name="next" value="{% url 'accounts:membre_modifier' pk=object.pk %}">
+              <button type="submit" class="btn btn-outline-dark btn-sm">{{ delta|stringformat:'+d' }}</button>
+            </form>
+          {% endfor %}
+          <a href="{% url 'purchases:historique_membre' membre_id=object.pk %}" class="btn btn-outline-dark btn-sm ms-auto">Historique</a>
+        </div>
+      </div>
+
       <div class="card p-4 mb-3" style="max-width: 640px;">
         <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
           <span class="fw-semibold">Joker :</span>

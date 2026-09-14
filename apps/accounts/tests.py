@@ -189,6 +189,27 @@ class MembreUpdateViewTests(TestCase):
         self.assertContains(response, 'Retirer le joker')
 
 
+class MembreUpdateViewSoldeAffichageTests(TestCase):
+    def test_le_solde_est_affiche_sur_la_fiche_d_un_membre(self):
+        gestionnaire = creer_gestionnaire()
+        membre = User.objects.create(username='membre_fiche_solde', role=User.Role.MEMBRE)
+        self.client.force_login(gestionnaire)
+
+        response = self.client.get(reverse('accounts:membre_modifier', args=[membre.pk]))
+
+        self.assertContains(response, 'badge-solde')
+
+    def test_le_solde_n_est_pas_affiche_sur_la_fiche_d_un_coach(self):
+        gestionnaire = creer_gestionnaire()
+        coach = User.objects.create(username='coach_fiche_sans_solde', role=User.Role.COACH)
+        self.client.force_login(gestionnaire)
+
+        response = self.client.get(reverse('accounts:membre_modifier', args=[coach.pk]))
+
+        self.assertNotContains(response, 'badge-solde')
+        self.assertNotContains(response, 'Historique')
+
+
 class MembreListViewTests(TestCase):
     def test_les_comptes_coach_apparaissent_dans_la_liste(self):
         gestionnaire = creer_gestionnaire()
