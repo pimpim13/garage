@@ -9,6 +9,7 @@ from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, ListView, TemplateView, UpdateView
 
 from apps.bookings.services import solde_jokers
+from apps.notifications.email import notifier_creation_compte_par_email
 from apps.purchases.services import solde_seances, statut_solde
 from apps.purchases.views import AJUSTEMENTS_AUTORISES as AJUSTEMENTS_POSSIBLES
 
@@ -72,8 +73,10 @@ class MembreCreateView(GestionnaireRequiredMixin, CreateView):
         return context
 
     def form_valid(self, form):
+        reponse = super().form_valid(form)
+        notifier_creation_compte_par_email(self.object, self.request)
         messages.success(self.request, "Compte créé.")
-        return super().form_valid(form)
+        return reponse
 
 
 class MembreUpdateView(GestionnaireRequiredMixin, UpdateView):

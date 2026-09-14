@@ -53,8 +53,7 @@ class MembreCreateFormTests(TestCase):
         form = MembreCreateForm(data={
             'username': 'jdupont',
             'role': User.Role.MEMBRE,
-            'password1': 'motdepasse123',
-            'password2': 'motdepasse123',
+            'email': 'jdupont@example.com',
             'tolerance_seances_negatives': 0,
         })
 
@@ -62,12 +61,33 @@ class MembreCreateFormTests(TestCase):
         user = form.save()
         self.assertEqual(user.role, User.Role.MEMBRE)
 
+    def test_le_compte_cree_n_a_pas_de_mot_de_passe_utilisable(self):
+        form = MembreCreateForm(data={
+            'username': 'jdupont_mdp',
+            'role': User.Role.MEMBRE,
+            'email': 'jdupont_mdp@example.com',
+            'tolerance_seances_negatives': 0,
+        })
+
+        self.assertTrue(form.is_valid(), form.errors)
+        user = form.save()
+        self.assertFalse(user.has_usable_password())
+
+    def test_refuse_sans_email(self):
+        form = MembreCreateForm(data={
+            'username': 'sans_email',
+            'role': User.Role.MEMBRE,
+            'tolerance_seances_negatives': 0,
+        })
+
+        self.assertFalse(form.is_valid())
+        self.assertIn('email', form.errors)
+
     def test_un_nouveau_membre_recoit_un_joker(self):
         form = MembreCreateForm(data={
             'username': 'jdupont2',
             'role': User.Role.MEMBRE,
-            'password1': 'motdepasse123',
-            'password2': 'motdepasse123',
+            'email': 'jdupont2@example.com',
             'tolerance_seances_negatives': 0,
         })
 
@@ -79,8 +99,7 @@ class MembreCreateFormTests(TestCase):
         form = MembreCreateForm(data={
             'username': 'jcoach2',
             'role': User.Role.GESTIONNAIRE,
-            'password1': 'motdepasse123',
-            'password2': 'motdepasse123',
+            'email': 'jcoach2@example.com',
             'tolerance_seances_negatives': 0,
         })
 
@@ -92,8 +111,7 @@ class MembreCreateFormTests(TestCase):
         form = MembreCreateForm(data={
             'username': 'jcoach',
             'role': User.Role.GESTIONNAIRE,
-            'password1': 'motdepasse123',
-            'password2': 'motdepasse123',
+            'email': 'jcoach@example.com',
             'tolerance_seances_negatives': 0,
         })
 
@@ -106,8 +124,7 @@ class MembreCreateFormTests(TestCase):
         form = MembreCreateForm(data={
             'username': 'jadmin',
             'role': User.Role.ADMIN,
-            'password1': 'motdepasse123',
-            'password2': 'motdepasse123',
+            'email': 'jadmin@example.com',
             'tolerance_seances_negatives': 0,
         })
 
@@ -226,6 +243,52 @@ class MembreToggleActifViewTests(TestCase):
 
         coach.refresh_from_db()
         self.assertFalse(coach.is_active)
+
+
+class MembreCreateViewEmailTests(TestCase):
+    def setUp(self):
+        self.gestionnaire = creer_gestionnaire()
+        self.client.force_login(self.gestionnaire)
+
+    def test_envoie_un_email_avec_le_login_et_un_lien_pour_definir_le_mot_de_passe(self):
+        response = self.client.post(reverse('accounts:membre_creer'), {
+            'username': 'nouveau_membre_email',
+            'role': User.Role.MEMBRE,
+            'email': 'nouveau_membre_email@example.com',
+            'tolerance_seances_negatives': 0,
+        })
+
+        self.assertRedirects(response, reverse('accounts:membre_liste'))
+        self.assertEqual(len(mail.outbox), 1)
+        email = mail.outbox[0]
+        self.assertEqual(email.to, ['nouveau_membre_email@example.com'])
+        self.assertIn('nouveau_membre_email', email.body)
+        self.assertIn('/comptes/mot-de-passe/reinitialiser/', email.body)
+
+    def test_le_lien_recu_permet_de_definir_le_mot_de_passe(self):
+        self.client.post(reverse('accounts:membre_creer'), {
+            'username': 'membre_lien_mdp',
+            'role': User.Role.MEMBRE,
+            'email': 'membre_lien_mdp@example.com',
+            'tolerance_seances_negatives': 0,
+        })
+        membre = User.objects.get(username='membre_lien_mdp')
+        self.assertFalse(membre.has_usable_password())
+
+        lien = re.search(r'https?://\S+/comptes/mot-de-passe/reinitialiser/\S+', mail.outbox[0].body).group(0)
+        chemin = urlparse(lien).path
+
+        reponse_lien = self.client.get(chemin, follow=True)
+        self.assertTrue(reponse_lien.context['validlink'])
+
+        reponse_post = self.client.post(reponse_lien.request['PATH_INFO'], {
+            'new_password1': 'motdepassechoisi123!',
+            'new_password2': 'motdepassechoisi123!',
+        })
+
+        self.assertRedirects(reponse_post, reverse('accounts:password_reset_complete'))
+        membre.refresh_from_db()
+        self.assertTrue(membre.check_password('motdepassechoisi123!'))
 
 
 class AdminSiteAccessTests(TestCase):

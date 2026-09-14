@@ -1,5 +1,4 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
 
 from apps.bookings.services import attribuer_joker_initial
 
@@ -20,16 +19,23 @@ class RoleAssignableMixin(forms.ModelForm):
     role = forms.ChoiceField(choices=[(r.value, r.label) for r in ROLES_ASSIGNABLES], label='Rôle')
 
 
-class MembreCreateForm(RoleAssignableMixin, UserCreationForm):
-    class Meta(UserCreationForm.Meta):
+class MembreCreateForm(RoleAssignableMixin):
+    class Meta:
         model = User
         fields = MEMBRE_FIELDS
         labels = MEMBRE_LABELS
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['email'].required = True
+
     def save(self, commit=True):
-        user = super().save(commit=commit)
-        if commit and user.role == User.Role.MEMBRE:
-            attribuer_joker_initial(user)
+        user = super().save(commit=False)
+        user.set_unusable_password()
+        if commit:
+            user.save()
+            if user.role == User.Role.MEMBRE:
+                attribuer_joker_initial(user)
         return user
 
 
