@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
@@ -11,7 +12,7 @@ from apps.bookings.services import solde_jokers
 from apps.purchases.services import solde_seances, statut_solde
 from apps.purchases.views import AJUSTEMENTS_AUTORISES as AJUSTEMENTS_POSSIBLES
 
-from .forms import MembreCreateForm, MembreUpdateForm, ProfilForm
+from .forms import FamilleForm, MembreCreateForm, MembreUpdateForm, ProfilForm
 from .mixins import GestionnaireRequiredMixin
 from .models import User
 
@@ -65,6 +66,11 @@ class MembreCreateView(GestionnaireRequiredMixin, CreateView):
     template_name = 'accounts/membre_form.html'
     success_url = reverse_lazy('accounts:membre_liste')
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['famille_form'] = FamilleForm()
+        return context
+
     def form_valid(self, form):
         messages.success(self.request, "Compte créé.")
         return super().form_valid(form)
@@ -85,11 +91,24 @@ class MembreUpdateView(GestionnaireRequiredMixin, UpdateView):
         context['statut_solde'] = statut_solde(self.object)
         context['ajustements_possibles'] = AJUSTEMENTS_POSSIBLES
         context['solde_jokers'] = solde_jokers(self.object)
+        context['famille_form'] = FamilleForm()
         return context
 
     def form_valid(self, form):
         messages.success(self.request, "Compte modifié.")
         return super().form_valid(form)
+
+
+@login_required
+@require_POST
+def famille_creer_ajax(request):
+    if not request.user.is_staff_or_manager:
+        raise PermissionDenied
+    form = FamilleForm(request.POST)
+    if form.is_valid():
+        famille = form.save()
+        return JsonResponse({'id': famille.pk, 'nom': str(famille)}, status=201)
+    return JsonResponse({'errors': form.errors}, status=400)
 
 
 @login_required

@@ -8,8 +8,8 @@ from django.urls import reverse
 from apps.bookings.services import solde_jokers
 
 from .backends import CaseInsensitiveModelBackend
-from .forms import MembreCreateForm, MembreUpdateForm, ProfilForm
-from .models import User
+from .forms import FamilleForm, MembreCreateForm, MembreUpdateForm, ProfilForm
+from .models import Famille, User
 
 
 class RoleCoachSimpleTests(TestCase):
@@ -383,6 +383,89 @@ class CaseInsensitiveModelBackendTests(TestCase):
         user = backend.authenticate(request=None, username='inconnu', password='motdepasse123')
 
         self.assertIsNone(user)
+
+
+class FamilleFormTests(TestCase):
+    def test_cree_une_famille_avec_nom_et_tolerance(self):
+        form = FamilleForm(data={'nom': 'Famille Dupont', 'tolerance_seances_negatives': 2})
+
+        self.assertTrue(form.is_valid(), form.errors)
+        famille = form.save()
+        self.assertEqual(famille.nom, 'Famille Dupont')
+        self.assertEqual(famille.tolerance_seances_negatives, 2)
+
+    def test_refuse_une_famille_sans_nom(self):
+        form = FamilleForm(data={'nom': '', 'tolerance_seances_negatives': 0})
+
+        self.assertFalse(form.is_valid())
+        self.assertIn('nom', form.errors)
+
+
+class FamilleCreerAjaxViewTests(TestCase):
+    def test_un_gestionnaire_peut_creer_une_famille_en_ajax(self):
+        gestionnaire = creer_gestionnaire()
+        self.client.force_login(gestionnaire)
+
+        response = self.client.post(reverse('accounts:famille_creer_ajax'), {
+            'nom': 'Famille Martin',
+            'tolerance_seances_negatives': 1,
+        })
+
+        self.assertEqual(response.status_code, 201)
+        data = response.json()
+        famille = Famille.objects.get(pk=data['id'])
+        self.assertEqual(famille.nom, 'Famille Martin')
+        self.assertEqual(data['nom'], 'Famille Martin')
+
+    def test_un_membre_ne_peut_pas_creer_de_famille(self):
+        membre = User.objects.create_user(
+            username='membre_famille', password='motdepasse123', role=User.Role.MEMBRE
+        )
+        self.client.force_login(membre)
+
+        response = self.client.post(reverse('accounts:famille_creer_ajax'), {
+            'nom': 'Famille Interdite',
+            'tolerance_seances_negatives': 0,
+        })
+
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(Famille.objects.filter(nom='Famille Interdite').exists())
+
+    def test_un_coach_simple_ne_peut_pas_creer_de_famille(self):
+        coach = User.objects.create_user(
+            username='coach_simple_famille', password='motdepasse123', role=User.Role.COACH
+        )
+        self.client.force_login(coach)
+
+        response = self.client.post(reverse('accounts:famille_creer_ajax'), {
+            'nom': 'Famille Interdite 2',
+            'tolerance_seances_negatives': 0,
+        })
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_donnees_invalides_renvoie_400_avec_erreurs(self):
+        gestionnaire = creer_gestionnaire()
+        self.client.force_login(gestionnaire)
+
+        response = self.client.post(reverse('accounts:famille_creer_ajax'), {
+            'nom': '',
+            'tolerance_seances_negatives': 0,
+        })
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('nom', response.json()['errors'])
+
+
+class MembreFormFamilleTests(TestCase):
+    def test_le_formulaire_de_creation_propose_un_lien_pour_creer_une_famille(self):
+        gestionnaire = creer_gestionnaire()
+        self.client.force_login(gestionnaire)
+
+        response = self.client.get(reverse('accounts:membre_creer'))
+
+        self.assertContains(response, 'Nouvelle famille')
+        self.assertContains(response, reverse('accounts:famille_creer_ajax'))
 
 
 class ConnexionInsensibleCasseTests(TestCase):

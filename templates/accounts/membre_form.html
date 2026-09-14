@@ -57,9 +57,74 @@
     <form method="post">
       {% csrf_token %}
       {{ form|crispy }}
+      <button type="button" class="btn btn-outline-dark btn-sm mb-3" data-bs-toggle="modal" data-bs-target="#familleModal">
+        + Nouvelle famille
+      </button>
       <button type="submit" class="btn btn-accent mt-2">
         {% if object %}Enregistrer{% else %}Créer le compte{% endif %}
       </button>
     </form>
   </div>
+
+  <div class="modal fade" id="familleModal" tabindex="-1" aria-labelledby="familleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="familleForm" action="{% url 'accounts:famille_creer_ajax' %}" method="post">
+          {% csrf_token %}
+          <div class="modal-header">
+            <h5 class="modal-title" id="familleModalLabel">Nouvelle famille</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+          </div>
+          <div class="modal-body">
+            <div id="familleFormErrors" class="alert alert-danger d-none"></div>
+            {{ famille_form|crispy }}
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Annuler</button>
+            <button type="submit" class="btn btn-accent">Créer la famille</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var familleForm = document.getElementById('familleForm');
+      var familleModalEl = document.getElementById('familleModal');
+      var familleModal = new bootstrap.Modal(familleModalEl);
+      var errorsBox = document.getElementById('familleFormErrors');
+      var select = document.getElementById('id_famille');
+
+      familleForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        fetch(familleForm.action, {
+          method: 'POST',
+          headers: {'X-Requested-With': 'XMLHttpRequest'},
+          body: new FormData(familleForm),
+        })
+          .then(function (response) {
+            return response.json().then(function (data) {
+              return {ok: response.status === 201, data: data};
+            });
+          })
+          .then(function (result) {
+            if (result.ok) {
+              var option = document.createElement('option');
+              option.value = result.data.id;
+              option.textContent = result.data.nom;
+              option.selected = true;
+              select.appendChild(option);
+              errorsBox.classList.add('d-none');
+              familleForm.reset();
+              familleModal.hide();
+            } else {
+              var messages = Object.values(result.data.errors || {}).flat();
+              errorsBox.textContent = messages.join(' ') || "Erreur lors de la création de la famille.";
+              errorsBox.classList.remove('d-none');
+            }
+          });
+      });
+    });
+  </script>
 {% endblock %}

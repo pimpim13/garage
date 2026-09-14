@@ -54,5 +54,6 @@ urlpatterns = [
     path('membres/', views.MembreListView.as_view(), name='membre_liste'),
     path('membres/nouveau/', views.MembreCreateView.as_view(), name='membre_creer'),
     path('membres/<int:pk>/modifier/', views.MembreUpdateView.as_view(), name='membre_modifier'),
+    path('familles/nouveau-ajax/', views.famille_creer_ajax, name='famille_creer_ajax'),
     path('membres/<int:pk>/toggle-actif/', views.membre_toggle_actif, name='membre_toggle_actif'),
 ]

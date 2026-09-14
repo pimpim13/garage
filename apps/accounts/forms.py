@@ -3,7 +3,7 @@ from django.contrib.auth.forms import UserCreationForm
 
 from apps.bookings.services import attribuer_joker_initial
 
-from .models import User
+from .models import Famille, User
 
 ROLES_ASSIGNABLES = [User.Role.MEMBRE, User.Role.COACH, User.Role.GESTIONNAIRE]
 
@@ -38,6 +38,15 @@ class MembreUpdateForm(RoleAssignableMixin):
         model = User
         fields = MEMBRE_FIELDS
         labels = MEMBRE_LABELS
+
+
+class FamilleForm(forms.ModelForm):
+    class Meta:
+        model = Famille
+        fields = ['nom', 'tolerance_seances_negatives']
+        labels = {
+            'tolerance_seances_negatives': 'Tolérance de séances négatives',
+        }
 
 
 class ProfilForm(forms.ModelForm):
