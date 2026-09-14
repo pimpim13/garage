@@ -1,3 +1,5 @@
+import secrets
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
@@ -65,6 +67,20 @@ class User(AbstractUser):
         help_text="Date à partir de laquelle un nouveau joker peut être ré-attribué (3 mois après la "
         "consommation du précédent). Effacée si un joker est attribué manuellement avant cette date.",
     )
+    topic_ntfy_coach = models.CharField(
+        max_length=64,
+        unique=True,
+        null=True,
+        blank=True,
+        editable=False,
+        help_text="Canal ntfy individuel, généré automatiquement pour les comptes qui animent des séances "
+        "(coach, coach gestionnaire, admin). Notifie séance pleine et désinscriptions.",
+    )
+
+    def save(self, *args, **kwargs):
+        if self.anime_des_seances and not self.topic_ntfy_coach:
+            self.topic_ntfy_coach = _generer_topic_ntfy_coach()
+        super().save(*args, **kwargs)
 
     @property
     def is_admin(self):
@@ -87,6 +103,10 @@ class User(AbstractUser):
         return self.role in (self.Role.ADMIN, self.Role.GESTIONNAIRE)
 
     @property
+    def anime_des_seances(self):
+        return self.role in (self.Role.ADMIN, self.Role.GESTIONNAIRE, self.Role.COACH)
+
+    @property
     def peut_marquer_absence(self):
         return self.role in (self.Role.ADMIN, self.Role.GESTIONNAIRE, self.Role.COACH)
 
@@ -100,3 +120,10 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.get_full_name() or self.username
+
+
+def _generer_topic_ntfy_coach():
+    while True:
+        candidat = f"garage-coach-{secrets.token_hex(4)}"
+        if not User.objects.filter(topic_ntfy_coach=candidat).exists():
+            return candidat

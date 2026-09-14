@@ -1,4 +1,5 @@
 import datetime
+from unittest.mock import patch
 
 from dateutil.relativedelta import relativedelta
 from django.contrib.auth import get_user_model
@@ -544,3 +545,66 @@ class JokerVueTests(TestCase):
         self.client.post(reverse('bookings:retirer_joker', args=[self.membre.pk]), {'commentaire': 'Motif'})
 
         self.assertEqual(solde_jokers(self.membre), 0)
+
+
+class NotifierCoachSeancePleineTests(TestCase):
+    def setUp(self):
+        self.coach = User.objects.create(username='coach_pleine', role=User.Role.COACH)
+        self.membre = User.objects.create_user(username='membre_pleine', password='motdepasse123')
+        MouvementSeance.objects.create(membre=self.membre, delta=5, motif=MouvementSeance.Motif.ACHAT)
+        self.seance = Seance.objects.create(
+            nom='WOD',
+            debut=timezone.now() + datetime.timedelta(days=2),
+            duree_minutes=60,
+            capacite_max=1,
+            delai_annulation_heures=24,
+            coach=self.coach,
+        )
+
+    @patch('apps.bookings.views.notifier_coach')
+    @patch('apps.bookings.views.notifier_coachs')
+    def test_notifie_individuellement_le_coach_quand_la_seance_devient_pleine(self, mock_coachs, mock_coach):
+        self.client.force_login(self.membre)
+
+        self.client.post(reverse('bookings:inscrire', args=[self.seance.pk]))
+
+        mock_coach.assert_called_once()
+        coach_appele, message = mock_coach.call_args.args
+        self.assertEqual(coach_appele, self.coach)
+        self.assertIn('complète', message)
+
+    @patch('apps.bookings.views.notifier_coach')
+    @patch('apps.bookings.views.notifier_coachs')
+    def test_ne_notifie_pas_individuellement_si_la_seance_n_est_pas_pleine(self, mock_coachs, mock_coach):
+        self.seance.capacite_max = 10
+        self.seance.save(update_fields=['capacite_max'])
+        self.client.force_login(self.membre)
+
+        self.client.post(reverse('bookings:inscrire', args=[self.seance.pk]))
+
+        mock_coach.assert_not_called()
+
+
+class EnregistrerDesinscriptionNotifieCoachTests(TestCase):
+    def setUp(self):
+        self.coach = User.objects.create(username='coach_desinscr_notif', role=User.Role.COACH)
+        self.membre = User.objects.create(username='membre_desinscr_notif')
+        MouvementSeance.objects.create(membre=self.membre, delta=5, motif=MouvementSeance.Motif.ACHAT)
+        self.seance = Seance.objects.create(
+            nom='WOD',
+            debut=timezone.now() + datetime.timedelta(days=2),
+            duree_minutes=60,
+            capacite_max=10,
+            delai_annulation_heures=24,
+            coach=self.coach,
+        )
+        self.inscription = enregistrer_inscription(membre=self.membre, seance=self.seance, auteur=self.membre)
+
+    @patch('apps.bookings.services.notifier_coach')
+    def test_notifie_le_coach_quand_un_membre_se_desinscrit(self, mock_notifier_coach):
+        enregistrer_desinscription(self.inscription, auteur=self.membre)
+
+        mock_notifier_coach.assert_called_once()
+        coach_appele, message = mock_notifier_coach.call_args.args
+        self.assertEqual(coach_appele, self.coach)
+        self.assertIn(str(self.membre), message)

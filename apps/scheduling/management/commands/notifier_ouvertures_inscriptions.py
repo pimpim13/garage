@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
+from apps.notifications.email import notifier_ouverture_inscriptions_par_email
 from apps.notifications.ntfy import notifier_membres
 from apps.scheduling.models import Seance
 
@@ -23,6 +24,7 @@ class Command(BaseCommand):
                 continue
             debut = timezone.localtime(seance.debut)
             notifier_membres(f"Inscriptions ouvertes : « {seance.nom} » le {debut:%d/%m à %H:%M}.")
+            notifier_ouverture_inscriptions_par_email(seance)
             seance.notification_ouverture_envoyee = True
             seance.save(update_fields=['notification_ouverture_envoyee'])
             envoyees += 1

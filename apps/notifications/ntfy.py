@@ -29,3 +29,10 @@ def notifier_membres(message, titre="Le Garage"):
 def notifier_coachs(message, titre="Le Garage"):
     """Canal coachs/gestionnaires : inscriptions, séances pleines."""
     _envoyer(settings.NTFY_TOPIC_COACHS, message, titre)
+
+
+def notifier_coach(coach, message, titre="Le Garage"):
+    """Canal individuel d'un coach : sa séance est pleine, désinscription dans une de ses séances."""
+    if coach is None:
+        return
+    _envoyer(coach.topic_ntfy_coach, message, titre)

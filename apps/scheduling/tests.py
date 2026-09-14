@@ -1,11 +1,15 @@
 import datetime
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.core import mail
+from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
 from apps.bookings.services import enregistrer_inscription, marquer_non_presente
+from apps.notifications.models import PreferenceNotification, TypeEvenement
 from apps.purchases.models import MouvementSeance
 
 from .forms import SeanceForm
@@ -197,3 +201,68 @@ class SeanceDetailCoachSimpleTests(TestCase):
         response = self.client.get(reverse('scheduling:seance_detail', kwargs={'pk': seance.pk}))
 
         self.assertNotContains(response, 'data-href="/comptes/membres/')
+
+
+class NotifierOuverturesInscriptionsEmailTests(TestCase):
+    def setUp(self):
+        self.seance = Seance.objects.create(
+            nom='WOD',
+            debut=timezone.now() + datetime.timedelta(days=1),
+            duree_minutes=60,
+            capacite_max=10,
+            delai_annulation_heures=24,
+        )
+
+    def test_envoie_un_email_au_membre_par_defaut(self):
+        membre = User.objects.create_user(
+            username='membre_email_ouverture', password='motdepasse123',
+            role=User.Role.MEMBRE, email='membre@example.com',
+        )
+
+        call_command('notifier_ouvertures_inscriptions')
+
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn(membre.email, mail.outbox[0].to)
+        self.assertIn('WOD', mail.outbox[0].subject + mail.outbox[0].body)
+
+    def test_n_envoie_pas_si_le_membre_a_refuse(self):
+        membre = User.objects.create_user(
+            username='membre_refuse_email', password='motdepasse123',
+            role=User.Role.MEMBRE, email='refuse@example.com',
+        )
+        PreferenceNotification.objects.create(
+            membre=membre, type_evenement=TypeEvenement.NOUVELLE_SEANCE,
+            canal=PreferenceNotification.Canal.EMAIL, active=False,
+        )
+
+        call_command('notifier_ouvertures_inscriptions')
+
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_n_envoie_pas_a_un_membre_sans_email(self):
+        User.objects.create_user(username='membre_sans_email', password='motdepasse123', role=User.Role.MEMBRE)
+
+        call_command('notifier_ouvertures_inscriptions')
+
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_n_envoie_pas_a_un_coach(self):
+        User.objects.create_user(
+            username='coach_pas_email', password='motdepasse123',
+            role=User.Role.COACH, email='coach@example.com',
+        )
+
+        call_command('notifier_ouvertures_inscriptions')
+
+        self.assertEqual(len(mail.outbox), 0)
+
+    @patch('apps.scheduling.management.commands.notifier_ouvertures_inscriptions.notifier_membres')
+    def test_envoie_toujours_la_notification_ntfy_partagee(self, mock_notifier_membres):
+        User.objects.create_user(
+            username='membre_ntfy_check', password='motdepasse123',
+            role=User.Role.MEMBRE, email='ntfy@example.com',
+        )
+
+        call_command('notifier_ouvertures_inscriptions')
+
+        mock_notifier_membres.assert_called_once()

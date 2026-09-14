@@ -2,7 +2,7 @@ from dateutil.relativedelta import relativedelta
 from django.db.models import Sum
 from django.utils import timezone
 
-from apps.notifications.ntfy import notifier_coachs, notifier_membres
+from apps.notifications.ntfy import notifier_coach, notifier_coachs, notifier_membres
 from apps.purchases.models import MouvementSeance
 from apps.purchases.services import solde_seances
 
@@ -132,6 +132,8 @@ def enregistrer_desinscription(inscription, auteur):
             inscription=inscription,
             auteur=auteur,
         )
+    debut = timezone.localtime(seance.debut)
+    notifier_coach(seance.coach, f"{membre} s'est désinscrit(e) de « {seance.nom} » le {debut:%d/%m à %H:%M}.")
     promouvoir_liste_attente(seance)
 
 

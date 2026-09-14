@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from apps.accounts.models import User
-from apps.notifications.ntfy import notifier_coachs
+from apps.notifications.ntfy import notifier_coach, notifier_coachs
 from apps.scheduling.models import Seance
 
 from .models import Inscription
@@ -29,7 +29,7 @@ def _notifier_inscription(seance, membre):
     debut = timezone.localtime(seance.debut)
     notifier_coachs(f"{membre} inscrit(e) à « {seance.nom} » le {debut:%d/%m à %H:%M}.")
     if seance.places_restantes == 0:
-        notifier_coachs(f"Séance « {seance.nom} » du {debut:%d/%m %H:%M} complète.")
+        notifier_coach(seance.coach, f"Séance « {seance.nom} » du {debut:%d/%m %H:%M} complète.")
 
 
 @login_required

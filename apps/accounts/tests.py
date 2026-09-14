@@ -468,6 +468,56 @@ class MembreFormFamilleTests(TestCase):
         self.assertContains(response, reverse('accounts:famille_creer_ajax'))
 
 
+class AnimeDesSeancesTests(TestCase):
+    def test_un_coach_anime_des_seances(self):
+        coach = User(role=User.Role.COACH)
+
+        self.assertTrue(coach.anime_des_seances)
+
+    def test_un_gestionnaire_anime_des_seances(self):
+        gestionnaire = User(role=User.Role.GESTIONNAIRE)
+
+        self.assertTrue(gestionnaire.anime_des_seances)
+
+    def test_un_admin_anime_des_seances(self):
+        admin = User(role=User.Role.ADMIN)
+
+        self.assertTrue(admin.anime_des_seances)
+
+    def test_un_membre_n_anime_pas_de_seances(self):
+        membre = User(role=User.Role.MEMBRE)
+
+        self.assertFalse(membre.anime_des_seances)
+
+
+class TopicNtfyCoachTests(TestCase):
+    def test_un_coach_recoit_un_topic_ntfy_a_la_creation(self):
+        coach = User.objects.create(username='coach_topic', role=User.Role.COACH)
+
+        self.assertTrue(coach.topic_ntfy_coach)
+        self.assertTrue(coach.topic_ntfy_coach.startswith('garage-coach-'))
+
+    def test_un_membre_ne_recoit_pas_de_topic_ntfy(self):
+        membre = User.objects.create(username='membre_topic', role=User.Role.MEMBRE)
+
+        self.assertFalse(membre.topic_ntfy_coach)
+
+    def test_le_topic_n_est_pas_regenere_a_chaque_sauvegarde(self):
+        coach = User.objects.create(username='coach_stable', role=User.Role.COACH)
+        premier_topic = coach.topic_ntfy_coach
+
+        coach.first_name = 'Jean'
+        coach.save()
+
+        self.assertEqual(coach.topic_ntfy_coach, premier_topic)
+
+    def test_deux_coachs_ont_des_topics_differents(self):
+        coach1 = User.objects.create(username='coach_a', role=User.Role.COACH)
+        coach2 = User.objects.create(username='coach_b', role=User.Role.COACH)
+
+        self.assertNotEqual(coach1.topic_ntfy_coach, coach2.topic_ntfy_coach)
+
+
 class ConnexionInsensibleCasseTests(TestCase):
     def test_connexion_avec_une_casse_differente_fonctionne(self):
         User.objects.create_user(username='JeanDupont', password='motdepasse123')

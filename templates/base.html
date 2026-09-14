@@ -28,7 +28,7 @@
       <div class="collapse navbar-collapse" id="nav">
         <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
           <li class="nav-item"><a class="nav-link" href="{% url 'scheduling:calendrier' %}">Calendrier</a></li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'offers:catalogue' %}">Offres</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'notifications:preferences' %}">Notifications</a></li>
           {% if user.is_staff_or_manager %}
             <li class="nav-item"><a class="nav-link" href="{% url 'accounts:membre_liste' %}">Comptes</a></li>
           {% endif %}
