@@ -57,12 +57,14 @@
     <form method="post">
       {% csrf_token %}
       {{ form|crispy }}
-      <button type="button" class="btn btn-outline-dark btn-sm mb-3" data-bs-toggle="modal" data-bs-target="#familleModal">
-        + Nouvelle famille
-      </button>
-      <button type="submit" class="btn btn-accent mt-2">
-        {% if object %}Enregistrer{% else %}Créer le compte{% endif %}
-      </button>
+      <div class="d-flex flex-wrap gap-2 mt-2">
+        <button type="button" class="btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#familleModal">
+          + Nouvelle famille
+        </button>
+        <button type="submit" class="btn btn-accent">
+          {% if object %}Enregistrer{% else %}Créer le compte{% endif %}
+        </button>
+      </div>
     </form>
   </div>
 
