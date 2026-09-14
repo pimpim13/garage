@@ -233,6 +233,44 @@ class MembreListViewTests(TestCase):
         self.assertEqual(response.status_code, 403)
 
 
+class MembreListViewSoldeAffichageTests(TestCase):
+    def test_le_solde_est_affiche_pour_un_membre(self):
+        gestionnaire = creer_gestionnaire()
+        User.objects.create(username='membre_solde_liste', role=User.Role.MEMBRE)
+        self.client.force_login(gestionnaire)
+
+        response = self.client.get(reverse('accounts:membre_liste'))
+
+        self.assertContains(response, 'badge-solde')
+
+    def test_le_solde_n_est_pas_affiche_pour_un_coach(self):
+        gestionnaire = creer_gestionnaire()
+        User.objects.create(username='coach_sans_solde', role=User.Role.COACH)
+        self.client.force_login(gestionnaire)
+
+        response = self.client.get(reverse('accounts:membre_liste'))
+
+        self.assertNotContains(response, 'badge-solde')
+
+    def test_le_solde_n_est_pas_affiche_pour_un_coach_gestionnaire(self):
+        gestionnaire = creer_gestionnaire()
+        User.objects.create(username='autre_gestionnaire_sans_solde', role=User.Role.GESTIONNAIRE)
+        self.client.force_login(gestionnaire)
+
+        response = self.client.get(reverse('accounts:membre_liste'))
+
+        self.assertNotContains(response, 'badge-solde')
+
+    def test_les_boutons_d_ajustement_n_apparaissent_pas_pour_un_coach(self):
+        gestionnaire = creer_gestionnaire()
+        User.objects.create(username='coach_sans_ajustement', role=User.Role.COACH)
+        self.client.force_login(gestionnaire)
+
+        response = self.client.get(reverse('accounts:membre_liste'))
+
+        self.assertNotContains(response, 'ajuster_solde')
+
+
 class MembreToggleActifViewTests(TestCase):
     def test_un_gestionnaire_peut_desactiver_un_compte_coach(self):
         gestionnaire = creer_gestionnaire()

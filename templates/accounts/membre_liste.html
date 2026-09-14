@@ -38,15 +38,17 @@
               </p>
             </div>
             <div class="d-flex flex-wrap align-items-center gap-2">
-              <span class="badge-solde badge-solde-{{ membre.statut_solde }} flex-shrink-0">{{ membre.solde }}</span>
-              {% for delta in ajustements_possibles %}
-                <form method="post" action="{% url 'purchases:ajuster_solde' membre_id=membre.pk %}">
-                  {% csrf_token %}
-                  <input type="hidden" name="delta" value="{{ delta }}">
-                  <input type="hidden" name="next" value="{% url 'accounts:membre_liste' %}">
-                  <button type="submit" class="btn btn-outline-dark btn-sm">{{ delta|stringformat:'+d' }}</button>
-                </form>
-              {% endfor %}
+              {% if membre.is_membre %}
+                <span class="badge-solde badge-solde-{{ membre.statut_solde }} flex-shrink-0">{{ membre.solde }}</span>
+                {% for delta in ajustements_possibles %}
+                  <form method="post" action="{% url 'purchases:ajuster_solde' membre_id=membre.pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="delta" value="{{ delta }}">
+                    <input type="hidden" name="next" value="{% url 'accounts:membre_liste' %}">
+                    <button type="submit" class="btn btn-outline-dark btn-sm">{{ delta|stringformat:'+d' }}</button>
+                  </form>
+                {% endfor %}
+              {% endif %}
               <form method="post" action="{% url 'accounts:membre_toggle_actif' pk=membre.pk %}" class="ms-auto">
                 {% csrf_token %}
                 {% if membre.is_active %}
