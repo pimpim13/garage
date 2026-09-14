@@ -608,3 +608,21 @@ class EnregistrerDesinscriptionNotifieCoachTests(TestCase):
         coach_appele, message = mock_notifier_coach.call_args.args
         self.assertEqual(coach_appele, self.coach)
         self.assertIn(str(self.membre), message)
+
+
+class InscrireViewMessageOuvertureTests(TestCase):
+    def test_le_message_indique_la_date_et_l_heure_d_ouverture(self):
+        membre = User.objects.create_user(username='membre_avant_ouverture', password='motdepasse123')
+        seance = Seance.objects.create(
+            nom='WOD',
+            debut=timezone.now() + datetime.timedelta(days=20),
+            duree_minutes=60,
+            capacite_max=10,
+            delai_annulation_heures=24,
+        )
+        self.client.force_login(membre)
+
+        response = self.client.post(reverse('bookings:inscrire', args=[seance.pk]), follow=True)
+
+        messages = [str(m) for m in response.context['messages']]
+        self.assertTrue(any('21:00' in message for message in messages), messages)

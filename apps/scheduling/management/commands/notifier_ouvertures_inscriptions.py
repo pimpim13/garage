@@ -9,18 +9,18 @@ from apps.scheduling.models import Seance
 class Command(BaseCommand):
     help = (
         "Notifie les membres pour les séances dont les inscriptions viennent de s'ouvrir "
-        "(mercredi de la semaine précédant la séance). À exécuter une fois par jour (cron)."
+        "(mercredi de la semaine précédant la séance, à 21h00). À exécuter via cron à 21h00, "
+        "ou plus fréquemment pour réduire le délai de notification."
     )
 
     def handle(self, *args, **options):
-        aujourdhui = timezone.localdate()
         candidates = Seance.objects.filter(
             notification_ouverture_envoyee=False, debut__gte=timezone.now()
         )
 
         envoyees = 0
         for seance in candidates:
-            if seance.date_ouverture_inscriptions > aujourdhui:
+            if not seance.inscriptions_ouvertes:
                 continue
             debut = timezone.localtime(seance.debut)
             notifier_membres(f"Inscriptions ouvertes : « {seance.nom} » le {debut:%d/%m à %H:%M}.")

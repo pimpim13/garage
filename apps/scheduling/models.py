@@ -54,6 +54,8 @@ class Seance(models.Model):
     def est_passee(self):
         return self.debut < timezone.now()
 
+    HEURE_OUVERTURE_INSCRIPTIONS = datetime.time(21, 0)
+
     @property
     def date_ouverture_inscriptions(self):
         """Mercredi de la semaine précédant celle de la séance."""
@@ -62,8 +64,15 @@ class Seance(models.Model):
         return lundi_semaine_seance - datetime.timedelta(days=5)
 
     @property
+    def date_heure_ouverture_inscriptions(self):
+        """Mercredi de la semaine précédant celle de la séance, à 21h00."""
+        return timezone.make_aware(
+            datetime.datetime.combine(self.date_ouverture_inscriptions, self.HEURE_OUVERTURE_INSCRIPTIONS)
+        )
+
+    @property
     def inscriptions_ouvertes(self):
-        return timezone.localdate() >= self.date_ouverture_inscriptions
+        return timezone.now() >= self.date_heure_ouverture_inscriptions
 
     @property
     def promotion_liste_attente_possible(self):

@@ -46,6 +46,43 @@ class DesinscriptionTardiveTests(TestCase):
         self.assertTrue(seance.desinscription_tardive)
 
 
+class DateHeureOuvertureInscriptionsTests(TestCase):
+    def test_ouvre_le_mercredi_precedent_a_21h(self):
+        seance = Seance(debut=timezone.make_aware(datetime.datetime(2027, 3, 15, 18, 0)))
+
+        attendu = timezone.make_aware(datetime.datetime(2027, 3, 10, 21, 0))
+        self.assertEqual(seance.date_heure_ouverture_inscriptions, attendu)
+
+
+class InscriptionsOuvertesTests(TestCase):
+    def setUp(self):
+        self.seance = Seance(debut=timezone.make_aware(datetime.datetime(2027, 3, 15, 18, 0)))
+
+    @patch('django.utils.timezone.now')
+    def test_fermees_avant_21h_le_mercredi_d_ouverture(self, mock_now):
+        mock_now.return_value = timezone.make_aware(datetime.datetime(2027, 3, 10, 20, 59))
+
+        self.assertFalse(self.seance.inscriptions_ouvertes)
+
+    @patch('django.utils.timezone.now')
+    def test_ouvertes_a_21h_pile_le_mercredi_d_ouverture(self, mock_now):
+        mock_now.return_value = timezone.make_aware(datetime.datetime(2027, 3, 10, 21, 0))
+
+        self.assertTrue(self.seance.inscriptions_ouvertes)
+
+    @patch('django.utils.timezone.now')
+    def test_fermees_la_veille_meme_tard_le_soir(self, mock_now):
+        mock_now.return_value = timezone.make_aware(datetime.datetime(2027, 3, 9, 23, 59))
+
+        self.assertFalse(self.seance.inscriptions_ouvertes)
+
+    @patch('django.utils.timezone.now')
+    def test_restent_ouvertes_les_jours_suivants(self, mock_now):
+        mock_now.return_value = timezone.make_aware(datetime.datetime(2027, 3, 12, 10, 0))
+
+        self.assertTrue(self.seance.inscriptions_ouvertes)
+
+
 class SeanceDetailBoutonAbsenceTests(TestCase):
     def setUp(self):
         self.coach = User.objects.create_user(
@@ -200,6 +237,35 @@ class SeanceDetailCoachSimpleTests(TestCase):
         response = self.client.get(reverse('scheduling:seance_detail', kwargs={'pk': seance.pk}))
 
         self.assertNotContains(response, 'data-href="/comptes/membres/')
+
+
+class NotifierOuverturesInscriptionsRespecteL_HeureTests(TestCase):
+    def setUp(self):
+        self.seance = Seance.objects.create(
+            nom='WOD',
+            debut=timezone.make_aware(datetime.datetime(2027, 3, 15, 18, 0)),
+            duree_minutes=60,
+            capacite_max=10,
+            delai_annulation_heures=24,
+        )
+
+    @patch('django.utils.timezone.now')
+    def test_n_envoie_rien_avant_21h_le_jour_d_ouverture(self, mock_now):
+        mock_now.return_value = timezone.make_aware(datetime.datetime(2027, 3, 10, 20, 59))
+
+        call_command('notifier_ouvertures_inscriptions')
+
+        self.seance.refresh_from_db()
+        self.assertFalse(self.seance.notification_ouverture_envoyee)
+
+    @patch('django.utils.timezone.now')
+    def test_envoie_a_partir_de_21h_le_jour_d_ouverture(self, mock_now):
+        mock_now.return_value = timezone.make_aware(datetime.datetime(2027, 3, 10, 21, 0))
+
+        call_command('notifier_ouvertures_inscriptions')
+
+        self.seance.refresh_from_db()
+        self.assertTrue(self.seance.notification_ouverture_envoyee)
 
 
 class NotifierOuverturesInscriptionsEmailTests(TestCase):
