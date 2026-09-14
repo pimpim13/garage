@@ -52,5 +52,58 @@
         <code>{{ topic_ntfy_coach }}</code>
       </p>
     </div>
+
+    <div class="card p-4" style="max-width: 640px;">
+      <h5 class="mb-3">Préférences (push)</h5>
+      <form method="post">
+        {% csrf_token %}
+        <div class="form-check">
+          <input
+            type="checkbox" class="form-check-input" id="notifie_inscription" name="notifie_inscription"
+            {% if notifie_inscription %}checked{% endif %}
+          >
+          <label class="form-check-label" for="notifie_inscription">Inscription</label>
+        </div>
+        <div class="form-check">
+          <input
+            type="checkbox" class="form-check-input" id="notifie_desinscription" name="notifie_desinscription"
+            {% if notifie_desinscription %}checked{% endif %}
+          >
+          <label class="form-check-label" for="notifie_desinscription">Désinscription</label>
+        </div>
+        <div class="form-check">
+          <input
+            type="checkbox" class="form-check-input" id="notifie_promotion_automatique" name="notifie_promotion_automatique"
+            {% if notifie_promotion_automatique %}checked{% endif %}
+          >
+          <label class="form-check-label" for="notifie_promotion_automatique">Promotion automatique</label>
+        </div>
+        <div class="form-check mb-3">
+          <input
+            type="checkbox" class="form-check-input" id="notifie_seance_complete" name="notifie_seance_complete"
+            {% if notifie_seance_complete %}checked{% endif %}
+          >
+          <label class="form-check-label" for="notifie_seance_complete">Séance complète</label>
+        </div>
+
+        {% if est_gestionnaire_ou_admin %}
+          <label class="form-label fw-semibold">Séances de :</label>
+          <p class="text-muted small mb-2">Ne rien cocher pour suivre tous les coachs.</p>
+          {% for coach in coachs_disponibles %}
+            <div class="form-check">
+              <input
+                type="checkbox" class="form-check-input" id="coach_suivi_{{ coach.pk }}" name="coachs_suivis"
+                value="{{ coach.pk }}" {% if coach.pk in coachs_suivis_ids %}checked{% endif %}
+              >
+              <label class="form-check-label" for="coach_suivi_{{ coach.pk }}">
+                {{ coach.get_full_name|default:coach.username }}
+              </label>
+            </div>
+          {% endfor %}
+        {% endif %}
+
+        <button type="submit" class="btn btn-accent btn-sm mt-3">Enregistrer</button>
+      </form>
+    </div>
   {% endif %}
 {% endblock %}

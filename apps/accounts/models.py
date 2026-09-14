@@ -82,6 +82,28 @@ class User(AbstractUser):
         help_text="Canal ntfy individuel, généré automatiquement pour les comptes qui animent des séances "
         "(coach, coach gestionnaire, admin). Notifie séance pleine et désinscriptions.",
     )
+    notifie_inscription = models.BooleanField(
+        default=True, help_text="Notifier ce compte (canal ntfy individuel) à chaque inscription."
+    )
+    notifie_desinscription = models.BooleanField(
+        default=True, help_text="Notifier ce compte (canal ntfy individuel) à chaque désinscription."
+    )
+    notifie_promotion_automatique = models.BooleanField(
+        default=True,
+        help_text="Notifier ce compte (canal ntfy individuel) lors d'une promotion automatique depuis la "
+        "liste d'attente.",
+    )
+    notifie_seance_complete = models.BooleanField(
+        default=True, help_text="Notifier ce compte (canal ntfy individuel) quand une séance devient complète."
+    )
+    coachs_suivis = models.ManyToManyField(
+        'self',
+        symmetrical=False,
+        blank=True,
+        related_name='suivi_par',
+        help_text="Coachs dont ce compte veut suivre les séances (vide = tous). Pertinent seulement pour un "
+        "coach gestionnaire ou un admin — un coach simple ne suit que ses propres séances.",
+    )
 
     def save(self, *args, **kwargs):
         if self.anime_des_seances and not self.topic_ntfy_coach:

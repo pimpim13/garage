@@ -153,13 +153,11 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Le Garage <noreply@legarage.fr>')
 
-# Notifications push via ntfy.sh (https://ntfy.sh) — spike/test.
-# Deux canaux partagés (pas encore de préférences configurables par membre) :
-# - membres : nouvelles séances, annulations
-# - coachs/gestionnaires : inscriptions, séances pleines
+# Notifications push via ntfy.sh (https://ntfy.sh).
+# Canal partagé membres (nouvelles séances, annulations). Les coachs/gestionnaires/admin
+# ont chacun un canal individuel généré automatiquement (User.topic_ntfy_coach).
 NTFY_BASE_URL = os.environ.get('NTFY_BASE_URL', 'https://ntfy.sh')
 NTFY_TOPIC_MEMBRES = os.environ['NTFY_TOPIC_MEMBRES']
-NTFY_TOPIC_COACHS = os.environ['NTFY_TOPIC_COACHS']
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

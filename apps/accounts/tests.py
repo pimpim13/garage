@@ -640,6 +640,37 @@ class TopicNtfyCoachTests(TestCase):
         self.assertNotEqual(coach1.topic_ntfy_coach, coach2.topic_ntfy_coach)
 
 
+class PreferencesNotificationCoachTests(TestCase):
+    def test_les_4_preferences_sont_activees_par_defaut(self):
+        coach = User.objects.create(username='coach_prefs_defaut', role=User.Role.COACH)
+
+        self.assertTrue(coach.notifie_inscription)
+        self.assertTrue(coach.notifie_desinscription)
+        self.assertTrue(coach.notifie_promotion_automatique)
+        self.assertTrue(coach.notifie_seance_complete)
+
+    def test_coachs_suivis_est_vide_par_defaut(self):
+        gestionnaire = creer_gestionnaire(username='gestionnaire_suivi_defaut')
+
+        self.assertEqual(list(gestionnaire.coachs_suivis.all()), [])
+
+    def test_peut_suivre_des_coachs_precis(self):
+        gestionnaire = creer_gestionnaire(username='gestionnaire_suivi')
+        coach_a = User.objects.create(username='coach_suivi_a', role=User.Role.COACH)
+
+        gestionnaire.coachs_suivis.add(coach_a)
+
+        self.assertIn(coach_a, gestionnaire.coachs_suivis.all())
+
+    def test_suivre_un_coach_ne_le_fait_pas_apparaitre_dans_ses_propres_suivis(self):
+        gestionnaire = creer_gestionnaire(username='gestionnaire_suivi2')
+        coach_a = User.objects.create(username='coach_suivi_b', role=User.Role.COACH)
+
+        gestionnaire.coachs_suivis.add(coach_a)
+
+        self.assertEqual(list(coach_a.coachs_suivis.all()), [])
+
+
 class ConnexionInsensibleCasseTests(TestCase):
     def test_connexion_avec_une_casse_differente_fonctionne(self):
         User.objects.create_user(username='JeanDupont', password='motdepasse123')

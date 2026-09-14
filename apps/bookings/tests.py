@@ -561,28 +561,26 @@ class NotifierCoachSeancePleineTests(TestCase):
             coach=self.coach,
         )
 
-    @patch('apps.bookings.views.notifier_coach')
-    @patch('apps.bookings.views.notifier_coachs')
-    def test_notifie_individuellement_le_coach_quand_la_seance_devient_pleine(self, mock_coachs, mock_coach):
+    @patch('apps.bookings.views.notifier_evenement_seance')
+    def test_notifie_l_evenement_seance_complete_quand_la_seance_devient_pleine(self, mock_notifier):
         self.client.force_login(self.membre)
 
         self.client.post(reverse('bookings:inscrire', args=[self.seance.pk]))
 
-        mock_coach.assert_called_once()
-        coach_appele, message = mock_coach.call_args.args
-        self.assertEqual(coach_appele, self.coach)
-        self.assertIn('complète', message)
+        champs_notifies = [call.args[2] for call in mock_notifier.call_args_list]
+        self.assertIn('notifie_seance_complete', champs_notifies)
 
-    @patch('apps.bookings.views.notifier_coach')
-    @patch('apps.bookings.views.notifier_coachs')
-    def test_ne_notifie_pas_individuellement_si_la_seance_n_est_pas_pleine(self, mock_coachs, mock_coach):
+    @patch('apps.bookings.views.notifier_evenement_seance')
+    def test_ne_notifie_pas_seance_complete_si_la_seance_n_est_pas_pleine(self, mock_notifier):
         self.seance.capacite_max = 10
         self.seance.save(update_fields=['capacite_max'])
         self.client.force_login(self.membre)
 
         self.client.post(reverse('bookings:inscrire', args=[self.seance.pk]))
 
-        mock_coach.assert_not_called()
+        champs_notifies = [call.args[2] for call in mock_notifier.call_args_list]
+        self.assertNotIn('notifie_seance_complete', champs_notifies)
+        self.assertIn('notifie_inscription', champs_notifies)
 
 
 class EnregistrerDesinscriptionNotifieCoachTests(TestCase):
@@ -600,13 +598,14 @@ class EnregistrerDesinscriptionNotifieCoachTests(TestCase):
         )
         self.inscription = enregistrer_inscription(membre=self.membre, seance=self.seance, auteur=self.membre)
 
-    @patch('apps.bookings.services.notifier_coach')
-    def test_notifie_le_coach_quand_un_membre_se_desinscrit(self, mock_notifier_coach):
+    @patch('apps.bookings.services.notifier_evenement_seance')
+    def test_notifie_l_evenement_desinscription_quand_un_membre_se_desinscrit(self, mock_notifier):
         enregistrer_desinscription(self.inscription, auteur=self.membre)
 
-        mock_notifier_coach.assert_called_once()
-        coach_appele, message = mock_notifier_coach.call_args.args
-        self.assertEqual(coach_appele, self.coach)
+        mock_notifier.assert_called_once()
+        seance_appelee, message, champ = mock_notifier.call_args.args
+        self.assertEqual(seance_appelee, self.seance)
+        self.assertEqual(champ, 'notifie_desinscription')
         self.assertIn(str(self.membre), message)
 
 
