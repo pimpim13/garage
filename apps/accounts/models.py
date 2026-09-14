@@ -67,6 +67,12 @@ class User(AbstractUser):
         help_text="Date à partir de laquelle un nouveau joker peut être ré-attribué (3 mois après la "
         "consommation du précédent). Effacée si un joker est attribué manuellement avant cette date.",
     )
+    accepte_emails = models.BooleanField(
+        default=True,
+        verbose_name='accepte de recevoir des emails',
+        help_text="Consentement général à recevoir des emails de notification (ouverture des inscriptions, "
+        "solde bas, crédit renouvelé, etc.).",
+    )
     topic_ntfy_coach = models.CharField(
         max_length=64,
         unique=True,

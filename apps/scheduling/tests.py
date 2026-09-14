@@ -9,7 +9,6 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.bookings.services import enregistrer_inscription, marquer_non_presente
-from apps.notifications.models import PreferenceNotification, TypeEvenement
 from apps.purchases.models import MouvementSeance
 
 from .forms import SeanceForm
@@ -225,14 +224,10 @@ class NotifierOuverturesInscriptionsEmailTests(TestCase):
         self.assertIn(membre.email, mail.outbox[0].to)
         self.assertIn('WOD', mail.outbox[0].subject + mail.outbox[0].body)
 
-    def test_n_envoie_pas_si_le_membre_a_refuse(self):
-        membre = User.objects.create_user(
+    def test_n_envoie_pas_si_le_membre_a_refuse_les_emails(self):
+        User.objects.create_user(
             username='membre_refuse_email', password='motdepasse123',
-            role=User.Role.MEMBRE, email='refuse@example.com',
-        )
-        PreferenceNotification.objects.create(
-            membre=membre, type_evenement=TypeEvenement.NOUVELLE_SEANCE,
-            canal=PreferenceNotification.Canal.EMAIL, active=False,
+            role=User.Role.MEMBRE, email='refuse@example.com', accepte_emails=False,
         )
 
         call_command('notifier_ouvertures_inscriptions')

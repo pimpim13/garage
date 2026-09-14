@@ -6,7 +6,6 @@ from django.urls import reverse
 
 from apps.accounts.models import User
 
-from .models import PreferenceNotification, TypeEvenement
 from .ntfy import notifier_coach
 
 
@@ -54,7 +53,7 @@ class PreferencesViewMembreTests(TestCase):
         response = self.client.get(reverse('notifications:preferences'))
 
         self.assertContains(response, 'checked')
-        self.assertContains(response, "ouverture")
+        self.assertContains(response, "email")
 
     def test_affiche_le_topic_ntfy_partage_des_membres(self):
         response = self.client.get(reverse('notifications:preferences'))
@@ -72,26 +71,20 @@ class PreferencesViewMembreTests(TestCase):
 
         self.assertNotContains(response, 'garage-coach-')
 
-    def test_decocher_desactive_la_preference(self):
+    def test_decocher_desactive_le_consentement(self):
         self.client.post(reverse('notifications:preferences'), {})
 
-        preference = PreferenceNotification.objects.get(
-            membre=self.membre, type_evenement=TypeEvenement.NOUVELLE_SEANCE
-        )
-        self.assertFalse(preference.active)
+        self.membre.refresh_from_db()
+        self.assertFalse(self.membre.accepte_emails)
 
-    def test_cocher_active_la_preference(self):
-        PreferenceNotification.objects.create(
-            membre=self.membre, type_evenement=TypeEvenement.NOUVELLE_SEANCE,
-            canal=PreferenceNotification.Canal.EMAIL, active=False,
-        )
+    def test_cocher_active_le_consentement(self):
+        self.membre.accepte_emails = False
+        self.membre.save(update_fields=['accepte_emails'])
 
-        self.client.post(reverse('notifications:preferences'), {'recevoir_email_ouverture': 'on'})
+        self.client.post(reverse('notifications:preferences'), {'accepte_emails': 'on'})
 
-        preference = PreferenceNotification.objects.get(
-            membre=self.membre, type_evenement=TypeEvenement.NOUVELLE_SEANCE
-        )
-        self.assertTrue(preference.active)
+        self.membre.refresh_from_db()
+        self.assertTrue(self.membre.accepte_emails)
 
 
 class PreferencesViewCoachTests(TestCase):
@@ -111,4 +104,4 @@ class PreferencesViewCoachTests(TestCase):
 
         response = self.client.get(reverse('notifications:preferences'))
 
-        self.assertNotContains(response, 'name="recevoir_email_ouverture"')
+        self.assertNotContains(response, 'name="accepte_emails"')
