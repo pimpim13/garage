@@ -15,6 +15,25 @@ from .forms import FamilleForm, MembreCreateForm, MembreUpdateForm, ProfilForm
 from .models import Famille, User
 
 
+class NavigationAnonymeTests(TestCase):
+    def test_seuls_connexion_et_offres_sont_visibles_pour_un_anonyme(self):
+        response = self.client.get(reverse('home'))
+
+        self.assertContains(response, 'Connexion')
+        self.assertContains(response, '>Offres<')
+        self.assertNotContains(response, '>Calendrier<')
+        self.assertNotContains(response, '>Notifications<')
+
+    def test_calendrier_et_notifications_apparaissent_une_fois_connecte(self):
+        membre = User.objects.create_user(username='membre_nav_connecte', password='motdepasse123')
+        self.client.force_login(membre)
+
+        response = self.client.get(reverse('offers:catalogue'))
+
+        self.assertContains(response, '>Calendrier<')
+        self.assertContains(response, '>Notifications<')
+
+
 class RoleCoachSimpleTests(TestCase):
     def test_coach_gestionnaire_garde_les_droits_actuels(self):
         gestionnaire = User(role=User.Role.GESTIONNAIRE)

@@ -340,3 +340,25 @@ class NotifierOuverturesInscriptionsEmailTests(TestCase):
         call_command('notifier_ouvertures_inscriptions')
 
         mock_notifier_membres.assert_called_once()
+
+
+class AccesAnonymeCalendrierTests(TestCase):
+    def test_le_calendrier_redirige_vers_la_connexion_si_anonyme(self):
+        response = self.client.get(reverse('scheduling:calendrier'))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse('accounts:login'), response.url)
+
+    def test_le_calendrier_mensuel_redirige_vers_la_connexion_si_anonyme(self):
+        response = self.client.get(reverse('scheduling:calendrier_mois'))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse('accounts:login'), response.url)
+
+    def test_la_fiche_seance_redirige_vers_la_connexion_si_anonyme(self):
+        seance = Seance.objects.create(nom='WOD', debut=timezone.now() + datetime.timedelta(days=1))
+
+        response = self.client.get(reverse('scheduling:seance_detail', kwargs={'pk': seance.pk}))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse('accounts:login'), response.url)

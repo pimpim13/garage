@@ -4,6 +4,8 @@ from collections import defaultdict
 from types import SimpleNamespace
 
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count, Q
 from django.shortcuts import render
 from django.urls import reverse
@@ -66,6 +68,7 @@ def _occupation_par_jour(jours):
     return statuts
 
 
+@login_required
 def calendrier(request, semaine=None):
     aujourdhui = timezone.localdate()
     lundi = _lundi(datetime.date.fromisoformat(semaine)) if semaine else _lundi(aujourdhui)
@@ -89,13 +92,11 @@ def calendrier(request, semaine=None):
         .order_by('debut')
     )
 
-    inscriptions_membre = set()
-    if request.user.is_authenticated:
-        inscriptions_membre = set(
-            request.user.inscriptions.filter(
-                statut=Inscription.Statut.INSCRIT, seance__in=seances_du_jour
-            ).values_list('seance_id', flat=True)
-        )
+    inscriptions_membre = set(
+        request.user.inscriptions.filter(
+            statut=Inscription.Statut.INSCRIT, seance__in=seances_du_jour
+        ).values_list('seance_id', flat=True)
+    )
 
     statuts_jours = _occupation_par_jour(jours)
     jours_info = [SimpleNamespace(date=jour, statut=statuts_jours[jour]) for jour in jours]
@@ -110,12 +111,13 @@ def calendrier(request, semaine=None):
         'inscriptions_membre': inscriptions_membre,
         'aujourdhui': aujourdhui,
     }
-    if request.user.is_authenticated and request.user.is_membre:
+    if request.user.is_membre:
         context['solde_membre'] = solde_seances(request.user)
         context['statut_solde_membre'] = statut_solde(request.user)
     return render(request, 'scheduling/calendrier.html', context)
 
 
+@login_required
 def calendrier_mois(request, mois=None):
     aujourdhui = timezone.localdate()
     if mois:
@@ -156,13 +158,13 @@ def calendrier_mois(request, mois=None):
         'semaines': semaines,
         'aujourdhui': aujourdhui,
     }
-    if request.user.is_authenticated and request.user.is_membre:
+    if request.user.is_membre:
         context['solde_membre'] = solde_seances(request.user)
         context['statut_solde_membre'] = statut_solde(request.user)
     return render(request, 'scheduling/calendrier_mois.html', context)
 
 
-class SeanceDetailView(DetailView):
+class SeanceDetailView(LoginRequiredMixin, DetailView):
     model = Seance
     template_name = 'scheduling/seance_detail.html'
     context_object_name = 'seance'
@@ -177,7 +179,7 @@ class SeanceDetailView(DetailView):
                 statut__in=[Inscription.Statut.INSCRIT, Inscription.Statut.NON_PRESENTE]
             ).select_related('membre')
         )
-        if self.request.user.is_authenticated and self.request.user.is_staff_or_manager:
+        if self.request.user.is_staff_or_manager:
             for inscription in participants:
                 inscription.solde = solde_seances(inscription.membre)
                 inscription.statut_solde = statut_solde(inscription.membre)
@@ -191,19 +193,18 @@ class SeanceDetailView(DetailView):
         )
         context['liste_attente'] = liste_attente
 
-        if self.request.user.is_authenticated:
-            context['inscrit'] = self.object.inscriptions.filter(
-                membre=self.request.user, statut=Inscription.Statut.INSCRIT
-            ).exists()
-            if self.request.user.is_membre:
-                context['solde_membre'] = solde_seances(self.request.user)
-                context['statut_solde_membre'] = statut_solde(self.request.user)
-            for rang, inscription in enumerate(liste_attente, start=1):
-                if inscription.membre_id == self.request.user.id:
-                    context['rang_liste_attente'] = rang
-                    break
+        context['inscrit'] = self.object.inscriptions.filter(
+            membre=self.request.user, statut=Inscription.Statut.INSCRIT
+        ).exists()
+        if self.request.user.is_membre:
+            context['solde_membre'] = solde_seances(self.request.user)
+            context['statut_solde_membre'] = statut_solde(self.request.user)
+        for rang, inscription in enumerate(liste_attente, start=1):
+            if inscription.membre_id == self.request.user.id:
+                context['rang_liste_attente'] = rang
+                break
 
-        if self.request.user.is_authenticated and self.request.user.is_staff_or_manager:
+        if self.request.user.is_staff_or_manager:
             deja_ids = [i.membre_id for i in context['participants']] + [i.membre_id for i in liste_attente]
             context['membres_disponibles'] = (
                 User.objects.filter(role=User.Role.MEMBRE, is_active=True)
