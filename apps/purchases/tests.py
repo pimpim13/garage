@@ -55,6 +55,7 @@ class EnregistrerAchatTests(TestCase):
             type_offre=Offre.TypeOffre.CARNET,
             prix=100,
             nombre_seances=11,
+            duree_validite_mois=6,
         )
         self.gestionnaire = User.objects.create(username='gestionnaire_test')
 
@@ -106,6 +107,44 @@ class EnregistrerAchatTests(TestCase):
 
         membre.refresh_from_db()
         self.assertEqual(membre.date_expiration_solde, dans_5_mois + relativedelta(months=6))
+
+    def test_la_duree_de_prolongation_depend_de_l_offre(self):
+        offre_courte = Offre.objects.create(
+            nom='Carnet 23 séances', type_offre=Offre.TypeOffre.CARNET,
+            prix=200, nombre_seances=23, duree_validite_mois=3,
+        )
+        membre = User.objects.create(username='achat_duree_courte')
+        aujourdhui = timezone.localdate()
+
+        enregistrer_achat(membre=membre, offre=offre_courte, prix_paye=200, saisi_par=self.gestionnaire)
+
+        membre.refresh_from_db()
+        self.assertEqual(membre.date_expiration_solde, aujourdhui + relativedelta(months=3))
+
+    def test_achat_a_l_unite_ne_prolonge_pas_l_expiration(self):
+        offre_unite = Offre.objects.create(
+            nom='1 séance', type_offre=Offre.TypeOffre.CARNET,
+            prix=10, nombre_seances=1, duree_validite_mois=None,
+        )
+        membre = User.objects.create(username='achat_unite')
+
+        enregistrer_achat(membre=membre, offre=offre_unite, prix_paye=10, saisi_par=self.gestionnaire)
+
+        membre.refresh_from_db()
+        self.assertIsNone(membre.date_expiration_solde)
+
+    def test_achat_a_l_unite_ne_modifie_pas_une_expiration_existante(self):
+        offre_unite = Offre.objects.create(
+            nom='1 séance bis', type_offre=Offre.TypeOffre.CARNET,
+            prix=10, nombre_seances=1, duree_validite_mois=None,
+        )
+        dans_2_mois = timezone.localdate() + relativedelta(months=2)
+        membre = User.objects.create(username='achat_unite_deja_actif', date_expiration_solde=dans_2_mois)
+
+        enregistrer_achat(membre=membre, offre=offre_unite, prix_paye=10, saisi_par=self.gestionnaire)
+
+        membre.refresh_from_db()
+        self.assertEqual(membre.date_expiration_solde, dans_2_mois)
 
 
 class StatutSoldeTests(TestCase):
@@ -286,3 +325,100 @@ class HistoriqueMembreViewTests(TestCase):
         response = self.client.get(reverse('purchases:historique_membre', args=[membre.pk]))
 
         self.assertContains(response, 'par Loic')
+
+
+class AjusterSoldeMembreViewTests(TestCase):
+    def setUp(self):
+        self.gestionnaire = User.objects.create_user(
+            username='gestionnaire_ajust_vue', password='motdepasse123', role=User.Role.GESTIONNAIRE
+        )
+        self.membre = User.objects.create(username='membre_ajust_vue', role=User.Role.MEMBRE)
+        self.client.force_login(self.gestionnaire)
+
+    def test_refuse_un_ajustement_de_10(self):
+        self.client.post(reverse('purchases:ajuster_solde', args=[self.membre.pk]), {'delta': 10})
+
+        self.assertEqual(solde_seances(self.membre), 0)
+
+    def test_accepte_un_ajustement_de_1(self):
+        self.client.post(reverse('purchases:ajuster_solde', args=[self.membre.pk]), {'delta': 1})
+
+        self.assertEqual(solde_seances(self.membre), 1)
+
+
+class EnregistrerAchatMembreViewTests(TestCase):
+    def setUp(self):
+        self.gestionnaire = User.objects.create_user(
+            username='gestionnaire_achat_vue', password='motdepasse123', role=User.Role.GESTIONNAIRE
+        )
+        self.membre = User.objects.create(username='membre_achat_vue', role=User.Role.MEMBRE)
+        self.offre = Offre.objects.create(
+            nom='Offre test vue', type_offre=Offre.TypeOffre.CARNET,
+            prix=100, nombre_seances=11, duree_validite_mois=3,
+        )
+        self.client.force_login(self.gestionnaire)
+
+    def test_un_membre_ne_peut_pas_enregistrer_un_achat(self):
+        membre_intrus = User.objects.create_user(
+            username='membre_intrus_achat', password='motdepasse123', role=User.Role.MEMBRE
+        )
+        self.client.force_login(membre_intrus)
+
+        response = self.client.post(reverse('purchases:enregistrer_achat', args=[self.membre.pk]), {
+            'offre': self.offre.pk, 'prix_paye': '100',
+        })
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_enregistre_l_achat_et_credite_le_bon_nombre_de_seances(self):
+        self.client.post(reverse('purchases:enregistrer_achat', args=[self.membre.pk]), {
+            'offre': self.offre.pk, 'prix_paye': '100',
+        })
+
+        self.assertEqual(solde_seances(self.membre), 11)
+        achat = Achat.objects.get(membre=self.membre)
+        self.assertEqual(achat.offre, self.offre)
+        self.assertEqual(achat.saisi_par, self.gestionnaire)
+
+    def test_le_prix_paye_est_modifiable(self):
+        self.client.post(reverse('purchases:enregistrer_achat', args=[self.membre.pk]), {
+            'offre': self.offre.pk, 'prix_paye': '80',
+        })
+
+        achat = Achat.objects.get(membre=self.membre)
+        self.assertEqual(achat.prix_paye, 80)
+
+    def test_prolonge_la_validite_selon_la_duree_de_l_offre(self):
+        aujourdhui = timezone.localdate()
+
+        self.client.post(reverse('purchases:enregistrer_achat', args=[self.membre.pk]), {
+            'offre': self.offre.pk, 'prix_paye': '100',
+        })
+
+        self.membre.refresh_from_db()
+        self.assertEqual(self.membre.date_expiration_solde, aujourdhui + relativedelta(months=3))
+
+    def test_refuse_une_offre_inconnue(self):
+        response = self.client.post(reverse('purchases:enregistrer_achat', args=[self.membre.pk]), {
+            'offre': 9999, 'prix_paye': '100',
+        })
+
+        self.assertEqual(response.status_code, 404)
+        self.assertFalse(Achat.objects.filter(membre=self.membre).exists())
+
+    def test_refuse_un_prix_non_numerique(self):
+        self.client.post(reverse('purchases:enregistrer_achat', args=[self.membre.pk]), {
+            'offre': self.offre.pk, 'prix_paye': 'pas-un-prix',
+        })
+
+        self.assertFalse(Achat.objects.filter(membre=self.membre).exists())
+
+    def test_refuse_une_offre_inactive(self):
+        self.offre.active = False
+        self.offre.save(update_fields=['active'])
+
+        response = self.client.post(reverse('purchases:enregistrer_achat', args=[self.membre.pk]), {
+            'offre': self.offre.pk, 'prix_paye': '100',
+        })
+
+        self.assertEqual(response.status_code, 404)

@@ -6,6 +6,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from apps.bookings.services import solde_jokers
+from apps.offers.models import Offre
 
 from .backends import CaseInsensitiveModelBackend
 from .forms import FamilleForm, MembreCreateForm, MembreUpdateForm, ProfilForm
@@ -187,6 +188,45 @@ class MembreUpdateViewTests(TestCase):
         response = self.client.get(reverse('accounts:membre_modifier', args=[membre.pk]))
 
         self.assertContains(response, 'Retirer le joker')
+
+
+class MembreFormAchatOffreTests(TestCase):
+    def setUp(self):
+        self.gestionnaire = creer_gestionnaire()
+        self.membre = User.objects.create(username='membre_achat_fiche', role=User.Role.MEMBRE)
+        self.offre = Offre.objects.create(
+            nom='Offre fiche test', type_offre=Offre.TypeOffre.CARNET,
+            prix=100, nombre_seances=11, duree_validite_mois=3, active=True,
+        )
+        Offre.objects.create(
+            nom='Offre fiche inactive', type_offre=Offre.TypeOffre.CARNET,
+            prix=50, nombre_seances=5, active=False,
+        )
+        self.client.force_login(self.gestionnaire)
+
+    def test_propose_les_offres_actives_dans_un_selecteur(self):
+        response = self.client.get(reverse('accounts:membre_modifier', args=[self.membre.pk]))
+
+        self.assertContains(response, 'Offre fiche test')
+        self.assertNotContains(response, 'Offre fiche inactive')
+
+    def test_ne_propose_plus_le_bouton_10(self):
+        response = self.client.get(reverse('accounts:membre_modifier', args=[self.membre.pk]))
+
+        self.assertNotContains(response, '>+10<')
+
+    def test_le_prix_dans_data_prix_utilise_un_point_pas_une_virgule(self):
+        response = self.client.get(reverse('accounts:membre_modifier', args=[self.membre.pk]))
+
+        self.assertContains(response, 'data-prix="100.00"')
+        self.assertNotContains(response, 'data-prix="100,00"')
+
+    def test_ne_propose_pas_le_selecteur_d_offre_pour_un_coach(self):
+        coach = User.objects.create(username='coach_sans_achat', role=User.Role.COACH)
+
+        response = self.client.get(reverse('accounts:membre_modifier', args=[coach.pk]))
+
+        self.assertNotContains(response, 'Offre fiche test')
 
 
 class MembreUpdateViewSoldeAffichageTests(TestCase):

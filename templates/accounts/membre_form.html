@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load crispy_forms_tags %}
+{% load crispy_forms_tags l10n %}
 
 {% block content %}
   <h2 class="mb-4">{% if object %}Modifier le compte{% else %}Nouveau compte{% endif %}</h2>
@@ -19,6 +19,25 @@
           {% endfor %}
           <a href="{% url 'purchases:historique_membre' membre_id=object.pk %}" class="btn btn-outline-dark btn-sm ms-auto">Historique</a>
         </div>
+
+        <form method="post" action="{% url 'purchases:enregistrer_achat' membre_id=object.pk %}" class="d-flex flex-wrap gap-2 align-items-end">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{% url 'accounts:membre_modifier' pk=object.pk %}">
+          <div>
+            <label for="id_achat_offre" class="form-label mb-1 small">Offre</label>
+            <select name="offre" id="id_achat_offre" class="form-select form-select-sm" required>
+              <option value="">— Choisir une offre —</option>
+              {% for offre in offres_disponibles %}
+                <option value="{{ offre.pk }}" data-prix="{{ offre.prix|unlocalize }}">{{ offre.nom }} — {{ offre.prix }} €</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label for="id_achat_prix_paye" class="form-label mb-1 small">Prix payé (€)</label>
+            <input type="number" step="0.01" min="0" name="prix_paye" id="id_achat_prix_paye" class="form-control form-control-sm" required>
+          </div>
+          <button type="submit" class="btn btn-accent btn-sm">Enregistrer l'achat</button>
+        </form>
       </div>
 
       <div class="card p-4 mb-3" style="max-width: 640px;">
@@ -127,6 +146,18 @@
             }
           });
       });
+
+      var selectOffre = document.getElementById('id_achat_offre');
+      var inputPrixPaye = document.getElementById('id_achat_prix_paye');
+      if (selectOffre && inputPrixPaye) {
+        selectOffre.addEventListener('change', function () {
+          var optionChoisie = selectOffre.options[selectOffre.selectedIndex];
+          var prix = optionChoisie.getAttribute('data-prix');
+          if (prix) {
+            inputPrixPaye.value = prix;
+          }
+        });
+      }
     });
   </script>
 {% endblock %}

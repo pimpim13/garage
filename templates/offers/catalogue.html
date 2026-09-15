@@ -2,5 +2,26 @@
 
 {% block content %}
   <h2 class="mb-4">Nos offres</h2>
-  <p class="text-muted">Le catalogue d'offres (carnet, famille, personnalisées) sera affiché ici.</p>
+
+  <div class="row g-3">
+    {% for offre in offres %}
+      <div class="col-12 col-md-6 col-lg-4">
+        <div class="card p-4 h-100 d-flex flex-column">
+          <h5 class="mb-2">{{ offre.nom }}</h5>
+          <p class="display-6 fw-bold mb-1">{{ offre.prix }} €</p>
+          <p class="text-muted mb-2">{{ offre.nombre_seances }} séance{{ offre.nombre_seances|pluralize }}</p>
+          {% if offre.duree_validite_mois %}
+            <p class="text-muted small mb-2">
+              Prolonge la validité de l'ensemble du solde de {{ offre.duree_validite_mois }} mois.
+            </p>
+          {% endif %}
+          {% if offre.description %}
+            <p class="mb-0">{{ offre.description }}</p>
+          {% endif %}
+        </div>
+      </div>
+    {% empty %}
+      <p class="text-muted">Aucune offre disponible pour le moment.</p>
+    {% endfor %}
+  </div>
 {% endblock %}

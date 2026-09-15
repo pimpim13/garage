@@ -45,12 +45,14 @@ def ajuster_solde(membre, delta, auteur):
     )
 
 
-def _prolonger_expiration(membre):
+def _prolonger_expiration(membre, offre):
+    if not offre.duree_validite_mois:
+        return
     titulaire = membre.famille if membre.famille_id else membre
     aujourdhui = timezone.localdate()
     date_actuelle = titulaire.date_expiration_solde
     base = max(date_actuelle, aujourdhui) if date_actuelle else aujourdhui
-    titulaire.date_expiration_solde = base + relativedelta(months=6)
+    titulaire.date_expiration_solde = base + relativedelta(months=offre.duree_validite_mois)
     titulaire.save(update_fields=['date_expiration_solde'])
 
 
@@ -70,5 +72,5 @@ def enregistrer_achat(membre, offre, prix_paye, saisi_par):
         achat=achat,
         auteur=saisi_par,
     )
-    _prolonger_expiration(membre)
+    _prolonger_expiration(membre, offre)
     return achat

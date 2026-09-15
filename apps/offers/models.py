@@ -12,6 +12,12 @@ class Offre(models.Model):
     description = models.TextField(blank=True)
     prix = models.DecimalField(max_digits=8, decimal_places=2)
     nombre_seances = models.PositiveIntegerField()
+    duree_validite_mois = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Durée (en mois) dont un achat de cette offre prolonge la validité de l'ensemble du solde "
+        "du membre (ou de sa famille). Vide = n'affecte pas la date d'expiration (ex : achat à l'unité).",
+    )
     active = models.BooleanField(default=True)
     cree_le = models.DateTimeField(auto_now_add=True)
 

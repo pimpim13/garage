@@ -10,6 +10,7 @@ from django.views.generic import CreateView, ListView, TemplateView, UpdateView
 
 from apps.bookings.services import solde_jokers
 from apps.notifications.email import notifier_creation_compte_par_email
+from apps.offers.models import Offre
 from apps.purchases.services import solde_seances, statut_solde
 from apps.purchases.views import AJUSTEMENTS_AUTORISES as AJUSTEMENTS_POSSIBLES
 
@@ -95,6 +96,8 @@ class MembreUpdateView(GestionnaireRequiredMixin, UpdateView):
         context['ajustements_possibles'] = AJUSTEMENTS_POSSIBLES
         context['solde_jokers'] = solde_jokers(self.object)
         context['famille_form'] = FamilleForm()
+        if self.object.is_membre:
+            context['offres_disponibles'] = Offre.objects.filter(active=True)
         return context
 
     def form_valid(self, form):

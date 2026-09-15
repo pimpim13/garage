@@ -1,3 +1,5 @@
+from decimal import Decimal, InvalidOperation
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
@@ -6,10 +8,11 @@ from django.views.decorators.http import require_POST
 
 from apps.accounts.models import User
 from apps.bookings.services import historique_jokers, solde_jokers
+from apps.offers.models import Offre
 
-from .services import ajuster_solde, historique_seances, solde_seances, statut_solde
+from .services import ajuster_solde, enregistrer_achat, historique_seances, solde_seances, statut_solde
 
-AJUSTEMENTS_AUTORISES = (10, 1, -1)
+AJUSTEMENTS_AUTORISES = (1, -1)
 ROLES_GERES = [User.Role.MEMBRE, User.Role.COACH, User.Role.GESTIONNAIRE]
 
 
@@ -63,4 +66,23 @@ def ajuster_solde_membre(request, membre_id):
     else:
         ajuster_solde(membre=membre, delta=delta, auteur=request.user)
         messages.success(request, f"Solde de {membre} ajusté de {delta:+d}.")
+    return redirect(request.POST.get('next') or 'accounts:membre_liste')
+
+
+@login_required
+@require_POST
+def enregistrer_achat_membre(request, membre_id):
+    if not request.user.is_staff_or_manager:
+        raise PermissionDenied
+    membre = get_object_or_404(User, pk=membre_id, role__in=ROLES_GERES)
+    offre = get_object_or_404(Offre, pk=request.POST.get('offre'), active=True)
+    try:
+        prix_paye = Decimal(request.POST.get('prix_paye'))
+    except (TypeError, InvalidOperation):
+        prix_paye = None
+    if prix_paye is None or prix_paye < 0:
+        messages.error(request, "Prix payé invalide.")
+    else:
+        enregistrer_achat(membre=membre, offre=offre, prix_paye=prix_paye, saisi_par=request.user)
+        messages.success(request, f"Achat « {offre.nom} » enregistré pour {membre}.")
     return redirect(request.POST.get('next') or 'accounts:membre_liste')
