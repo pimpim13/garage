@@ -29,6 +29,7 @@ def mon_solde(request):
     context = {
         'solde': solde_seances(request.user),
         'statut_solde': statut_solde(request.user),
+        'date_expiration': request.user.date_expiration_applicable,
         'historique': historique_seances(request.user),
         **_contexte_jokers(request.user),
     }
@@ -45,6 +46,7 @@ def historique_membre(request, membre_id):
         'titre': f"Historique de {membre}",
         'solde': solde_seances(membre),
         'statut_solde': statut_solde(membre),
+        'date_expiration': membre.date_expiration_applicable,
         'historique': historique_seances(membre),
         **_contexte_jokers(membre),
     }

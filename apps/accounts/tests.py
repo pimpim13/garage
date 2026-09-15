@@ -1,9 +1,11 @@
 import re
 from urllib.parse import urlparse
 
+from dateutil.relativedelta import relativedelta
 from django.core import mail
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from apps.bookings.services import solde_jokers
 from apps.offers.models import Offre
@@ -238,6 +240,18 @@ class MembreUpdateViewSoldeAffichageTests(TestCase):
         response = self.client.get(reverse('accounts:membre_modifier', args=[membre.pk]))
 
         self.assertContains(response, 'badge-solde')
+
+    def test_la_date_de_validite_est_affichee_sur_la_fiche_d_un_membre(self):
+        gestionnaire = creer_gestionnaire()
+        expiration = timezone.localdate() + relativedelta(months=3)
+        membre = User.objects.create(
+            username='membre_fiche_expiration', role=User.Role.MEMBRE, date_expiration_solde=expiration,
+        )
+        self.client.force_login(gestionnaire)
+
+        response = self.client.get(reverse('accounts:membre_modifier', args=[membre.pk]))
+
+        self.assertContains(response, expiration.strftime('%d/%m/%Y'))
 
     def test_le_solde_n_est_pas_affiche_sur_la_fiche_d_un_coach(self):
         gestionnaire = creer_gestionnaire()

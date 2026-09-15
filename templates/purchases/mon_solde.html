@@ -14,6 +14,9 @@
       <span class="fs-3 fw-bold">{{ solde }}</span>
       <span class="text-muted">séance{{ solde|pluralize }} restante{{ solde|pluralize }}</span>
     </div>
+    {% if date_expiration %}
+      <p class="text-muted small mb-0 mt-2">Valable jusqu'au {{ date_expiration|date:'d/m/Y' }}</p>
+    {% endif %}
   </div>
 
   {% if historique_jokers is not None %}

@@ -241,6 +241,34 @@ class MonSoldeViewTests(TestCase):
 
         self.assertContains(response, date_reacquisition.strftime('%d/%m/%Y'))
 
+    def test_affiche_la_date_de_validite_du_solde(self):
+        expiration = timezone.localdate() + relativedelta(months=3)
+        membre = User.objects.create_user(
+            username='membre_solde_expiration', password='motdepasse123', date_expiration_solde=expiration,
+        )
+        self.client.force_login(membre)
+
+        response = self.client.get(reverse('purchases:mon_solde'))
+
+        self.assertContains(response, expiration.strftime('%d/%m/%Y'))
+
+    def test_affiche_la_date_de_validite_de_la_famille_si_rattache(self):
+        famille = Famille.objects.create(nom='Durand', date_expiration_solde=timezone.localdate() + relativedelta(months=6))
+        membre = User.objects.create_user(username='membre_solde_famille', password='motdepasse123', famille=famille)
+        self.client.force_login(membre)
+
+        response = self.client.get(reverse('purchases:mon_solde'))
+
+        self.assertContains(response, famille.date_expiration_solde.strftime('%d/%m/%Y'))
+
+    def test_n_affiche_pas_de_date_si_jamais_achete(self):
+        membre = User.objects.create_user(username='membre_solde_jamais_achete', password='motdepasse123')
+        self.client.force_login(membre)
+
+        response = self.client.get(reverse('purchases:mon_solde'))
+
+        self.assertNotContains(response, 'Valable jusqu')
+
 
 class HistoriqueMembreViewTests(TestCase):
     def test_un_gestionnaire_voit_l_historique_d_un_membre(self):
@@ -253,6 +281,20 @@ class HistoriqueMembreViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Achat')
+
+    def test_affiche_la_date_de_validite_du_membre_consulte(self):
+        gestionnaire = User.objects.create_user(
+            username='gestionnaire_expiration', password='motdepasse123', role=User.Role.GESTIONNAIRE
+        )
+        expiration = timezone.localdate() + relativedelta(months=6)
+        membre = User.objects.create(
+            username='membre_vue_expiration', role=User.Role.MEMBRE, date_expiration_solde=expiration,
+        )
+        self.client.force_login(gestionnaire)
+
+        response = self.client.get(reverse('purchases:historique_membre', args=[membre.pk]))
+
+        self.assertContains(response, expiration.strftime('%d/%m/%Y'))
 
     def test_un_membre_ne_peut_pas_voir_l_historique_d_un_autre(self):
         membre = User.objects.create_user(username='intrus', password='motdepasse123', role=User.Role.MEMBRE)

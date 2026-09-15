@@ -93,6 +93,7 @@ class MembreUpdateView(GestionnaireRequiredMixin, UpdateView):
         context = super().get_context_data(**kwargs)
         context['solde'] = solde_seances(self.object)
         context['statut_solde'] = statut_solde(self.object)
+        context['date_expiration'] = self.object.date_expiration_applicable
         context['ajustements_possibles'] = AJUSTEMENTS_POSSIBLES
         context['solde_jokers'] = solde_jokers(self.object)
         context['famille_form'] = FamilleForm()

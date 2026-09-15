@@ -19,8 +19,11 @@
           {% endfor %}
           <a href="{% url 'purchases:historique_membre' membre_id=object.pk %}" class="btn btn-outline-dark btn-sm ms-auto">Historique</a>
         </div>
+        {% if date_expiration %}
+          <p class="text-muted small mb-0 mt-2">Valable jusqu'au {{ date_expiration|date:'d/m/Y' }}</p>
+        {% endif %}
 
-        <form method="post" action="{% url 'purchases:enregistrer_achat' membre_id=object.pk %}" class="d-flex flex-wrap gap-2 align-items-end">
+        <form method="post" action="{% url 'purchases:enregistrer_achat' membre_id=object.pk %}" class="d-flex flex-wrap gap-2 align-items-end mt-2">
           {% csrf_token %}
           <input type="hidden" name="next" value="{% url 'accounts:membre_modifier' pk=object.pk %}">
           <div>
