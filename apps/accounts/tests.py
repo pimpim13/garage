@@ -33,6 +33,12 @@ class NavigationAnonymeTests(TestCase):
         self.assertContains(response, '>Calendrier<')
         self.assertContains(response, '>Notifications<')
 
+    def test_le_bouton_nos_offres_est_a_cote_de_connexion_sur_l_accueil(self):
+        response = self.client.get(reverse('home'))
+
+        self.assertContains(response, 'Nos offres')
+        self.assertContains(response, reverse('offers:catalogue'))
+
 
 class RoleCoachSimpleTests(TestCase):
     def test_coach_gestionnaire_garde_les_droits_actuels(self):

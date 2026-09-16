@@ -7,7 +7,10 @@
     <div class="hero-contenu">
       <h1 class="display-4">RESTEZ EN FORME</h1>
       <p class="lead mb-4">Venez pratiquer une activité sportive près de chez vous pour améliorer votre forme physique.</p>
-      <a href="{% url 'accounts:login' %}" class="btn btn-accent btn-lg">Connexion</a>
+      <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'accounts:login' %}" class="btn btn-accent btn-lg">Connexion</a>
+        <a href="{% url 'offers:catalogue' %}" class="btn btn-outline-dark btn-lg">Nos offres</a>
+      </div>
     </div>
   </div>
 {% endblock %}
