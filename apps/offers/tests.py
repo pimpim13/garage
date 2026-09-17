@@ -29,6 +29,7 @@ class SeedOffresCarnetTests(TestCase):
 
         self.assertEqual(offre.prix, Decimal('10'))
         self.assertEqual(offre.nombre_seances, 1)
+        self.assertEqual(offre.nombre_seances_offertes, 0)
         self.assertIsNone(offre.duree_validite_mois)
 
     def test_offre_10_plus_1_a_une_validite_de_3_mois(self):
@@ -36,6 +37,7 @@ class SeedOffresCarnetTests(TestCase):
 
         self.assertEqual(offre.prix, Decimal('100'))
         self.assertEqual(offre.nombre_seances, 11)
+        self.assertEqual(offre.nombre_seances_offertes, 1)
         self.assertEqual(offre.duree_validite_mois, 3)
 
     def test_offre_20_plus_3_a_une_validite_de_6_mois(self):
@@ -43,6 +45,7 @@ class SeedOffresCarnetTests(TestCase):
 
         self.assertEqual(offre.prix, Decimal('200'))
         self.assertEqual(offre.nombre_seances, 23)
+        self.assertEqual(offre.nombre_seances_offertes, 3)
         self.assertEqual(offre.duree_validite_mois, 6)
 
     def test_offre_25_plus_5_a_une_validite_de_6_mois(self):
@@ -50,6 +53,7 @@ class SeedOffresCarnetTests(TestCase):
 
         self.assertEqual(offre.prix, Decimal('250'))
         self.assertEqual(offre.nombre_seances, 30)
+        self.assertEqual(offre.nombre_seances_offertes, 5)
         self.assertEqual(offre.duree_validite_mois, 6)
 
     def test_toutes_les_offres_sont_actives(self):
@@ -79,6 +83,19 @@ class CatalogueViewTests(TestCase):
         response = self.client.get(reverse('offers:catalogue'))
 
         self.assertContains(response, '100')
+
+    def test_met_en_avant_les_seances_offertes(self):
+        response = self.client.get(reverse('offers:catalogue'))
+
+        self.assertContains(response, '1 offerte')
+        self.assertContains(response, '3 offertes')
+        self.assertContains(response, '5 offertes')
+
+    def test_n_affiche_pas_de_chip_offerte_si_aucune(self):
+        response = self.client.get(reverse('offers:catalogue'))
+
+        # L'offre à l'unité n'a pas de séance offerte : pas de "0 offerte(s)" affiché.
+        self.assertNotContains(response, '0 offerte')
 
     def test_ne_necessite_pas_d_etre_connecte(self):
         response = self.client.get(reverse('offers:catalogue'))

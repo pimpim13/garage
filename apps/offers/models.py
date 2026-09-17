@@ -12,6 +12,12 @@ class Offre(models.Model):
     description = models.TextField(blank=True)
     prix = models.DecimalField(max_digits=8, decimal_places=2)
     nombre_seances = models.PositiveIntegerField()
+    nombre_seances_offertes = models.PositiveIntegerField(
+        default=0,
+        blank=True,
+        help_text="Parmi le nombre de séances ci-dessus, combien sont offertes (à but d'affichage uniquement — "
+        "le nombre total crédité au solde reste « Nombre de séances »).",
+    )
     duree_validite_mois = models.PositiveIntegerField(
         null=True,
         blank=True,

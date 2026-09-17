@@ -6,12 +6,16 @@ from .models import Offre
 class OffreForm(forms.ModelForm):
     class Meta:
         model = Offre
-        fields = ['nom', 'type_offre', 'description', 'prix', 'nombre_seances', 'duree_validite_mois', 'active']
+        fields = [
+            'nom', 'type_offre', 'description', 'prix', 'nombre_seances', 'nombre_seances_offertes',
+            'duree_validite_mois', 'active',
+        ]
         labels = {
             'nom': 'Nom',
             'type_offre': "Type d'offre",
             'prix': 'Prix (€)',
-            'nombre_seances': 'Nombre de séances',
+            'nombre_seances': 'Nombre de séances (total)',
+            'nombre_seances_offertes': 'Dont séances offertes',
             'duree_validite_mois': 'Durée de validité (mois)',
             'active': 'Active',
         }

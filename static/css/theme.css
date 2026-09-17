@@ -151,13 +151,26 @@ h1, h2, h3, .display-font {
   font-size: 1.1rem;
 }
 
-.offre-prix {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.15rem;
+.offre-prix-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.7rem;
+  border-radius: var(--bs-border-radius-pill);
+  background-color: var(--ps-black);
+  color: var(--ps-white);
+  font-weight: 700;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.offre-prix-montant {
+.offre-seances-hero {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.offre-seances-nombre {
   font-family: 'Poppins', 'Inter', sans-serif;
   font-weight: 900;
   font-size: 3rem;
@@ -165,12 +178,11 @@ h1, h2, h3, .display-font {
   color: var(--ps-black);
 }
 
-.offre-prix-devise {
-  font-family: 'Poppins', 'Inter', sans-serif;
-  font-weight: 800;
-  font-size: 1.5rem;
-  color: var(--ps-green-dark);
-  margin-top: 0.2rem;
+.offre-seances-label {
+  font-weight: 700;
+  font-size: 1rem;
+  text-transform: uppercase;
+  color: var(--ps-black);
 }
 
 .offre-chip {
@@ -187,6 +199,7 @@ h1, h2, h3, .display-font {
 .offre-chip-accent {
   background-color: var(--ps-green);
   color: var(--ps-black);
+  font-weight: 800;
 }
 
 .offre-actions-gestion {
