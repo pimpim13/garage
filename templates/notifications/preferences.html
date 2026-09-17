@@ -12,15 +12,17 @@
           <input
             type="checkbox"
             class="form-check-input"
-            id="accepte_emails"
-            name="accepte_emails"
-            {% if accepte_emails %}checked{% endif %}
+            id="email_ouverture_seance"
+            name="email_ouverture_seance"
+            {% if email_ouverture_seance %}checked{% endif %}
           >
-          <label class="form-check-label" for="accepte_emails">
-            Autoriser Le Garage à m'envoyer des emails de notification (ouverture des inscriptions,
-            solde bas, crédit renouvelé, etc.)
+          <label class="form-check-label" for="email_ouverture_seance">
+            Email à l'ouverture des inscriptions à une séance
           </label>
         </div>
+        <p class="text-muted small mb-0 mt-2">
+          Le mot de passe oublié est toujours envoyé par email, indépendamment de ce réglage.
+        </p>
         <button type="submit" class="btn btn-accent btn-sm mt-3">Enregistrer</button>
       </form>
     </div>

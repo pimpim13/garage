@@ -306,7 +306,7 @@ class NotifierOuverturesInscriptionsEmailTests(TestCase):
     def test_n_envoie_pas_si_le_membre_a_refuse_les_emails(self):
         User.objects.create_user(
             username='membre_refuse_email', password='motdepasse123',
-            role=User.Role.MEMBRE, email='refuse@example.com', accepte_emails=False,
+            role=User.Role.MEMBRE, email='refuse@example.com', email_ouverture_seance=False,
         )
 
         call_command('notifier_ouvertures_inscriptions')

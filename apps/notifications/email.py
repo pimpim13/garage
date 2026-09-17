@@ -11,7 +11,7 @@ from apps.accounts.models import User
 def notifier_ouverture_inscriptions_par_email(seance):
     debut = timezone.localtime(seance.debut)
     destinataires = User.objects.filter(
-        role=User.Role.MEMBRE, is_active=True, accepte_emails=True
+        role=User.Role.MEMBRE, is_active=True, email_ouverture_seance=True
     ).exclude(email='')
     for membre in destinataires:
         send_mail(

@@ -168,16 +168,16 @@ class PreferencesViewMembreTests(TestCase):
         self.client.post(reverse('notifications:preferences'), {})
 
         self.membre.refresh_from_db()
-        self.assertFalse(self.membre.accepte_emails)
+        self.assertFalse(self.membre.email_ouverture_seance)
 
     def test_cocher_active_le_consentement(self):
-        self.membre.accepte_emails = False
-        self.membre.save(update_fields=['accepte_emails'])
+        self.membre.email_ouverture_seance = False
+        self.membre.save(update_fields=['email_ouverture_seance'])
 
-        self.client.post(reverse('notifications:preferences'), {'accepte_emails': 'on'})
+        self.client.post(reverse('notifications:preferences'), {'email_ouverture_seance': 'on'})
 
         self.membre.refresh_from_db()
-        self.assertTrue(self.membre.accepte_emails)
+        self.assertTrue(self.membre.email_ouverture_seance)
 
 
 class PreferencesViewCoachTests(TestCase):
@@ -197,7 +197,7 @@ class PreferencesViewCoachTests(TestCase):
 
         response = self.client.get(reverse('notifications:preferences'))
 
-        self.assertNotContains(response, 'name="accepte_emails"')
+        self.assertNotContains(response, 'name="email_ouverture_seance"')
 
 
 class PreferencesViewCoachEvenementsTests(TestCase):

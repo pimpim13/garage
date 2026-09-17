@@ -12,6 +12,10 @@ CHAMPS_PREFERENCE_EVENEMENTS = [
     'notifie_seance_complete',
 ]
 
+CHAMPS_PREFERENCE_EMAILS = [
+    'email_ouverture_seance',
+]
+
 
 @login_required
 def preferences(request):
@@ -19,11 +23,13 @@ def preferences(request):
 
     if request.user.is_membre:
         if request.method == 'POST':
-            request.user.accepte_emails = 'accepte_emails' in request.POST
-            request.user.save(update_fields=['accepte_emails'])
+            for champ in CHAMPS_PREFERENCE_EMAILS:
+                setattr(request.user, champ, champ in request.POST)
+            request.user.save(update_fields=CHAMPS_PREFERENCE_EMAILS)
             messages.success(request, "Préférences de notification mises à jour.")
             return redirect('notifications:preferences')
-        context['accepte_emails'] = request.user.accepte_emails
+        for champ in CHAMPS_PREFERENCE_EMAILS:
+            context[champ] = getattr(request.user, champ)
         context['topic_ntfy_membres'] = settings.NTFY_TOPIC_MEMBRES
 
     if request.user.anime_des_seances:
