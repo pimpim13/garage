@@ -1,0 +1,9 @@
+<div class="d-flex flex-wrap align-items-center gap-2">
+  <code>{{ topic }}</code>
+  <button type="button" class="btn btn-outline-dark btn-sm js-copier-canal" data-topic="{{ topic }}">Copier</button>
+  <form method="post" action="{% url 'notifications:tester_notification' %}" class="d-inline">
+    {% csrf_token %}
+    <input type="hidden" name="canal" value="{{ canal }}">
+    <button type="submit" class="btn btn-outline-dark btn-sm">Tester</button>
+  </form>
+</div>

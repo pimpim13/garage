@@ -34,10 +34,8 @@
         de l'ouverture des inscriptions.
       </p>
       {% include "notifications/_liens_stores_ntfy.html" %}
-      <p class="mb-0">
-        Une fois l'application installée, abonne-toi au canal :
-        <code>{{ topic_ntfy_membres }}</code>
-      </p>
+      <p class="mb-2">Une fois l'application installée, abonne-toi au canal :</p>
+      {% include "notifications/_canal_ntfy.html" with topic=topic_ntfy_membres canal="membre" %}
     </div>
   {% endif %}
 
@@ -49,10 +47,8 @@
         séances est complète, ou en cas de désinscription d'un participant.
       </p>
       {% include "notifications/_liens_stores_ntfy.html" %}
-      <p class="mb-0">
-        Ton canal personnel :
-        <code>{{ topic_ntfy_coach }}</code>
-      </p>
+      <p class="mb-2">Ton canal personnel :</p>
+      {% include "notifications/_canal_ntfy.html" with topic=topic_ntfy_coach canal="coach" %}
     </div>
 
     <div class="card p-4" style="max-width: 640px;">
@@ -108,4 +104,21 @@
       </form>
     </div>
   {% endif %}
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      document.querySelectorAll('.js-copier-canal').forEach(function (bouton) {
+        bouton.addEventListener('click', function () {
+          var topic = bouton.getAttribute('data-topic');
+          navigator.clipboard.writeText(topic).then(function () {
+            var texteOriginal = bouton.textContent;
+            bouton.textContent = 'Copié !';
+            setTimeout(function () {
+              bouton.textContent = texteOriginal;
+            }, 1500);
+          });
+        });
+      });
+    });
+  </script>
 {% endblock %}
