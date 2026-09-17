@@ -1,9 +1,18 @@
 from decimal import Decimal
 
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
 from .models import Offre
+
+User = get_user_model()
+
+
+def creer_gestionnaire(**kwargs):
+    kwargs.setdefault('username', 'gestionnaire_offres')
+    kwargs.setdefault('role', User.Role.GESTIONNAIRE)
+    return User.objects.create_user(password='motdepasse123', **kwargs)
 
 
 class SeedOffresCarnetTests(TestCase):
@@ -75,3 +84,145 @@ class CatalogueViewTests(TestCase):
         response = self.client.get(reverse('offers:catalogue'))
 
         self.assertEqual(response.status_code, 200)
+
+    def test_un_gestionnaire_voit_aussi_les_offres_inactives(self):
+        Offre.objects.create(
+            nom='Offre retirée visible gestionnaire', type_offre=Offre.TypeOffre.CARNET,
+            prix=50, nombre_seances=5, active=False,
+        )
+        gestionnaire = creer_gestionnaire()
+        self.client.force_login(gestionnaire)
+
+        response = self.client.get(reverse('offers:catalogue'))
+
+        self.assertContains(response, 'Offre retirée visible gestionnaire')
+
+    def test_un_gestionnaire_voit_les_boutons_de_gestion(self):
+        gestionnaire = creer_gestionnaire(username='gestionnaire_boutons')
+        self.client.force_login(gestionnaire)
+
+        response = self.client.get(reverse('offers:catalogue'))
+
+        self.assertContains(response, 'Nouvelle offre')
+        self.assertContains(response, 'Modifier')
+        self.assertContains(response, 'Supprimer')
+
+    def test_un_membre_ne_voit_pas_les_boutons_de_gestion(self):
+        membre = User.objects.create_user(username='membre_sans_gestion_offre', password='motdepasse123')
+        self.client.force_login(membre)
+
+        response = self.client.get(reverse('offers:catalogue'))
+
+        self.assertNotContains(response, 'Nouvelle offre')
+
+
+class OffreCreateViewTests(TestCase):
+    def setUp(self):
+        self.gestionnaire = creer_gestionnaire(username='gestionnaire_creer_offre')
+        self.client.force_login(self.gestionnaire)
+
+    def test_un_membre_ne_peut_pas_creer_d_offre(self):
+        membre = User.objects.create_user(username='membre_creer_offre', password='motdepasse123')
+        self.client.force_login(membre)
+
+        response = self.client.get(reverse('offers:offre_creer'))
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_cree_une_offre(self):
+        response = self.client.post(reverse('offers:offre_creer'), {
+            'nom': 'Offre test création',
+            'type_offre': Offre.TypeOffre.CARNET,
+            'description': '',
+            'prix': '150',
+            'nombre_seances': 15,
+            'duree_validite_mois': 4,
+            'active': 'on',
+        })
+
+        self.assertRedirects(response, reverse('offers:catalogue'))
+        offre = Offre.objects.get(nom='Offre test création')
+        self.assertEqual(offre.duree_validite_mois, 4)
+
+    def test_duree_de_validite_facultative(self):
+        response = self.client.post(reverse('offers:offre_creer'), {
+            'nom': 'Offre sans validité',
+            'type_offre': Offre.TypeOffre.CARNET,
+            'description': '',
+            'prix': '15',
+            'nombre_seances': 1,
+            'active': 'on',
+        })
+
+        self.assertRedirects(response, reverse('offers:catalogue'))
+        offre = Offre.objects.get(nom='Offre sans validité')
+        self.assertIsNone(offre.duree_validite_mois)
+
+
+class OffreUpdateViewTests(TestCase):
+    def setUp(self):
+        self.gestionnaire = creer_gestionnaire(username='gestionnaire_modifier_offre')
+        self.offre = Offre.objects.create(
+            nom='Offre à modifier', type_offre=Offre.TypeOffre.CARNET,
+            prix=100, nombre_seances=11, duree_validite_mois=3,
+        )
+        self.client.force_login(self.gestionnaire)
+
+    def test_modifie_la_duree_de_validite(self):
+        response = self.client.post(reverse('offers:offre_modifier', args=[self.offre.pk]), {
+            'nom': self.offre.nom,
+            'type_offre': Offre.TypeOffre.CARNET,
+            'description': '',
+            'prix': '100',
+            'nombre_seances': 11,
+            'duree_validite_mois': 6,
+            'active': 'on',
+        })
+
+        self.assertRedirects(response, reverse('offers:catalogue'))
+        self.offre.refresh_from_db()
+        self.assertEqual(self.offre.duree_validite_mois, 6)
+
+    def test_un_membre_ne_peut_pas_modifier_une_offre(self):
+        membre = User.objects.create_user(username='membre_modifier_offre', password='motdepasse123')
+        self.client.force_login(membre)
+
+        response = self.client.get(reverse('offers:offre_modifier', args=[self.offre.pk]))
+
+        self.assertEqual(response.status_code, 403)
+
+
+class OffreDeleteViewTests(TestCase):
+    def setUp(self):
+        self.gestionnaire = creer_gestionnaire(username='gestionnaire_supprimer_offre')
+        self.offre = Offre.objects.create(
+            nom='Offre à supprimer', type_offre=Offre.TypeOffre.CARNET,
+            prix=100, nombre_seances=11, duree_validite_mois=3,
+        )
+        self.client.force_login(self.gestionnaire)
+
+    def test_supprime_une_offre_jamais_achetee(self):
+        response = self.client.post(reverse('offers:offre_supprimer', args=[self.offre.pk]))
+
+        self.assertRedirects(response, reverse('offers:catalogue'))
+        self.assertFalse(Offre.objects.filter(pk=self.offre.pk).exists())
+
+    def test_refuse_de_supprimer_une_offre_deja_achetee(self):
+        from apps.purchases.services import enregistrer_achat
+
+        membre = User.objects.create(username='membre_a_achete')
+        enregistrer_achat(membre=membre, offre=self.offre, prix_paye=100, saisi_par=self.gestionnaire)
+
+        response = self.client.post(reverse('offers:offre_supprimer', args=[self.offre.pk]), follow=True)
+
+        self.assertTrue(Offre.objects.filter(pk=self.offre.pk).exists())
+        self.assertContains(response, 'achat')
+
+    def test_un_membre_ne_peut_pas_supprimer_une_offre(self):
+        membre = User.objects.create_user(username='membre_supprimer_offre', password='motdepasse123')
+        self.client.force_login(membre)
+
+        response = self.client.post(reverse('offers:offre_supprimer', args=[self.offre.pk]))
+
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(Offre.objects.filter(pk=self.offre.pk).exists())

@@ -1,13 +1,21 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <h2 class="mb-4">Nos offres</h2>
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <h2 class="mb-0">Nos offres</h2>
+    {% if peut_gerer %}
+      <a href="{% url 'offers:offre_creer' %}" class="btn btn-accent btn-sm">+ Nouvelle offre</a>
+    {% endif %}
+  </div>
 
   <div class="row g-3">
     {% for offre in offres %}
       <div class="col-12 col-md-6 col-lg-4">
         <div class="card p-4 h-100 d-flex flex-column">
-          <h5 class="mb-2">{{ offre.nom }}</h5>
+          <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+            <h5 class="mb-0">{{ offre.nom }}</h5>
+            {% if not offre.active %}<span class="badge bg-secondary">Inactive</span>{% endif %}
+          </div>
           <p class="display-6 fw-bold mb-1">{{ offre.prix }} €</p>
           <p class="text-muted mb-2">{{ offre.nombre_seances }} séance{{ offre.nombre_seances|pluralize }}</p>
           {% if offre.duree_validite_mois %}
@@ -17,6 +25,12 @@
           {% endif %}
           {% if offre.description %}
             <p class="mb-0">{{ offre.description }}</p>
+          {% endif %}
+          {% if peut_gerer %}
+            <div class="d-flex gap-2 mt-3">
+              <a href="{% url 'offers:offre_modifier' pk=offre.pk %}" class="btn btn-outline-dark btn-sm">Modifier</a>
+              <a href="{% url 'offers:offre_supprimer' pk=offre.pk %}" class="btn btn-outline-danger btn-sm">Supprimer</a>
+            </div>
           {% endif %}
         </div>
       </div>

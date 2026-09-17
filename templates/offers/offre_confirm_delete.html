@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h2 class="mb-4">Supprimer l'offre</h2>
+
+  <div class="card p-4" style="max-width: 640px;">
+    <p>Voulez-vous vraiment supprimer <strong>{{ offre.nom }}</strong> ?</p>
+
+    {% if nb_achats %}
+      <p class="text-danger">
+        {{ nb_achats }} achat{{ nb_achats|pluralize }} référence{{ nb_achats|pluralize }} cette offre :
+        la suppression sera refusée. Désactive-la plutôt (case « Active » dans le formulaire de modification)
+        pour qu'elle disparaisse du catalogue public sans perdre l'historique des achats.
+      </p>
+    {% endif %}
+
+    <form method="post" class="d-flex gap-2 mt-3">
+      {% csrf_token %}
+      <a href="{% url 'offers:catalogue' %}" class="btn btn-outline-dark">Annuler</a>
+      <button type="submit" class="btn btn-danger">Supprimer définitivement</button>
+    </form>
+  </div>
+{% endblock %}
