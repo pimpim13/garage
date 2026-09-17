@@ -8,30 +8,50 @@
     {% endif %}
   </div>
 
-  <div class="row g-3">
+  <div class="row g-4">
     {% for offre in offres %}
       <div class="col-12 col-md-6 col-lg-4">
-        <div class="card p-4 h-100 d-flex flex-column">
-          <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
-            <h5 class="mb-0">{{ offre.nom }}</h5>
-            {% if not offre.active %}<span class="badge bg-secondary">Inactive</span>{% endif %}
-          </div>
-          <p class="display-6 fw-bold mb-1">{{ offre.prix }} €</p>
-          <p class="text-muted mb-2">{{ offre.nombre_seances }} séance{{ offre.nombre_seances|pluralize }}</p>
-          {% if offre.duree_validite_mois %}
-            <p class="text-muted small mb-2">
-              Prolonge la validité de l'ensemble du solde de {{ offre.duree_validite_mois }} mois.
-            </p>
+        <div class="card offre-card h-100 d-flex flex-column position-relative {% if not offre.active %}offre-card-inactive{% endif %}">
+          {% if not offre.active %}
+            <span class="badge bg-secondary offre-badge-inactive">Inactive</span>
           {% endif %}
-          {% if offre.description %}
-            <p class="mb-0">{{ offre.description }}</p>
-          {% endif %}
-          {% if peut_gerer %}
-            <div class="d-flex gap-2 mt-3">
-              <a href="{% url 'offers:offre_modifier' pk=offre.pk %}" class="btn btn-outline-dark btn-sm">Modifier</a>
-              <a href="{% url 'offers:offre_supprimer' pk=offre.pk %}" class="btn btn-outline-danger btn-sm">Supprimer</a>
+          <div class="offre-card-accent"></div>
+          <div class="p-4 d-flex flex-column flex-grow-1">
+            <h5 class="offre-nom mb-3">{{ offre.nom }}</h5>
+
+            <div class="offre-prix mb-3">
+              <span class="offre-prix-montant">{{ offre.prix|floatformat:"-2" }}</span>
+              <span class="offre-prix-devise">€</span>
             </div>
-          {% endif %}
+
+            <div class="d-flex flex-wrap gap-2 mb-3">
+              <span class="offre-chip">{{ offre.nombre_seances }} séance{{ offre.nombre_seances|pluralize }}</span>
+              {% if offre.duree_validite_mois %}
+                <span class="offre-chip offre-chip-accent">valable {{ offre.duree_validite_mois }} mois</span>
+              {% endif %}
+            </div>
+
+            {% if offre.description %}
+              <p class="text-muted small mb-0">{{ offre.description }}</p>
+            {% endif %}
+
+            <div class="flex-grow-1"></div>
+
+            {% if peut_gerer %}
+              <div class="d-flex flex-wrap gap-2 mt-3 pt-3 offre-actions-gestion">
+                <a href="{% url 'offers:offre_modifier' pk=offre.pk %}" class="btn btn-outline-dark btn-sm">Modifier</a>
+                <form method="post" action="{% url 'offers:offre_toggle_actif' pk=offre.pk %}">
+                  {% csrf_token %}
+                  {% if offre.active %}
+                    <button type="submit" class="btn btn-outline-dark btn-sm">Désactiver</button>
+                  {% else %}
+                    <button type="submit" class="btn btn-outline-dark btn-sm">Réactiver</button>
+                  {% endif %}
+                </form>
+                <a href="{% url 'offers:offre_supprimer' pk=offre.pk %}" class="btn btn-outline-danger btn-sm ms-auto">Supprimer</a>
+              </div>
+            {% endif %}
+          </div>
         </div>
       </div>
     {% empty %}

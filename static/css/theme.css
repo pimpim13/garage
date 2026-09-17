@@ -112,6 +112,87 @@ h1, h2, h3, .display-font {
   color: var(--ps-black);
 }
 
+.offre-card {
+  overflow: hidden;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.offre-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.45);
+}
+
+.offre-card-accent {
+  height: 8px;
+  background: linear-gradient(90deg, var(--ps-green-dark), var(--ps-green));
+}
+
+.offre-card-inactive {
+  opacity: 0.6;
+}
+
+.offre-card-inactive:hover {
+  transform: none;
+}
+
+.offre-badge-inactive {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1;
+}
+
+.offre-nom {
+  font-family: 'Poppins', 'Inter', sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  font-size: 1.1rem;
+}
+
+.offre-prix {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.15rem;
+}
+
+.offre-prix-montant {
+  font-family: 'Poppins', 'Inter', sans-serif;
+  font-weight: 900;
+  font-size: 3rem;
+  line-height: 1;
+  color: var(--ps-black);
+}
+
+.offre-prix-devise {
+  font-family: 'Poppins', 'Inter', sans-serif;
+  font-weight: 800;
+  font-size: 1.5rem;
+  color: var(--ps-green-dark);
+  margin-top: 0.2rem;
+}
+
+.offre-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--bs-border-radius-pill);
+  background-color: rgba(32, 30, 31, 0.08);
+  color: var(--ps-black);
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.offre-chip-accent {
+  background-color: var(--ps-green);
+  color: var(--ps-black);
+}
+
+.offre-actions-gestion {
+  border-top: 1px solid rgba(32, 30, 31, 0.12);
+}
+
 .nav-pills .nav-link {
   border-radius: var(--bs-border-radius-pill);
   color: var(--ps-black);

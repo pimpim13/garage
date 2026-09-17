@@ -238,3 +238,45 @@ class OffreDeleteViewTests(TestCase):
 
         self.assertEqual(response.status_code, 403)
         self.assertTrue(Offre.objects.filter(pk=self.offre.pk).exists())
+
+
+class OffreToggleActifViewTests(TestCase):
+    def setUp(self):
+        self.gestionnaire = creer_gestionnaire(username='gestionnaire_toggle_offre')
+        self.offre = Offre.objects.create(
+            nom='Offre à activer/désactiver', type_offre=Offre.TypeOffre.CARNET,
+            prix=100, nombre_seances=11, active=True,
+        )
+        self.client.force_login(self.gestionnaire)
+
+    def test_desactive_une_offre_active(self):
+        response = self.client.post(reverse('offers:offre_toggle_actif', args=[self.offre.pk]))
+
+        self.assertRedirects(response, reverse('offers:catalogue'))
+        self.offre.refresh_from_db()
+        self.assertFalse(self.offre.active)
+
+    def test_reactive_une_offre_inactive(self):
+        self.offre.active = False
+        self.offre.save(update_fields=['active'])
+
+        self.client.post(reverse('offers:offre_toggle_actif', args=[self.offre.pk]))
+
+        self.offre.refresh_from_db()
+        self.assertTrue(self.offre.active)
+
+    def test_un_membre_ne_peut_pas_basculer_une_offre(self):
+        membre = User.objects.create_user(username='membre_toggle_offre', password='motdepasse123')
+        self.client.force_login(membre)
+
+        response = self.client.post(reverse('offers:offre_toggle_actif', args=[self.offre.pk]))
+
+        self.assertEqual(response.status_code, 403)
+        self.offre.refresh_from_db()
+        self.assertTrue(self.offre.active)
+
+    def test_le_bouton_de_bascule_est_visible_sur_la_carte(self):
+        response = self.client.get(reverse('offers:catalogue'))
+
+        self.assertContains(response, reverse('offers:offre_toggle_actif', args=[self.offre.pk]))
+        self.assertContains(response, 'Désactiver')

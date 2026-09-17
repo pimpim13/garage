@@ -1,7 +1,10 @@
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.db.models.deletion import ProtectedError
-from django.shortcuts import redirect
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
+from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 
 from apps.accounts.mixins import GestionnaireRequiredMixin
@@ -69,3 +72,18 @@ class OffreDeleteView(GestionnaireRequiredMixin, DeleteView):
             return redirect('offers:catalogue')
         messages.success(self.request, "Offre supprimée.")
         return response
+
+
+@login_required
+@require_POST
+def offre_toggle_actif(request, pk):
+    if not request.user.is_staff_or_manager:
+        raise PermissionDenied
+    offre = get_object_or_404(Offre, pk=pk)
+    offre.active = not offre.active
+    offre.save(update_fields=['active'])
+    if offre.active:
+        messages.success(request, f"« {offre.nom} » réactivée.")
+    else:
+        messages.success(request, f"« {offre.nom} » désactivée.")
+    return redirect('offers:catalogue')
