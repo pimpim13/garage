@@ -200,52 +200,6 @@ class PreferencesViewCoachTests(TestCase):
         self.assertNotContains(response, 'name="email_ouverture_seance"')
 
 
-class TesterNotificationViewTests(TestCase):
-    def test_necessite_d_etre_connecte(self):
-        response = self.client.post(reverse('notifications:tester_notification'), {'canal': 'membre'})
-
-        self.assertNotEqual(response.status_code, 200)
-
-    @patch('apps.notifications.views.notifier_membres')
-    def test_un_membre_peut_tester_le_canal_membre(self, mock_notifier_membres):
-        membre = User.objects.create_user(username='membre_test_ntfy', password='motdepasse123', role=User.Role.MEMBRE)
-        self.client.force_login(membre)
-
-        response = self.client.post(reverse('notifications:tester_notification'), {'canal': 'membre'})
-
-        self.assertRedirects(response, reverse('notifications:preferences'))
-        mock_notifier_membres.assert_called_once()
-
-    @patch('apps.notifications.views.notifier_coach')
-    def test_un_coach_peut_tester_son_canal_individuel(self, mock_notifier_coach):
-        coach = User.objects.create_user(username='coach_test_ntfy', password='motdepasse123', role=User.Role.COACH)
-        self.client.force_login(coach)
-
-        response = self.client.post(reverse('notifications:tester_notification'), {'canal': 'coach'})
-
-        self.assertRedirects(response, reverse('notifications:preferences'))
-        mock_notifier_coach.assert_called_once()
-        self.assertEqual(mock_notifier_coach.call_args.args[0], coach)
-
-    @patch('apps.notifications.views.notifier_membres')
-    def test_un_coach_ne_peut_pas_tester_le_canal_membre(self, mock_notifier_membres):
-        coach = User.objects.create_user(username='coach_pas_membre', password='motdepasse123', role=User.Role.COACH)
-        self.client.force_login(coach)
-
-        self.client.post(reverse('notifications:tester_notification'), {'canal': 'membre'})
-
-        mock_notifier_membres.assert_not_called()
-
-    @patch('apps.notifications.views.notifier_coach')
-    def test_un_membre_ne_peut_pas_tester_le_canal_coach(self, mock_notifier_coach):
-        membre = User.objects.create_user(username='membre_pas_coach', password='motdepasse123', role=User.Role.MEMBRE)
-        self.client.force_login(membre)
-
-        self.client.post(reverse('notifications:tester_notification'), {'canal': 'coach'})
-
-        mock_notifier_coach.assert_not_called()
-
-
 class PreferencesViewCoachEvenementsTests(TestCase):
     def setUp(self):
         self.coach = User.objects.create_user(

@@ -2,11 +2,8 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
-from django.views.decorators.http import require_POST
 
 from apps.accounts.models import User
-
-from .ntfy import notifier_coach, notifier_membres
 
 CHAMPS_PREFERENCE_EVENEMENTS = [
     'notifie_inscription',
@@ -57,18 +54,3 @@ def preferences(request):
             context['coachs_suivis_ids'] = set(request.user.coachs_suivis.values_list('pk', flat=True))
 
     return render(request, 'notifications/preferences.html', context)
-
-
-@login_required
-@require_POST
-def tester_notification(request):
-    canal = request.POST.get('canal')
-    if canal == 'membre' and request.user.is_membre:
-        notifier_membres("Ceci est une notification de test envoyée depuis Le Garage.")
-        messages.success(request, "Notification de test envoyée sur le canal membres.")
-    elif canal == 'coach' and request.user.anime_des_seances:
-        notifier_coach(request.user, "Ceci est une notification de test envoyée depuis Le Garage.")
-        messages.success(request, "Notification de test envoyée sur ton canal personnel.")
-    else:
-        messages.error(request, "Impossible d'envoyer une notification de test.")
-    return redirect('notifications:preferences')

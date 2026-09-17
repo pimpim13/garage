@@ -35,7 +35,7 @@
       </p>
       {% include "notifications/_liens_stores_ntfy.html" %}
       <p class="mb-2">Une fois l'application installée, abonne-toi au canal :</p>
-      {% include "notifications/_canal_ntfy.html" with topic=topic_ntfy_membres canal="membre" %}
+      {% include "notifications/_canal_ntfy.html" with topic=topic_ntfy_membres %}
     </div>
   {% endif %}
 
@@ -48,7 +48,7 @@
       </p>
       {% include "notifications/_liens_stores_ntfy.html" %}
       <p class="mb-2">Ton canal personnel :</p>
-      {% include "notifications/_canal_ntfy.html" with topic=topic_ntfy_coach canal="coach" %}
+      {% include "notifications/_canal_ntfy.html" with topic=topic_ntfy_coach %}
     </div>
 
     <div class="card p-4" style="max-width: 640px;">
