@@ -8,7 +8,10 @@
     <form method="post">
       {% csrf_token %}
       {{ form|crispy }}
-      <button type="submit" class="btn btn-accent mt-2">Enregistrer</button>
+      <div class="d-flex gap-2 mt-2">
+        <a href="{% url 'offers:catalogue' %}" class="btn btn-outline-dark">Annuler</a>
+        <button type="submit" class="btn btn-accent">Enregistrer</button>
+      </div>
     </form>
   </div>
 {% endblock %}

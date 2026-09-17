@@ -121,6 +121,12 @@ class OffreCreateViewTests(TestCase):
         self.gestionnaire = creer_gestionnaire(username='gestionnaire_creer_offre')
         self.client.force_login(self.gestionnaire)
 
+    def test_propose_un_bouton_annuler_vers_le_catalogue(self):
+        response = self.client.get(reverse('offers:offre_creer'))
+
+        self.assertContains(response, 'Annuler')
+        self.assertContains(response, reverse('offers:catalogue'))
+
     def test_un_membre_ne_peut_pas_creer_d_offre(self):
         membre = User.objects.create_user(username='membre_creer_offre', password='motdepasse123')
         self.client.force_login(membre)
@@ -167,6 +173,12 @@ class OffreUpdateViewTests(TestCase):
             prix=100, nombre_seances=11, duree_validite_mois=3,
         )
         self.client.force_login(self.gestionnaire)
+
+    def test_propose_un_bouton_annuler_vers_le_catalogue(self):
+        response = self.client.get(reverse('offers:offre_modifier', args=[self.offre.pk]))
+
+        self.assertContains(response, 'Annuler')
+        self.assertContains(response, reverse('offers:catalogue'))
 
     def test_modifie_la_duree_de_validite(self):
         response = self.client.post(reverse('offers:offre_modifier', args=[self.offre.pk]), {
