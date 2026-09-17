@@ -30,7 +30,7 @@
             <div class="d-flex flex-wrap gap-2 mb-3">
               {% if offre.nombre_seances_offertes %}
                 <span class="offre-chip offre-chip-accent">
-                  + {{ offre.nombre_seances_offertes }} offerte{{ offre.nombre_seances_offertes|pluralize }}
+                  {{ offre.nombre_seances_offertes }} offerte{{ offre.nombre_seances_offertes|pluralize }}
                 </span>
               {% endif %}
               {% if offre.duree_validite_mois %}
