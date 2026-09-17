@@ -24,7 +24,7 @@ L'application doit être prête à intégrer un système de paiement, qui ne ser
 
 ## Offres
 
-Le catalogue des offres est **évolutif** (modèle `Offre`, gérable en base). Catalogue actuel (4 offres de type carnet, page publique `/offres/`) :
+Le catalogue des offres est **évolutif** : le coach gestionnaire (ou l'admin) peut créer, modifier ou supprimer une offre directement depuis l'application (boutons visibles sur la page `/offres/` pour eux uniquement — suppression refusée si des achats y sont déjà rattachés, la désactivation étant alors recommandée à la place). Catalogue actuel (4 offres de type carnet, page publique `/offres/`) :
 
 - **1 séance** — 10 € — achat à l'unité, ne prolonge pas la date de péremption du solde
 - **10 séances + 1 offerte** (11 au total) — 100 € — prolonge la péremption du solde de **3 mois**
