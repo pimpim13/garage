@@ -8,8 +8,9 @@
 
     {% if membre.a_de_l_activite %}
       <p class="text-danger">
-        Ce compte a une activité (achats, inscriptions, séances animées...) : la suppression sera refusée.
-        Désactive-le plutôt pour bloquer la connexion tout en conservant son historique.
+        Ce compte a une activité (achats, inscriptions, séances animées...). Désactive-le plutôt pour bloquer
+        la connexion tout en conservant son historique. Si tu forces quand même la suppression, cet historique
+        (achats, inscriptions, mouvements de séances) sera effacé définitivement avec le compte.
       </p>
     {% else %}
       <p class="text-muted">Ce compte n'a aucune activité enregistrée. Cette action est définitive et irréversible.</p>
@@ -18,9 +19,11 @@
     <form method="post" class="d-flex gap-2 mt-3">
       {% csrf_token %}
       <a href="{% url 'accounts:membre_liste' %}" class="btn btn-outline-dark">Annuler</a>
-      <button type="submit" class="btn btn-danger" {% if membre.a_de_l_activite %}disabled{% endif %}>
-        Supprimer définitivement
-      </button>
+      {% if membre.a_de_l_activite %}
+        <button type="submit" name="force" value="1" class="btn btn-danger">Forcer la suppression</button>
+      {% else %}
+        <button type="submit" class="btn btn-danger">Supprimer définitivement</button>
+      {% endif %}
     </form>
   </div>
 {% endblock %}

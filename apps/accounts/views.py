@@ -116,16 +116,21 @@ class MembreDeleteView(GestionnaireRequiredMixin, DeleteView):
         return User.objects.filter(role__in=ROLES_GERES)
 
     def form_valid(self, form):
-        if self.object.a_de_l_activite:
+        force = self.request.POST.get('force') == '1'
+        a_de_l_activite = self.object.a_de_l_activite
+        if a_de_l_activite and not force:
             messages.error(
                 self.request,
                 f"Impossible de supprimer « {self.object} » : ce compte a une activité "
-                "(achats, inscriptions, séances animées...). Désactive-le plutôt.",
+                "(achats, inscriptions, séances animées...). Désactive-le plutôt, ou force la suppression.",
             )
             return redirect('accounts:membre_liste')
         nom = str(self.object)
         response = super().form_valid(form)
-        messages.success(self.request, f"Compte « {nom} » supprimé.")
+        if a_de_l_activite:
+            messages.success(self.request, f"Compte « {nom} » supprimé (suppression forcée, historique effacé).")
+        else:
+            messages.success(self.request, f"Compte « {nom} » supprimé.")
         return response
 
 

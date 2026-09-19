@@ -461,7 +461,7 @@ class MembreSupprimerViewTests(TestCase):
 
         self.assertFalse(User.objects.filter(pk=cible.pk).exists())
 
-    def test_refuse_de_supprimer_un_compte_avec_des_achats(self):
+    def test_refuse_de_supprimer_un_compte_avec_des_achats_sans_forcer(self):
         membre = User.objects.create_user(
             username='membre_avec_achat', password='motdepasse123', role=User.Role.MEMBRE
         )
@@ -472,7 +472,18 @@ class MembreSupprimerViewTests(TestCase):
 
         self.assertTrue(User.objects.filter(pk=membre.pk).exists())
 
-    def test_la_page_de_confirmation_avertit_si_le_compte_a_de_l_activite(self):
+    def test_forcer_permet_de_supprimer_un_compte_avec_des_achats(self):
+        membre = User.objects.create_user(
+            username='membre_avec_achat_force', password='motdepasse123', role=User.Role.MEMBRE
+        )
+        offre = Offre.objects.create(nom='Carnet', type_offre=Offre.TypeOffre.CARNET, prix=100, nombre_seances=10)
+        Achat.objects.create(membre=membre, offre=offre, nombre_seances=10, prix_paye=100)
+
+        self.client.post(reverse('accounts:membre_supprimer', args=[membre.pk]), {'force': '1'})
+
+        self.assertFalse(User.objects.filter(pk=membre.pk).exists())
+
+    def test_la_page_de_confirmation_propose_de_forcer_si_le_compte_a_de_l_activite(self):
         membre = User.objects.create_user(
             username='membre_avec_activite', password='motdepasse123', role=User.Role.MEMBRE
         )
@@ -480,14 +491,14 @@ class MembreSupprimerViewTests(TestCase):
 
         response = self.client.get(reverse('accounts:membre_supprimer', args=[membre.pk]))
 
-        self.assertContains(response, 'sera refusée')
+        self.assertContains(response, 'name="force"')
 
-    def test_la_page_de_confirmation_n_avertit_pas_si_le_compte_est_vierge(self):
+    def test_la_page_de_confirmation_ne_propose_pas_de_forcer_si_le_compte_est_vierge(self):
         cible = creer_gestionnaire(username='cible_vierge', role=User.Role.COACH)
 
         response = self.client.get(reverse('accounts:membre_supprimer', args=[cible.pk]))
 
-        self.assertNotContains(response, 'sera refusée')
+        self.assertNotContains(response, 'name="force"')
 
 
 class MembreCreateViewEmailTests(TestCase):
