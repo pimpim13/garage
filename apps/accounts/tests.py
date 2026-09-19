@@ -7,8 +7,11 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from apps.bookings.services import solde_jokers
+from apps.bookings.models import Inscription
+from apps.bookings.services import attribuer_joker_initial, solde_jokers
 from apps.offers.models import Offre
+from apps.purchases.models import Achat, MouvementSeance
+from apps.scheduling.models import Seance
 
 from .backends import CaseInsensitiveModelBackend
 from .forms import FamilleForm, MembreCreateForm, MembreUpdateForm, ProfilForm
@@ -371,6 +374,17 @@ class MembreListViewSoldeAffichageTests(TestCase):
         self.assertNotContains(response, 'ajuster_solde')
 
 
+class MembreListViewSuppressionTests(TestCase):
+    def test_un_lien_supprimer_apparait_pour_chaque_compte(self):
+        gestionnaire = creer_gestionnaire()
+        cible = creer_gestionnaire(username='cible_lien_suppr', role=User.Role.COACH)
+        self.client.force_login(gestionnaire)
+
+        response = self.client.get(reverse('accounts:membre_liste'))
+
+        self.assertContains(response, reverse('accounts:membre_supprimer', args=[cible.pk]))
+
+
 class MembreToggleActifViewTests(TestCase):
     def test_un_gestionnaire_peut_desactiver_un_compte_coach(self):
         gestionnaire = creer_gestionnaire()
@@ -381,6 +395,99 @@ class MembreToggleActifViewTests(TestCase):
 
         coach.refresh_from_db()
         self.assertFalse(coach.is_active)
+
+
+class UserADeLActiviteTests(TestCase):
+    def test_faux_par_defaut_pour_un_nouveau_membre(self):
+        membre = User.objects.create_user(username='membre_vierge', password='motdepasse123', role=User.Role.MEMBRE)
+
+        self.assertFalse(membre.a_de_l_activite)
+
+    def test_faux_si_le_membre_a_seulement_le_joker_initial(self):
+        membre = User.objects.create_user(username='membre_joker', password='motdepasse123', role=User.Role.MEMBRE)
+        attribuer_joker_initial(membre)
+
+        self.assertFalse(membre.a_de_l_activite)
+
+    def test_vrai_si_le_membre_a_un_achat(self):
+        membre = User.objects.create_user(username='membre_achat', password='motdepasse123', role=User.Role.MEMBRE)
+        offre = Offre.objects.create(nom='Carnet', type_offre=Offre.TypeOffre.CARNET, prix=100, nombre_seances=10)
+        Achat.objects.create(membre=membre, offre=offre, nombre_seances=10, prix_paye=100)
+
+        self.assertTrue(membre.a_de_l_activite)
+
+    def test_vrai_si_le_membre_a_une_inscription(self):
+        membre = User.objects.create_user(username='membre_inscrit', password='motdepasse123', role=User.Role.MEMBRE)
+        seance = Seance.objects.create(nom='WOD', debut=timezone.now() + relativedelta(days=2))
+
+        Inscription.objects.create(membre=membre, seance=seance)
+
+        self.assertTrue(membre.a_de_l_activite)
+
+    def test_vrai_si_le_membre_a_un_mouvement_de_seance(self):
+        membre = User.objects.create_user(
+            username='membre_mouvement', password='motdepasse123', role=User.Role.MEMBRE
+        )
+        MouvementSeance.objects.create(membre=membre, delta=1, motif=MouvementSeance.Motif.AJUSTEMENT)
+
+        self.assertTrue(membre.a_de_l_activite)
+
+    def test_vrai_si_le_coach_a_anime_une_seance(self):
+        coach = creer_gestionnaire(username='coach_animateur', role=User.Role.COACH)
+        Seance.objects.create(nom='WOD', debut=timezone.now() + relativedelta(days=2), coach=coach)
+
+        self.assertTrue(coach.a_de_l_activite)
+
+
+class MembreSupprimerViewTests(TestCase):
+    def setUp(self):
+        self.gestionnaire = creer_gestionnaire()
+        self.client.force_login(self.gestionnaire)
+
+    def test_un_coach_simple_ne_peut_pas_supprimer_un_compte(self):
+        coach_simple = creer_gestionnaire(username='coach_simple_suppr', role=User.Role.COACH)
+        cible = creer_gestionnaire(username='cible_suppr', role=User.Role.COACH)
+        self.client.force_login(coach_simple)
+
+        response = self.client.post(reverse('accounts:membre_supprimer', args=[cible.pk]))
+
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(User.objects.filter(pk=cible.pk).exists())
+
+    def test_un_gestionnaire_peut_supprimer_un_compte_sans_activite(self):
+        cible = creer_gestionnaire(username='cible_a_supprimer', role=User.Role.COACH)
+
+        self.client.post(reverse('accounts:membre_supprimer', args=[cible.pk]))
+
+        self.assertFalse(User.objects.filter(pk=cible.pk).exists())
+
+    def test_refuse_de_supprimer_un_compte_avec_des_achats(self):
+        membre = User.objects.create_user(
+            username='membre_avec_achat', password='motdepasse123', role=User.Role.MEMBRE
+        )
+        offre = Offre.objects.create(nom='Carnet', type_offre=Offre.TypeOffre.CARNET, prix=100, nombre_seances=10)
+        Achat.objects.create(membre=membre, offre=offre, nombre_seances=10, prix_paye=100)
+
+        self.client.post(reverse('accounts:membre_supprimer', args=[membre.pk]))
+
+        self.assertTrue(User.objects.filter(pk=membre.pk).exists())
+
+    def test_la_page_de_confirmation_avertit_si_le_compte_a_de_l_activite(self):
+        membre = User.objects.create_user(
+            username='membre_avec_activite', password='motdepasse123', role=User.Role.MEMBRE
+        )
+        MouvementSeance.objects.create(membre=membre, delta=1, motif=MouvementSeance.Motif.AJUSTEMENT)
+
+        response = self.client.get(reverse('accounts:membre_supprimer', args=[membre.pk]))
+
+        self.assertContains(response, 'sera refusée')
+
+    def test_la_page_de_confirmation_n_avertit_pas_si_le_compte_est_vierge(self):
+        cible = creer_gestionnaire(username='cible_vierge', role=User.Role.COACH)
+
+        response = self.client.get(reverse('accounts:membre_supprimer', args=[cible.pk]))
+
+        self.assertNotContains(response, 'sera refusée')
 
 
 class MembreCreateViewEmailTests(TestCase):

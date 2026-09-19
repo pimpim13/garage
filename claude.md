@@ -112,6 +112,7 @@ Un membre peut être rattaché à une **famille**, qui regroupe plusieurs membre
 
 - Le gestionnaire ou l'admin peut créer un compte membre (nom, prénom, email — obligatoire —, téléphone, tolérance). Aucun mot de passe initial à saisir : le compte est créé sans mot de passe utilisable, et un email est envoyé au membre avec un lien sécurisé pour qu'il définisse lui-même son mot de passe
 - Le gestionnaire ou l'admin peut **désactiver** un membre plutôt que le supprimer : la connexion est bloquée mais son historique (inscriptions, achats, mouvements) est conservé ; la désactivation est réversible
+- Le gestionnaire ou l'admin peut aussi **supprimer définitivement** un compte (doublon, erreur de saisie à la création...). La suppression est refusée si le compte a une activité réelle (achats, inscriptions, séances animées) : dans ce cas, seule la désactivation reste possible
 
 ## Droits d'accès
 

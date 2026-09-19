@@ -6,7 +6,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
-from django.views.generic import CreateView, ListView, TemplateView, UpdateView
+from django.views.generic import CreateView, DeleteView, ListView, TemplateView, UpdateView
 
 from apps.bookings.services import solde_jokers
 from apps.notifications.email import notifier_creation_compte_par_email
@@ -104,6 +104,29 @@ class MembreUpdateView(GestionnaireRequiredMixin, UpdateView):
     def form_valid(self, form):
         messages.success(self.request, "Compte modifié.")
         return super().form_valid(form)
+
+
+class MembreDeleteView(GestionnaireRequiredMixin, DeleteView):
+    model = User
+    template_name = 'accounts/membre_confirm_delete.html'
+    success_url = reverse_lazy('accounts:membre_liste')
+    context_object_name = 'membre'
+
+    def get_queryset(self):
+        return User.objects.filter(role__in=ROLES_GERES)
+
+    def form_valid(self, form):
+        if self.object.a_de_l_activite:
+            messages.error(
+                self.request,
+                f"Impossible de supprimer « {self.object} » : ce compte a une activité "
+                "(achats, inscriptions, séances animées...). Désactive-le plutôt.",
+            )
+            return redirect('accounts:membre_liste')
+        nom = str(self.object)
+        response = super().form_valid(form)
+        messages.success(self.request, f"Compte « {nom} » supprimé.")
+        return response
 
 
 @login_required

@@ -57,6 +57,7 @@
                   <button type="submit" class="btn btn-outline-dark btn-sm">Réactiver</button>
                 {% endif %}
               </form>
+              <a href="{% url 'accounts:membre_supprimer' pk=membre.pk %}" class="btn btn-outline-danger btn-sm">Supprimer</a>
             </div>
           </div>
         </div>

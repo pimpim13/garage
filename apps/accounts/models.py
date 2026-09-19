@@ -146,6 +146,15 @@ class User(AbstractUser):
     def date_expiration_applicable(self):
         return self.famille.date_expiration_solde if self.famille_id else self.date_expiration_solde
 
+    @property
+    def a_de_l_activite(self):
+        return (
+            self.achats.exists()
+            or self.inscriptions.exists()
+            or self.mouvements_seances.exists()
+            or self.seances_animees.exists()
+        )
+
     def __str__(self):
         return self.get_full_name() or self.username
 
