@@ -45,7 +45,7 @@
           <input type="hidden" name="next" value="{% url 'scheduling:seance_detail' pk=seance.pk %}">
           <button type="submit" class="btn btn-outline-dark">Quitter la liste d'attente</button>
         </form>
-      {% elif credit_insuffisant %}
+      {% elif afficher_carte_wero %}
         {% include "scheduling/_carte_paiement_wero.html" %}
       {% elif seance.places_restantes > 0 %}
         <form method="post" action="{% url 'bookings:inscrire' seance_id=seance.pk %}" class="mt-3">

@@ -5,7 +5,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django.core.management import call_command
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -158,6 +158,17 @@ class SeanceDetailPaiementWeroTests(TestCase):
 
         self.assertContains(response, 'séances')
         self.assertNotContains(response, 'carnet')
+
+    @override_settings(RECEPTIONNAIRE_PAIEMENTS_TEL='')
+    def test_le_bouton_normal_s_affiche_si_la_config_wero_est_absente(self):
+        membre = User.objects.create_user(username='membre_sans_credit_sans_config', password='motdepasse123')
+        seance = Seance.objects.create(nom='WOD', debut=timezone.now() + datetime.timedelta(days=2))
+        self.client.force_login(membre)
+
+        response = self.client.get(reverse('scheduling:seance_detail', kwargs={'pk': seance.pk}))
+
+        self.assertContains(response, "S'inscrire")
+        self.assertNotContains(response, 'carte-paiement-wero')
 
     def test_le_bouton_s_inscrire_n_apparait_pas_si_le_credit_est_insuffisant(self):
         membre = User.objects.create_user(username='membre_sans_credit_bouton', password='motdepasse123')

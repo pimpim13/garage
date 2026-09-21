@@ -201,10 +201,11 @@ class SeanceDetailView(LoginRequiredMixin, DetailView):
         if self.request.user.is_membre:
             context['solde_membre'] = solde_seances(self.request.user)
             context['statut_solde_membre'] = statut_solde(self.request.user)
+            context['receptionnaire_paiements_tel'] = settings.RECEPTIONNAIRE_PAIEMENTS_TEL
             context['credit_insuffisant'] = not peut_s_inscrire(self.request.user)
-            if context['credit_insuffisant']:
+            if context['credit_insuffisant'] and context['receptionnaire_paiements_tel']:
+                context['afficher_carte_wero'] = True
                 context['receptionnaire_paiements_nom'] = settings.RECEPTIONNAIRE_PAIEMENTS_NOM
-                context['receptionnaire_paiements_tel'] = settings.RECEPTIONNAIRE_PAIEMENTS_TEL
         for rang, inscription in enumerate(liste_attente, start=1):
             if inscription.membre_id == self.request.user.id:
                 context['rang_liste_attente'] = rang
