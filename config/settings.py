@@ -159,6 +159,11 @@ DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Le Garage <noreply@le
 NTFY_BASE_URL = os.environ.get('NTFY_BASE_URL', 'https://ntfy.sh')
 NTFY_TOPIC_MEMBRES = os.environ['NTFY_TOPIC_MEMBRES']
 
+# Paiement manuel par Wero (en attendant l'intégration e-commerce, pas encore disponible en
+# France) : coordonnées du coach gestionnaire qui reçoit les paiements et crédite les comptes.
+RECEPTIONNAIRE_PAIEMENTS_NOM = os.environ['RECEPTIONNAIRE_PAIEMENTS_NOM']
+RECEPTIONNAIRE_PAIEMENTS_TEL = os.environ['RECEPTIONNAIRE_PAIEMENTS_TEL']
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 

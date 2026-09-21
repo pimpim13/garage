@@ -45,6 +45,8 @@
           <input type="hidden" name="next" value="{% url 'scheduling:seance_detail' pk=seance.pk %}">
           <button type="submit" class="btn btn-outline-dark">Quitter la liste d'attente</button>
         </form>
+      {% elif credit_insuffisant %}
+        {% include "scheduling/_carte_paiement_wero.html" %}
       {% elif seance.places_restantes > 0 %}
         <form method="post" action="{% url 'bookings:inscrire' seance_id=seance.pk %}" class="mt-3">
           {% csrf_token %}
@@ -176,6 +178,19 @@
         carte.addEventListener('click', function (event) {
           if (event.target.closest('a, button, form, input')) return;
           window.location = carte.dataset.href;
+        });
+      });
+
+      document.querySelectorAll('.js-copier-numero-paiement').forEach(function (bouton) {
+        bouton.addEventListener('click', function () {
+          var numero = bouton.getAttribute('data-numero');
+          navigator.clipboard.writeText(numero).then(function () {
+            var texteOriginal = bouton.textContent;
+            bouton.textContent = 'Copié !';
+            setTimeout(function () {
+              bouton.textContent = texteOriginal;
+            }, 1500);
+          });
         });
       });
     });

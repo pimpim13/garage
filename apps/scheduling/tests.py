@@ -1,6 +1,7 @@
 import datetime
 from unittest.mock import patch
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django.core.management import call_command
@@ -126,6 +127,64 @@ class SeanceDetailBoutonAbsenceTests(TestCase):
 
         self.assertContains(response, 'Désinscrire')
         self.assertNotContains(response, 'Non présent(e)')
+
+
+class SeanceDetailPaiementWeroTests(TestCase):
+    def test_la_carte_de_paiement_wero_s_affiche_si_le_credit_est_insuffisant(self):
+        membre = User.objects.create_user(username='membre_sans_credit_wero', password='motdepasse123')
+        seance = Seance.objects.create(nom='WOD', debut=timezone.now() + datetime.timedelta(days=2))
+        self.client.force_login(membre)
+
+        response = self.client.get(reverse('scheduling:seance_detail', kwargs={'pk': seance.pk}))
+
+        self.assertContains(response, settings.RECEPTIONNAIRE_PAIEMENTS_TEL)
+        self.assertContains(response, 'Wero')
+
+    def test_le_bouton_s_inscrire_n_apparait_pas_si_le_credit_est_insuffisant(self):
+        membre = User.objects.create_user(username='membre_sans_credit_bouton', password='motdepasse123')
+        seance = Seance.objects.create(nom='WOD', debut=timezone.now() + datetime.timedelta(days=2))
+        self.client.force_login(membre)
+
+        response = self.client.get(reverse('scheduling:seance_detail', kwargs={'pk': seance.pk}))
+
+        self.assertNotContains(response, "S'inscrire")
+
+    def test_la_carte_de_paiement_wero_ne_s_affiche_pas_si_le_credit_est_suffisant(self):
+        membre = User.objects.create_user(username='membre_avec_credit_wero', password='motdepasse123')
+        MouvementSeance.objects.create(membre=membre, delta=5, motif=MouvementSeance.Motif.ACHAT)
+        seance = Seance.objects.create(nom='WOD', debut=timezone.now() + datetime.timedelta(days=2))
+        self.client.force_login(membre)
+
+        response = self.client.get(reverse('scheduling:seance_detail', kwargs={'pk': seance.pk}))
+
+        self.assertNotContains(response, settings.RECEPTIONNAIRE_PAIEMENTS_TEL)
+        self.assertContains(response, "S'inscrire")
+
+    def test_la_carte_de_paiement_wero_ne_s_affiche_pas_pour_un_gestionnaire(self):
+        gestionnaire = User.objects.create_user(
+            username='gestionnaire_wero', password='motdepasse123', role=User.Role.GESTIONNAIRE
+        )
+        seance = Seance.objects.create(nom='WOD', debut=timezone.now() + datetime.timedelta(days=2))
+        self.client.force_login(gestionnaire)
+
+        response = self.client.get(reverse('scheduling:seance_detail', kwargs={'pk': seance.pk}))
+
+        self.assertNotContains(response, settings.RECEPTIONNAIRE_PAIEMENTS_TEL)
+
+    def test_la_carte_de_paiement_wero_s_affiche_aussi_en_liste_d_attente(self):
+        membre_complet = User.objects.create_user(username='membre_complet_wod', password='motdepasse123')
+        MouvementSeance.objects.create(membre=membre_complet, delta=5, motif=MouvementSeance.Motif.ACHAT)
+        seance = Seance.objects.create(
+            nom='WOD', debut=timezone.now() + datetime.timedelta(days=2), capacite_max=1,
+        )
+        enregistrer_inscription(membre=membre_complet, seance=seance, auteur=membre_complet)
+        membre_sans_credit = User.objects.create_user(username='membre_sans_credit_attente', password='motdepasse123')
+        self.client.force_login(membre_sans_credit)
+
+        response = self.client.get(reverse('scheduling:seance_detail', kwargs={'pk': seance.pk}))
+
+        self.assertContains(response, settings.RECEPTIONNAIRE_PAIEMENTS_TEL)
+        self.assertNotContains(response, "liste d'attente")
 
 
 class SeanceDetailParticipantCliquableTests(TestCase):

@@ -3,6 +3,7 @@ import datetime
 from collections import defaultdict
 from types import SimpleNamespace
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -15,6 +16,7 @@ from django.views.generic import CreateView, DeleteView, DetailView, ListView, U
 from apps.accounts.mixins import GestionnaireRequiredMixin
 from apps.accounts.models import User
 from apps.bookings.models import Inscription
+from apps.bookings.services import peut_s_inscrire
 from apps.notifications.ntfy import notifier_membres
 from apps.purchases.services import solde_seances, statut_solde
 
@@ -199,6 +201,10 @@ class SeanceDetailView(LoginRequiredMixin, DetailView):
         if self.request.user.is_membre:
             context['solde_membre'] = solde_seances(self.request.user)
             context['statut_solde_membre'] = statut_solde(self.request.user)
+            context['credit_insuffisant'] = not peut_s_inscrire(self.request.user)
+            if context['credit_insuffisant']:
+                context['receptionnaire_paiements_nom'] = settings.RECEPTIONNAIRE_PAIEMENTS_NOM
+                context['receptionnaire_paiements_tel'] = settings.RECEPTIONNAIRE_PAIEMENTS_TEL
         for rang, inscription in enumerate(liste_attente, start=1):
             if inscription.membre_id == self.request.user.id:
                 context['rang_liste_attente'] = rang

@@ -20,7 +20,9 @@ Un « coach » au sens animateur d'une séance peut être soit un Coach gestionn
 
 ## Paiement
 
-L'application doit être prête à intégrer un système de paiement, qui ne sera pas implémenté dans un premier temps.
+L'application doit être prête à intégrer un système de paiement en ligne (ex. Stripe Checkout) ; pas encore implémenté.
+
+**Première étape manuelle (implémentée)** : quand un membre consulte une séance ouverte aux inscriptions mais que son crédit est insuffisant pour réserver (ou pour rejoindre la liste d'attente), une carte remplace le bouton habituel et l'invite à régler son prochain carnet par **Wero** auprès du coach gestionnaire qui réceptionne les paiements (nom et téléphone configurés via `.env`, boutons "Copier" comme pour les canaux ntfy). Le gestionnaire crédite ensuite manuellement le compte une fois le paiement reçu (ajustement `+10`/`+1` existant sur la fiche membre) ; il n'y a pas encore d'intégration API Wero (pas disponible pour les marchands français à ce jour).
 
 ## Offres
 

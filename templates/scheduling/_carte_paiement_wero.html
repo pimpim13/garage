@@ -1,0 +1,20 @@
+<div class="card p-3 mt-3" style="max-width: 480px;">
+  <h5 class="mb-2">Crédit de séances épuisé</h5>
+  <p class="mb-2">Vous n'avez plus de séance disponible pour réserver.</p>
+  <p class="mb-2">
+    Réglez votre prochain carnet par <strong>Wero</strong> auprès de {{ receptionnaire_paiements_nom }} :
+  </p>
+  <div class="d-flex align-items-center gap-2 mb-2">
+    <strong class="fs-5">{{ receptionnaire_paiements_tel }}</strong>
+    <button
+      type="button"
+      class="btn btn-outline-dark btn-sm js-copier-numero-paiement"
+      data-numero="{{ receptionnaire_paiements_tel }}"
+    >
+      Copier
+    </button>
+  </div>
+  <p class="text-muted small mb-0">
+    Votre crédit sera ajouté dès réception du paiement, vous pourrez alors réserver cette séance.
+  </p>
+</div>
