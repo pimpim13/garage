@@ -140,6 +140,25 @@ class SeanceDetailPaiementWeroTests(TestCase):
         self.assertContains(response, settings.RECEPTIONNAIRE_PAIEMENTS_TEL)
         self.assertContains(response, 'Wero')
 
+    def test_la_carte_de_paiement_wero_a_un_encadre_distinct(self):
+        membre = User.objects.create_user(username='membre_sans_credit_wero_style', password='motdepasse123')
+        seance = Seance.objects.create(nom='WOD', debut=timezone.now() + datetime.timedelta(days=2))
+        self.client.force_login(membre)
+
+        response = self.client.get(reverse('scheduling:seance_detail', kwargs={'pk': seance.pk}))
+
+        self.assertContains(response, 'carte-paiement-wero')
+
+    def test_la_carte_de_paiement_wero_parle_de_seances_pas_de_carnet(self):
+        membre = User.objects.create_user(username='membre_sans_credit_wero_vocab', password='motdepasse123')
+        seance = Seance.objects.create(nom='WOD', debut=timezone.now() + datetime.timedelta(days=2))
+        self.client.force_login(membre)
+
+        response = self.client.get(reverse('scheduling:seance_detail', kwargs={'pk': seance.pk}))
+
+        self.assertContains(response, 'séances')
+        self.assertNotContains(response, 'carnet')
+
     def test_le_bouton_s_inscrire_n_apparait_pas_si_le_credit_est_insuffisant(self):
         membre = User.objects.create_user(username='membre_sans_credit_bouton', password='motdepasse123')
         seance = Seance.objects.create(nom='WOD', debut=timezone.now() + datetime.timedelta(days=2))
