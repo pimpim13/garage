@@ -430,7 +430,8 @@ h1, h2, h3, .display-font {
 
 .bandeau-actualites {
   position: relative;
-  background-color: rgba(128, 176, 72, 0.15);
+  background-color: rgba(128, 176, 72, 0.4);
+  backdrop-filter: blur(4px);
   border: 1px solid var(--ps-green);
   border-radius: var(--bs-border-radius-lg);
   padding: 1.25rem 2.5rem;
