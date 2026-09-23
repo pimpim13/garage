@@ -440,6 +440,14 @@ class CalendrierSemaineIndicateurJoursTests(TestCase):
 
         self.assertContains(response, 'jours-semaine-chevron')
 
+    def test_le_chevron_est_un_bouton_cliquable(self):
+        membre = User.objects.create_user(username='membre_calendrier_chevron_bouton', password='motdepasse123')
+        self.client.force_login(membre)
+
+        response = self.client.get(reverse('scheduling:calendrier'))
+
+        self.assertContains(response, '<button type="button" class="jours-semaine-chevron"')
+
 
 class AccesAnonymeCalendrierTests(TestCase):
     def test_le_calendrier_redirige_vers_la_connexion_si_anonyme(self):

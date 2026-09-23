@@ -228,9 +228,11 @@ h1, h2, h3, .display-font {
 .jours-semaine-chevron {
   width: 26px;
   height: 26px;
+  border: none;
   border-radius: 50%;
   background-color: var(--ps-green);
   color: var(--ps-black);
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;

@@ -43,7 +43,7 @@
       </li>
     {% endfor %}
     <li class="nav-item d-flex align-items-center" id="jours-semaine-chevron" hidden>
-      <span class="jours-semaine-chevron" aria-hidden="true">&rsaquo;</span>
+      <button type="button" class="jours-semaine-chevron" aria-label="Afficher les jours masqués">&rsaquo;</button>
     </li>
   </ul>
 
@@ -99,6 +99,11 @@
 
       ajusterJoursVisibles();
       window.addEventListener('resize', ajusterJoursVisibles);
+
+      chevron.querySelector('button').addEventListener('click', function () {
+        jours.forEach(function (li) { li.hidden = false; });
+        chevron.hidden = true;
+      });
     });
   </script>
 {% endblock %}
