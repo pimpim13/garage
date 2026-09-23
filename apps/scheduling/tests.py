@@ -9,13 +9,77 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
-from apps.bookings.services import enregistrer_inscription, marquer_non_presente
+from apps.bookings.models import Inscription
+from apps.bookings.services import enregistrer_desinscription, enregistrer_inscription, marquer_non_presente
 from apps.purchases.models import MouvementSeance
+from apps.purchases.services import solde_seances
 
 from .forms import SeanceForm
 from .models import Seance
 
 User = get_user_model()
+
+
+class SeanceDeleteViewRecreditTests(TestCase):
+    def setUp(self):
+        self.gestionnaire = User.objects.create_user(
+            username='gestionnaire_suppr_seance', password='motdepasse123', role=User.Role.GESTIONNAIRE
+        )
+        self.client.force_login(self.gestionnaire)
+
+    def test_recredite_un_membre_inscrit_a_la_suppression(self):
+        membre = User.objects.create_user(username='membre_suppr_seance', password='motdepasse123')
+        MouvementSeance.objects.create(membre=membre, delta=5, motif=MouvementSeance.Motif.ACHAT)
+        seance = Seance.objects.create(nom='WOD', debut=timezone.now() + datetime.timedelta(days=2))
+        enregistrer_inscription(membre=membre, seance=seance, auteur=membre)
+        self.assertEqual(solde_seances(membre), 4)
+
+        self.client.post(reverse('scheduling:seance_supprimer', args=[seance.pk]))
+
+        self.assertEqual(solde_seances(membre), 5)
+
+    def test_recredite_plusieurs_membres_inscrits(self):
+        membre1 = User.objects.create_user(username='membre_suppr_1', password='motdepasse123')
+        membre2 = User.objects.create_user(username='membre_suppr_2', password='motdepasse123')
+        MouvementSeance.objects.create(membre=membre1, delta=5, motif=MouvementSeance.Motif.ACHAT)
+        MouvementSeance.objects.create(membre=membre2, delta=5, motif=MouvementSeance.Motif.ACHAT)
+        seance = Seance.objects.create(nom='WOD', debut=timezone.now() + datetime.timedelta(days=2))
+        enregistrer_inscription(membre=membre1, seance=seance, auteur=membre1)
+        enregistrer_inscription(membre=membre2, seance=seance, auteur=membre2)
+
+        self.client.post(reverse('scheduling:seance_supprimer', args=[seance.pk]))
+
+        self.assertEqual(solde_seances(membre1), 5)
+        self.assertEqual(solde_seances(membre2), 5)
+
+    def test_ne_recredite_pas_un_membre_deja_desinscrit(self):
+        membre = User.objects.create_user(username='membre_deja_desinscrit', password='motdepasse123')
+        MouvementSeance.objects.create(membre=membre, delta=5, motif=MouvementSeance.Motif.ACHAT)
+        seance = Seance.objects.create(nom='WOD', debut=timezone.now() + datetime.timedelta(days=2))
+        inscription = enregistrer_inscription(membre=membre, seance=seance, auteur=membre)
+        enregistrer_desinscription(inscription, membre)
+        self.assertEqual(solde_seances(membre), 5)
+
+        self.client.post(reverse('scheduling:seance_supprimer', args=[seance.pk]))
+
+        self.assertEqual(solde_seances(membre), 5)
+
+    def test_ne_recredite_pas_un_membre_en_liste_d_attente(self):
+        membre = User.objects.create_user(username='membre_liste_attente_suppr', password='motdepasse123')
+        MouvementSeance.objects.create(membre=membre, delta=5, motif=MouvementSeance.Motif.ACHAT)
+        seance = Seance.objects.create(nom='WOD', debut=timezone.now() + datetime.timedelta(days=2))
+        Inscription.objects.create(membre=membre, seance=seance, statut=Inscription.Statut.EN_ATTENTE)
+
+        self.client.post(reverse('scheduling:seance_supprimer', args=[seance.pk]))
+
+        self.assertEqual(solde_seances(membre), 5)
+
+    def test_la_seance_est_bien_supprimee(self):
+        seance = Seance.objects.create(nom='WOD', debut=timezone.now() + datetime.timedelta(days=2))
+
+        self.client.post(reverse('scheduling:seance_supprimer', args=[seance.pk]))
+
+        self.assertFalse(Seance.objects.filter(pk=seance.pk).exists())
 
 
 class PromotionListeAttentePossibleTests(TestCase):
