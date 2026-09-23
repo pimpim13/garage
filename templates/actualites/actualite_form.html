@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+  <h2 class="mb-4">{% if object %}Modifier l'actualité{% else %}Nouvelle actualité{% endif %}</h2>
+
+  <div class="card p-4" style="max-width: 640px;">
+    <p class="text-muted">Maximum 3 actualités actives en même temps. Elle s'affiche sur la page d'accueil entre les deux dates.</p>
+    <form method="post">
+      {% csrf_token %}
+      {{ form|crispy }}
+      <div class="d-flex gap-2 mt-2">
+        <a href="{% url 'actualites:liste' %}" class="btn btn-outline-dark">Annuler</a>
+        <button type="submit" class="btn btn-accent">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+{% endblock %}

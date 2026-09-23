@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'apps.bookings',
     'apps.notifications',
     'apps.payments',
+    'apps.actualites',
     'crispy_forms',
     'crispy_bootstrap5',
 ]

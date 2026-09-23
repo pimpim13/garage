@@ -8,6 +8,7 @@ from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DeleteView, ListView, TemplateView, UpdateView
 
+from apps.actualites.models import Actualite
 from apps.bookings.services import solde_jokers
 from apps.notifications.email import notifier_creation_compte_par_email
 from apps.offers.models import Offre
@@ -28,6 +29,11 @@ class HomeView(TemplateView):
         if request.user.is_authenticated:
             return redirect('scheduling:calendrier')
         return super().get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['actualites'] = Actualite.objects.actives()[:3]
+        return context
 
 
 class PreferencesView(LoginRequiredMixin, TemplateView):

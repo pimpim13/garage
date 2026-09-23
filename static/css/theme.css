@@ -428,6 +428,32 @@ h1, h2, h3, .display-font {
   max-width: 640px;
 }
 
+.bandeau-actualites {
+  background-color: rgba(128, 176, 72, 0.15);
+  border: 1px solid var(--ps-green);
+  border-radius: var(--bs-border-radius-lg);
+  padding: 1rem 1.5rem;
+  margin-bottom: 1.5rem;
+  color: var(--ps-white);
+}
+
+.bandeau-actualites-dots {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+
+.bandeau-actualites-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.35);
+}
+
+.bandeau-actualites-dot.active {
+  background-color: var(--ps-green);
+}
+
 .text-accent {
   color: var(--ps-green);
 }

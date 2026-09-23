@@ -1,3 +1,4 @@
+import datetime
 import re
 from urllib.parse import urlparse
 
@@ -7,6 +8,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
+from apps.actualites.models import Actualite
 from apps.bookings.models import Inscription
 from apps.bookings.services import attribuer_joker_initial, solde_jokers
 from apps.offers.models import Offre
@@ -41,6 +43,37 @@ class NavigationAnonymeTests(TestCase):
 
         self.assertContains(response, 'Nos offres')
         self.assertContains(response, reverse('offers:catalogue'))
+
+
+class AccueilActualitesTests(TestCase):
+    def test_affiche_une_actualite_active(self):
+        aujourd_hui = timezone.localdate()
+        Actualite.objects.create(
+            texte='Fermeture exceptionnelle le 25 décembre.',
+            date_debut=aujourd_hui,
+            date_fin=aujourd_hui + datetime.timedelta(days=5),
+        )
+
+        response = self.client.get(reverse('home'))
+
+        self.assertContains(response, 'Fermeture exceptionnelle le 25 décembre.')
+
+    def test_n_affiche_pas_une_actualite_expiree(self):
+        aujourd_hui = timezone.localdate()
+        Actualite.objects.create(
+            texte='Actualité expirée',
+            date_debut=aujourd_hui - datetime.timedelta(days=10),
+            date_fin=aujourd_hui - datetime.timedelta(days=1),
+        )
+
+        response = self.client.get(reverse('home'))
+
+        self.assertNotContains(response, 'Actualité expirée')
+
+    def test_n_affiche_pas_le_bandeau_si_aucune_actualite(self):
+        response = self.client.get(reverse('home'))
+
+        self.assertNotContains(response, 'bandeau-actualites')
 
 
 class RoleCoachSimpleTests(TestCase):

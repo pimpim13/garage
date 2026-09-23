@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h2 class="mb-4">Supprimer l'actualité</h2>
+
+  <div class="card p-4" style="max-width: 640px;">
+    <p>Voulez-vous vraiment supprimer « {{ object.texte }} » ?</p>
+
+    <form method="post" class="d-flex gap-2 mt-3">
+      {% csrf_token %}
+      <a href="{% url 'actualites:liste' %}" class="btn btn-outline-dark">Annuler</a>
+      <button type="submit" class="btn btn-danger">Supprimer définitivement</button>
+    </form>
+  </div>
+{% endblock %}
