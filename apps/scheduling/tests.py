@@ -81,6 +81,61 @@ class SeanceDeleteViewRecreditTests(TestCase):
 
         self.assertFalse(Seance.objects.filter(pk=seance.pk).exists())
 
+    @patch('apps.scheduling.views.notifier_membres')
+    def test_notifie_le_canal_ntfy_partage_des_membres(self, mock_notifier_membres):
+        seance = Seance.objects.create(nom='WOD', debut=timezone.now() + datetime.timedelta(days=2))
+
+        self.client.post(reverse('scheduling:seance_supprimer', args=[seance.pk]))
+
+        mock_notifier_membres.assert_called_once()
+        self.assertIn('WOD', mock_notifier_membres.call_args.args[0])
+
+    def test_envoie_un_email_a_un_membre_inscrit_avec_la_preference_activee(self):
+        membre = User.objects.create_user(
+            username='membre_email_annulation', password='motdepasse123', email='membre@example.com',
+        )
+        seance = Seance.objects.create(nom='WOD', debut=timezone.now() + datetime.timedelta(days=2))
+        enregistrer_inscription(membre=membre, seance=seance, auteur=membre)
+
+        self.client.post(reverse('scheduling:seance_supprimer', args=[seance.pk]))
+
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, ['membre@example.com'])
+        self.assertIn('WOD', mail.outbox[0].subject)
+
+    def test_n_envoie_pas_d_email_si_la_preference_est_desactivee(self):
+        membre = User.objects.create_user(
+            username='membre_email_refuse_annulation', password='motdepasse123', email='refuse@example.com',
+            email_annulation_seance=False,
+        )
+        seance = Seance.objects.create(nom='WOD', debut=timezone.now() + datetime.timedelta(days=2))
+        enregistrer_inscription(membre=membre, seance=seance, auteur=membre)
+
+        self.client.post(reverse('scheduling:seance_supprimer', args=[seance.pk]))
+
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_n_envoie_pas_d_email_a_un_membre_sans_email(self):
+        membre = User.objects.create_user(username='membre_sans_email_annulation', password='motdepasse123')
+        seance = Seance.objects.create(nom='WOD', debut=timezone.now() + datetime.timedelta(days=2))
+        enregistrer_inscription(membre=membre, seance=seance, auteur=membre)
+
+        self.client.post(reverse('scheduling:seance_supprimer', args=[seance.pk]))
+
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_n_envoie_pas_d_email_a_un_membre_deja_desinscrit(self):
+        membre = User.objects.create_user(
+            username='membre_desinscrit_email', password='motdepasse123', email='desinscrit@example.com',
+        )
+        seance = Seance.objects.create(nom='WOD', debut=timezone.now() + datetime.timedelta(days=2))
+        inscription = enregistrer_inscription(membre=membre, seance=seance, auteur=membre)
+        enregistrer_desinscription(inscription, membre)
+
+        self.client.post(reverse('scheduling:seance_supprimer', args=[seance.pk]))
+
+        self.assertEqual(len(mail.outbox), 0)
+
 
 class PromotionListeAttentePossibleTests(TestCase):
     def test_vrai_si_la_seance_a_lieu_dans_plus_de_24h(self):

@@ -14,6 +14,7 @@ CHAMPS_PREFERENCE_EVENEMENTS = [
 
 CHAMPS_PREFERENCE_EMAILS = [
     'email_ouverture_seance',
+    'email_annulation_seance',
 ]
 
 

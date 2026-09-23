@@ -179,6 +179,29 @@ class PreferencesViewMembreTests(TestCase):
         self.membre.refresh_from_db()
         self.assertTrue(self.membre.email_ouverture_seance)
 
+    def test_affiche_la_case_a_cocher_annulation_de_seance_cochee_par_defaut(self):
+        response = self.client.get(reverse('notifications:preferences'))
+
+        self.assertContains(response, 'name="email_annulation_seance"')
+        self.assertTrue(self.membre.email_annulation_seance)
+
+    def test_decocher_desactive_l_email_d_annulation(self):
+        self.client.post(reverse('notifications:preferences'), {'email_ouverture_seance': 'on'})
+
+        self.membre.refresh_from_db()
+        self.assertFalse(self.membre.email_annulation_seance)
+
+    def test_cocher_active_l_email_d_annulation(self):
+        self.membre.email_annulation_seance = False
+        self.membre.save(update_fields=['email_annulation_seance'])
+
+        self.client.post(reverse('notifications:preferences'), {
+            'email_ouverture_seance': 'on', 'email_annulation_seance': 'on',
+        })
+
+        self.membre.refresh_from_db()
+        self.assertTrue(self.membre.email_annulation_seance)
+
 
 class PreferencesViewCoachTests(TestCase):
     def test_affiche_le_topic_ntfy_individuel_du_coach(self):

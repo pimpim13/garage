@@ -67,7 +67,7 @@ Un membre peut être rattaché à une **famille**, qui regroupe plusieurs membre
 ### Annulation d'une séance par le gestionnaire
 
 - Si une séance n'a pas atteint un minimum de **4 participants** inscrits, le gestionnaire (ou l'admin) peut l'annuler
-- Les membres inscrits sont notifiés (push ntfy, canal partagé membres — le seuil de 4 participants minimum n'est pour l'instant pas vérifié techniquement avant suppression, c'est une règle d'usage)
+- Les membres inscrits sont notifiés par push ntfy (canal partagé membres) et par email (désactivable individuellement dans Notifications) — le seuil de 4 participants minimum n'est pour l'instant pas vérifié techniquement avant suppression, c'est une règle d'usage
 - Leur crédit de séance est restauré (recrédité), sans impact sur leurs jokers
 
 ## Gestion des séances achetées
@@ -127,6 +127,7 @@ Deux canaux : **email** et **push (ntfy.sh)**, gérables par chaque utilisateur 
 
 **Emails** — chaque type est activable/désactivable indépendamment par le membre (page Notifications) :
 - Ouverture des inscriptions à une séance — *implémenté*
+- Annulation d'une séance à laquelle le membre est inscrit — *implémenté*
 - Désinscription, joker utilisé, solde bas, crédit renouvelé, etc. — *à ajouter au fur et à mesure, même mécanisme*
 
 Le mot de passe oublié (et l'email de définition de mot de passe à la création d'un compte) sont **toujours envoyés**, indépendamment de ces réglages — non désactivables.

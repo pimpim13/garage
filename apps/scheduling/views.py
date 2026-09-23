@@ -17,6 +17,7 @@ from apps.accounts.mixins import GestionnaireRequiredMixin
 from apps.accounts.models import User
 from apps.bookings.models import Inscription
 from apps.bookings.services import peut_s_inscrire
+from apps.notifications.email import notifier_annulation_seance_par_email
 from apps.notifications.ntfy import notifier_membres
 from apps.purchases.models import MouvementSeance
 from apps.purchases.services import solde_seances, statut_solde
@@ -286,6 +287,7 @@ class SeanceDeleteView(GestionnaireRequiredMixin, DeleteView):
         inscriptions_a_recrediter = list(
             self.object.inscriptions.filter(statut=Inscription.Statut.INSCRIT)
         )
+        membres_inscrits = [inscription.membre for inscription in inscriptions_a_recrediter]
         for inscription in inscriptions_a_recrediter:
             MouvementSeance.objects.create(
                 membre=inscription.membre,
@@ -297,6 +299,7 @@ class SeanceDeleteView(GestionnaireRequiredMixin, DeleteView):
         response = super().form_valid(form)
         messages.success(self.request, "Séance supprimée.")
         notifier_membres(f"Séance annulée : « {nom} » le {debut:%d/%m à %H:%M}.")
+        notifier_annulation_seance_par_email(nom, debut, membres_inscrits)
         return response
 
 
