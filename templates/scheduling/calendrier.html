@@ -28,21 +28,24 @@
     <a href="{% url 'scheduling:calendrier_semaine' semaine=semaine_suivante|date:'Y-m-d' %}" class="btn btn-outline-dark btn-sm">Suiv. &raquo;</a>
   </div>
 
-  <ul class="nav nav-pills mb-4 flex-nowrap overflow-auto gap-1">
-    {% for jour in jours %}
-      <li class="nav-item">
-        <a class="nav-link text-center {% if jour.date == jour_selectionne %}active{% endif %}"
-           href="{% url 'scheduling:calendrier_semaine' semaine=lundi|date:'Y-m-d' %}?jour={{ jour.date|date:'Y-m-d' }}">
-          {{ jour.date|date:'D' }}<br>{{ jour.date|date:'d' }}
-          <span class="d-block">
-            {% if jour.statut == 'vert' %}<span class="dot dot-vert"></span>
-            {% elif jour.statut == 'rouge' %}<span class="dot dot-rouge"></span>
-            {% endif %}
-          </span>
-        </a>
-      </li>
-    {% endfor %}
-  </ul>
+  <div class="jours-semaine-wrapper mb-4">
+    <ul class="nav nav-pills flex-nowrap overflow-auto gap-1 mb-0" id="jours-semaine-liste">
+      {% for jour in jours %}
+        <li class="nav-item">
+          <a class="nav-link text-center {% if jour.date == jour_selectionne %}active{% endif %}"
+             href="{% url 'scheduling:calendrier_semaine' semaine=lundi|date:'Y-m-d' %}?jour={{ jour.date|date:'Y-m-d' }}">
+            {{ jour.date|date:'D' }}<br>{{ jour.date|date:'d' }}
+            <span class="d-block">
+              {% if jour.statut == 'vert' %}<span class="dot dot-vert"></span>
+              {% elif jour.statut == 'rouge' %}<span class="dot dot-rouge"></span>
+              {% endif %}
+            </span>
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+    <span class="jours-semaine-chevron" id="jours-semaine-chevron" aria-hidden="true">&rsaquo;</span>
+  </div>
 
   {% if seances_du_jour %}
     <div class="liste-seances">
@@ -71,4 +74,21 @@
     {% endif %}
   {% endif %}
   </div>
+{% endblock %}
+
+{% block extra_js %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const liste = document.getElementById('jours-semaine-liste');
+      const chevron = document.getElementById('jours-semaine-chevron');
+      if (!liste || !chevron) return;
+      function majChevron() {
+        const reste = liste.scrollWidth - liste.scrollLeft - liste.clientWidth;
+        chevron.classList.toggle('jours-semaine-chevron-masque', reste <= 4);
+      }
+      majChevron();
+      liste.addEventListener('scroll', majChevron);
+      window.addEventListener('resize', majChevron);
+    });
+  </script>
 {% endblock %}

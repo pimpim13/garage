@@ -431,6 +431,16 @@ class NotifierOuverturesInscriptionsEmailTests(TestCase):
         mock_notifier_membres.assert_called_once()
 
 
+class CalendrierSemaineIndicateurJoursTests(TestCase):
+    def test_l_indicateur_de_defilement_est_present(self):
+        membre = User.objects.create_user(username='membre_calendrier_indicateur', password='motdepasse123')
+        self.client.force_login(membre)
+
+        response = self.client.get(reverse('scheduling:calendrier'))
+
+        self.assertContains(response, 'jours-semaine-chevron')
+
+
 class AccesAnonymeCalendrierTests(TestCase):
     def test_le_calendrier_redirige_vers_la_connexion_si_anonyme(self):
         response = self.client.get(reverse('scheduling:calendrier'))
