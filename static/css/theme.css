@@ -429,25 +429,52 @@ h1, h2, h3, .display-font {
 }
 
 .bandeau-actualites {
+  position: relative;
   background-color: rgba(128, 176, 72, 0.15);
   border: 1px solid var(--ps-green);
   border-radius: var(--bs-border-radius-lg);
-  padding: 1rem 1.5rem;
+  padding: 1.25rem 2.5rem;
   margin-bottom: 1.5rem;
   color: var(--ps-white);
+  text-align: center;
+}
+
+.bandeau-actualites-texte {
+  font-size: 1.15rem;
+}
+
+.bandeau-actualites-fermer {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.75rem;
+  border: none;
+  background: none;
+  color: var(--ps-white);
+  font-size: 1.5rem;
+  line-height: 1;
+  padding: 0.25rem;
+  cursor: pointer;
+}
+
+.bandeau-actualites-fermer:hover {
+  color: var(--ps-green);
 }
 
 .bandeau-actualites-dots {
   display: flex;
-  gap: 0.4rem;
+  justify-content: center;
+  gap: 0.5rem;
   margin-top: 0.6rem;
 }
 
 .bandeau-actualites-dot {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
+  border: none;
   border-radius: 50%;
+  padding: 0;
   background-color: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
 }
 
 .bandeau-actualites-dot.active {

@@ -9,6 +9,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
+from apps.actualites.models import Actualite
 from apps.bookings.services import enregistrer_inscription, marquer_non_presente
 from apps.purchases.models import MouvementSeance
 
@@ -429,6 +430,44 @@ class NotifierOuverturesInscriptionsEmailTests(TestCase):
         call_command('notifier_ouvertures_inscriptions')
 
         mock_notifier_membres.assert_called_once()
+
+
+class CalendrierActualitesTests(TestCase):
+    def setUp(self):
+        self.membre = User.objects.create_user(username='membre_calendrier_actu', password='motdepasse123')
+        self.client.force_login(self.membre)
+
+    def test_affiche_une_actualite_active_avec_croix_de_fermeture(self):
+        aujourd_hui = timezone.localdate()
+        Actualite.objects.create(
+            texte='Fermeture exceptionnelle',
+            date_debut=aujourd_hui,
+            date_fin=aujourd_hui + datetime.timedelta(days=5),
+        )
+
+        response = self.client.get(reverse('scheduling:calendrier'))
+
+        self.assertContains(response, 'Fermeture exceptionnelle')
+        self.assertContains(response, 'bandeau-actualites-fermer')
+
+    def test_le_bouton_pointe_directement_vers_la_cible_pour_un_connecte(self):
+        aujourd_hui = timezone.localdate()
+        Actualite.objects.create(
+            texte='Nouvelle offre disponible !',
+            date_debut=aujourd_hui,
+            date_fin=aujourd_hui + datetime.timedelta(days=5),
+            cible=Actualite.Cible.OFFRES,
+        )
+
+        response = self.client.get(reverse('scheduling:calendrier'))
+
+        self.assertContains(response, reverse('offers:catalogue'))
+        self.assertNotContains(response, f"{reverse('accounts:login')}?next=")
+
+    def test_pas_de_bandeau_si_aucune_actualite(self):
+        response = self.client.get(reverse('scheduling:calendrier'))
+
+        self.assertNotContains(response, 'bandeau-actualites')
 
 
 class CalendrierSemaineIndicateurJoursTests(TestCase):

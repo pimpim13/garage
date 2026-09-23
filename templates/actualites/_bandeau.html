@@ -1,0 +1,95 @@
+{% if actualites %}
+  <div
+    class="bandeau-actualites"
+    id="bandeau-actualites"
+    data-ids="{% for a in actualites %}{{ a.pk }}{% if not forloop.last %},{% endif %}{% endfor %}"
+  >
+    {% if fermable %}
+      <button type="button" class="bandeau-actualites-fermer" id="bandeau-actualites-fermer" aria-label="Fermer">&times;</button>
+    {% endif %}
+    {% for actualite in actualites %}
+      <div class="bandeau-actualites-item" {% if not forloop.first %}hidden{% endif %}>
+        <p class="bandeau-actualites-texte mb-2">{{ actualite.texte }}</p>
+        {% if actualite.cible %}
+          {% url actualite.cible_url_name as cible_href %}
+          {% if user.is_authenticated %}
+            <a href="{{ cible_href }}" class="btn btn-accent btn-sm bandeau-actualites-bouton">{{ actualite.cible_libelle }}</a>
+          {% else %}
+            <a href="{% url 'accounts:login' %}?next={{ cible_href }}" class="btn btn-accent btn-sm bandeau-actualites-bouton">{{ actualite.cible_libelle }}</a>
+          {% endif %}
+        {% endif %}
+      </div>
+    {% endfor %}
+    {% if actualites|length > 1 %}
+      <div class="bandeau-actualites-dots">
+        {% for actualite in actualites %}
+          <button
+            type="button"
+            class="bandeau-actualites-dot {% if forloop.first %}active{% endif %}"
+            data-index="{{ forloop.counter0 }}"
+            aria-label="Message {{ forloop.counter }}"
+          ></button>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const bandeau = document.getElementById('bandeau-actualites');
+      if (!bandeau) return;
+      const idsActuels = (bandeau.dataset.ids || '').split(',').filter(Boolean);
+      const fermer = document.getElementById('bandeau-actualites-fermer');
+
+      if (fermer) {
+        let idsFermes = [];
+        try {
+          idsFermes = JSON.parse(localStorage.getItem('actualites_fermees') || '[]');
+        } catch (e) { /* localStorage indisponible : on ignore */ }
+        const dejaFerme = idsActuels.length > 0
+          && idsActuels.length === idsFermes.length
+          && idsActuels.every(function (id) { return idsFermes.includes(id); });
+        if (dejaFerme) {
+          bandeau.hidden = true;
+          return;
+        }
+        fermer.addEventListener('click', function () {
+          try {
+            localStorage.setItem('actualites_fermees', JSON.stringify(idsActuels));
+          } catch (e) { /* localStorage indisponible : on ignore */ }
+          bandeau.hidden = true;
+        });
+      }
+
+      const items = bandeau.querySelectorAll('.bandeau-actualites-item');
+      const dots = bandeau.querySelectorAll('.bandeau-actualites-dot');
+      let index = 0;
+      let minuteur = null;
+
+      function afficher(i) {
+        index = i;
+        items.forEach(function (el, idx) { el.hidden = idx !== index; });
+        dots.forEach(function (el, idx) { el.classList.toggle('active', idx === index); });
+      }
+
+      function demarrerRotation() {
+        if (items.length <= 1) return;
+        minuteur = setInterval(function () {
+          afficher((index + 1) % items.length);
+        }, 5000);
+      }
+
+      dots.forEach(function (dot, i) {
+        dot.addEventListener('click', function () {
+          afficher(i);
+          if (minuteur) {
+            clearInterval(minuteur);
+            demarrerRotation();
+          }
+        });
+      });
+
+      demarrerRotation();
+    });
+  </script>
+{% endif %}

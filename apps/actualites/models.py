@@ -12,9 +12,33 @@ class ActualiteQuerySet(models.QuerySet):
 
 
 class Actualite(models.Model):
+    class Cible(models.TextChoices):
+        CALENDRIER = 'calendrier', 'Calendrier'
+        OFFRES = 'offres', 'Offres'
+        NOTIFICATIONS = 'notifications', 'Notifications'
+        SOLDE = 'solde', 'Solde'
+
+    CIBLE_URL_NAMES = {
+        Cible.CALENDRIER: 'scheduling:calendrier',
+        Cible.OFFRES: 'offers:catalogue',
+        Cible.NOTIFICATIONS: 'notifications:preferences',
+        Cible.SOLDE: 'purchases:mon_solde',
+    }
+
+    CIBLE_LIBELLES = {
+        Cible.CALENDRIER: 'Voir le calendrier',
+        Cible.OFFRES: 'Voir les offres',
+        Cible.NOTIFICATIONS: 'Voir les notifications',
+        Cible.SOLDE: 'Voir mon solde',
+    }
+
     texte = models.CharField(max_length=200)
     date_debut = models.DateField()
     date_fin = models.DateField()
+    cible = models.CharField(
+        max_length=20, choices=Cible.choices, blank=True,
+        help_text="Bouton optionnel renvoyant vers une page de l'application.",
+    )
 
     objects = ActualiteQuerySet.as_manager()
 
@@ -23,6 +47,12 @@ class Actualite(models.Model):
 
     def __str__(self):
         return self.texte
+
+    def cible_url_name(self):
+        return self.CIBLE_URL_NAMES.get(self.cible, '')
+
+    def cible_libelle(self):
+        return self.CIBLE_LIBELLES.get(self.cible, '')
 
     def clean(self):
         super().clean()

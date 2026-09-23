@@ -18,6 +18,36 @@ def creer_actualite(**kwargs):
     return Actualite.objects.create(**kwargs)
 
 
+class ActualiteCibleTests(TestCase):
+    def test_sans_cible_par_defaut(self):
+        actualite = creer_actualite()
+
+        self.assertEqual(actualite.cible, '')
+        self.assertEqual(actualite.cible_url_name(), '')
+        self.assertEqual(actualite.cible_libelle(), '')
+
+    def test_cible_calendrier(self):
+        actualite = creer_actualite(cible=Actualite.Cible.CALENDRIER)
+
+        self.assertEqual(actualite.cible_url_name(), 'scheduling:calendrier')
+        self.assertEqual(actualite.cible_libelle(), 'Voir le calendrier')
+
+    def test_cible_offres(self):
+        actualite = creer_actualite(cible=Actualite.Cible.OFFRES)
+
+        self.assertEqual(actualite.cible_url_name(), 'offers:catalogue')
+
+    def test_cible_notifications(self):
+        actualite = creer_actualite(cible=Actualite.Cible.NOTIFICATIONS)
+
+        self.assertEqual(actualite.cible_url_name(), 'notifications:preferences')
+
+    def test_cible_solde(self):
+        actualite = creer_actualite(cible=Actualite.Cible.SOLDE)
+
+        self.assertEqual(actualite.cible_url_name(), 'purchases:mon_solde')
+
+
 class ActualiteQuerySetTests(TestCase):
     def test_actives_renvoie_une_actualite_en_cours(self):
         actualite = creer_actualite()

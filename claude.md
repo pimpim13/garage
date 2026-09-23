@@ -135,13 +135,15 @@ Le mot de passe oublié (et l'email de définition de mot de passe à la créati
 - Canal partagé pour tous les membres : ouverture des inscriptions, annulation de séance
 - Canal **individuel** généré automatiquement pour chaque coach/coach gestionnaire/admin (topic aléatoire non devinable) — chacun choisit, événement par événement, s'il est notifié : inscription, désinscription, promotion automatique depuis la liste d'attente, séance complète. Un coach simple n'est notifié que pour ses propres séances ; un coach gestionnaire/admin peut suivre les séances d'autres coachs de son choix (rien coché = aucun autre coach que lui-même)
 
-## Actualités (page d'accueil)
+## Actualités
 
-Le coach gestionnaire (ou l'admin) peut publier des actualités qui défilent en bandeau façon carrousel en bas de la page d'accueil (visible uniquement des visiteurs non connectés, puisqu'un utilisateur connecté est redirigé directement vers le calendrier) : fermeture exceptionnelle, promotion d'une nouvelle offre, etc.
+Le coach gestionnaire (ou l'admin) peut publier des actualités qui défilent en bandeau façon carrousel (texte centré, pastilles cliquables pour naviguer d'un message à l'autre) : fermeture exceptionnelle, promotion d'une nouvelle offre, etc.
 
-- Chaque actualité a un **texte** (200 caractères max), une **date de début** et une **date de fin** de validité ; elle ne s'affiche sur l'accueil qu'entre ces deux dates
+- Chaque actualité a un **texte** (200 caractères max), une **date de début** et une **date de fin** de validité ; elle ne s'affiche qu'entre ces deux dates
 - **Maximum 3 actualités actives en même temps** — la création/modification est refusée au-delà, pour garder le bandeau lisible
+- Un **bouton optionnel** peut renvoyer vers une page de l'app (Calendrier, Offres, Notifications ou Solde), avec un libellé automatique ("Voir le calendrier"...). Pour un visiteur non connecté, le bouton passe d'abord par la connexion puis renvoie vers la page visée
 - Gérées depuis une page dédiée (`/actualites/`, onglet « Actualités » du menu), pas depuis les Préférences (réglages personnels d'un compte)
+- **Affichage à deux endroits** : en bas de la page d'accueil pour les visiteurs non connectés (pas de croix de fermeture), et au-dessus du calendrier hebdomadaire pour les membres/coachs connectés, avec une croix pour fermer le bandeau (mémorisé dans le navigateur, réapparaît si les actualités affichées changent)
 
 ## Design
 

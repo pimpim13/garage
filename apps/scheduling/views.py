@@ -14,6 +14,7 @@ from django.utils import timezone
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
 
 from apps.accounts.mixins import GestionnaireRequiredMixin
+from apps.actualites.models import Actualite
 from apps.accounts.models import User
 from apps.bookings.models import Inscription
 from apps.bookings.services import peut_s_inscrire
@@ -112,6 +113,7 @@ def calendrier(request, semaine=None):
         'seances_du_jour': seances_du_jour,
         'inscriptions_membre': inscriptions_membre,
         'aujourdhui': aujourdhui,
+        'actualites': Actualite.objects.actives()[:3],
     }
     if request.user.is_membre:
         context['solde_membre'] = solde_seances(request.user)

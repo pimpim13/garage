@@ -75,6 +75,45 @@ class AccueilActualitesTests(TestCase):
 
         self.assertNotContains(response, 'bandeau-actualites')
 
+    def test_le_bouton_renvoie_vers_la_connexion_avec_next_pour_un_anonyme(self):
+        aujourd_hui = timezone.localdate()
+        Actualite.objects.create(
+            texte='Nouvelle offre disponible !',
+            date_debut=aujourd_hui,
+            date_fin=aujourd_hui + datetime.timedelta(days=5),
+            cible=Actualite.Cible.OFFRES,
+        )
+
+        response = self.client.get(reverse('home'))
+
+        attendu = f"{reverse('accounts:login')}?next={reverse('offers:catalogue')}"
+        self.assertContains(response, attendu)
+        self.assertContains(response, 'Voir les offres')
+
+    def test_pas_de_bouton_si_aucune_cible_definie(self):
+        aujourd_hui = timezone.localdate()
+        Actualite.objects.create(
+            texte='Sans bouton',
+            date_debut=aujourd_hui,
+            date_fin=aujourd_hui + datetime.timedelta(days=5),
+        )
+
+        response = self.client.get(reverse('home'))
+
+        self.assertNotContains(response, 'bandeau-actualites-bouton')
+
+    def test_le_bandeau_n_a_pas_de_croix_de_fermeture_sur_l_accueil(self):
+        aujourd_hui = timezone.localdate()
+        Actualite.objects.create(
+            texte='Actualité accueil',
+            date_debut=aujourd_hui,
+            date_fin=aujourd_hui + datetime.timedelta(days=5),
+        )
+
+        response = self.client.get(reverse('home'))
+
+        self.assertNotContains(response, 'id="bandeau-actualites-fermer"')
+
 
 class RoleCoachSimpleTests(TestCase):
     def test_coach_gestionnaire_garde_les_droits_actuels(self):

@@ -14,35 +14,5 @@
     </div>
   </div>
 
-  {% if actualites %}
-    <div class="bandeau-actualites" id="bandeau-actualites">
-      {% for actualite in actualites %}
-        <p class="bandeau-actualites-item mb-0" {% if not forloop.first %}hidden{% endif %}>{{ actualite.texte }}</p>
-      {% endfor %}
-      {% if actualites|length > 1 %}
-        <div class="bandeau-actualites-dots">
-          {% for actualite in actualites %}
-            <span class="bandeau-actualites-dot {% if forloop.first %}active{% endif %}"></span>
-          {% endfor %}
-        </div>
-      {% endif %}
-    </div>
-  {% endif %}
-{% endblock %}
-
-{% block extra_js %}
-  {% if actualites|length > 1 %}
-    <script>
-      document.addEventListener('DOMContentLoaded', function () {
-        const items = document.querySelectorAll('#bandeau-actualites .bandeau-actualites-item');
-        const dots = document.querySelectorAll('#bandeau-actualites .bandeau-actualites-dot');
-        let index = 0;
-        setInterval(function () {
-          index = (index + 1) % items.length;
-          items.forEach(function (el, i) { el.hidden = i !== index; });
-          dots.forEach(function (el, i) { el.classList.toggle('active', i === index); });
-        }, 5000);
-      });
-    </script>
-  {% endif %}
+  {% include "actualites/_bandeau.html" %}
 {% endblock %}
