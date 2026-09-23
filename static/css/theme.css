@@ -23,6 +23,12 @@ body {
   min-height: 100vh;
 }
 
+body > nav,
+body > main,
+body > footer {
+  min-width: 0;
+}
+
 body > main {
   flex: 1;
   display: flex;
@@ -219,15 +225,7 @@ h1, h2, h3, .display-font {
   font-size: 0.9rem;
 }
 
-.jours-semaine-wrapper {
-  position: relative;
-}
-
 .jours-semaine-chevron {
-  position: absolute;
-  top: 50%;
-  right: -6px;
-  transform: translateY(-50%);
   width: 26px;
   height: 26px;
   border-radius: 50%;
@@ -239,14 +237,7 @@ h1, h2, h3, .display-font {
   font-size: 1.1rem;
   font-weight: 700;
   line-height: 1;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
-  pointer-events: none;
-  opacity: 1;
-  transition: opacity 0.15s ease;
-}
-
-.jours-semaine-chevron-masque {
-  opacity: 0;
+  flex-shrink: 0;
 }
 
 .nav-pills .nav-link.active {

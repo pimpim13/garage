@@ -28,24 +28,24 @@
     <a href="{% url 'scheduling:calendrier_semaine' semaine=semaine_suivante|date:'Y-m-d' %}" class="btn btn-outline-dark btn-sm">Suiv. &raquo;</a>
   </div>
 
-  <div class="jours-semaine-wrapper mb-4">
-    <ul class="nav nav-pills flex-nowrap overflow-auto gap-1 mb-0" id="jours-semaine-liste">
-      {% for jour in jours %}
-        <li class="nav-item">
-          <a class="nav-link text-center {% if jour.date == jour_selectionne %}active{% endif %}"
-             href="{% url 'scheduling:calendrier_semaine' semaine=lundi|date:'Y-m-d' %}?jour={{ jour.date|date:'Y-m-d' }}">
-            {{ jour.date|date:'D' }}<br>{{ jour.date|date:'d' }}
-            <span class="d-block">
-              {% if jour.statut == 'vert' %}<span class="dot dot-vert"></span>
-              {% elif jour.statut == 'rouge' %}<span class="dot dot-rouge"></span>
-              {% endif %}
-            </span>
-          </a>
-        </li>
-      {% endfor %}
-    </ul>
-    <span class="jours-semaine-chevron" id="jours-semaine-chevron" aria-hidden="true">&rsaquo;</span>
-  </div>
+  <ul class="nav nav-pills flex-nowrap overflow-auto gap-1 mb-4" id="jours-semaine-liste">
+    {% for jour in jours %}
+      <li class="nav-item jour-semaine-item">
+        <a class="nav-link text-center {% if jour.date == jour_selectionne %}active{% endif %}"
+           href="{% url 'scheduling:calendrier_semaine' semaine=lundi|date:'Y-m-d' %}?jour={{ jour.date|date:'Y-m-d' }}">
+          {{ jour.date|date:'D' }}<br>{{ jour.date|date:'d' }}
+          <span class="d-block">
+            {% if jour.statut == 'vert' %}<span class="dot dot-vert"></span>
+            {% elif jour.statut == 'rouge' %}<span class="dot dot-rouge"></span>
+            {% endif %}
+          </span>
+        </a>
+      </li>
+    {% endfor %}
+    <li class="nav-item d-flex align-items-center" id="jours-semaine-chevron" hidden>
+      <span class="jours-semaine-chevron" aria-hidden="true">&rsaquo;</span>
+    </li>
+  </ul>
 
   {% if seances_du_jour %}
     <div class="liste-seances">
@@ -82,13 +82,23 @@
       const liste = document.getElementById('jours-semaine-liste');
       const chevron = document.getElementById('jours-semaine-chevron');
       if (!liste || !chevron) return;
-      function majChevron() {
-        const reste = liste.scrollWidth - liste.scrollLeft - liste.clientWidth;
-        chevron.classList.toggle('jours-semaine-chevron-masque', reste <= 4);
+      const jours = Array.from(liste.querySelectorAll('.jour-semaine-item'));
+
+      function ajusterJoursVisibles() {
+        jours.forEach(function (li) { li.hidden = false; });
+        chevron.hidden = true;
+
+        for (let i = jours.length - 1; i >= 0; i--) {
+          if (liste.scrollWidth <= liste.clientWidth) break;
+          const estSelectionne = jours[i].querySelector('.nav-link').classList.contains('active');
+          if (estSelectionne) continue;
+          jours[i].hidden = true;
+          chevron.hidden = false;
+        }
       }
-      majChevron();
-      liste.addEventListener('scroll', majChevron);
-      window.addEventListener('resize', majChevron);
+
+      ajusterJoursVisibles();
+      window.addEventListener('resize', ajusterJoursVisibles);
     });
   </script>
 {% endblock %}
