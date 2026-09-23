@@ -1,0 +1,354 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Le Garage — Parcours d'inscription à une séance",
+    "output": "garage.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/pimpim13/garage",
+      "provider": "github",
+      "link_mode": "local-only",
+      "revision": "e4febc383b4b962fe38cee0e71a765e412883bf0"
+    },
+    "views": [
+      {
+        "id": "parcours-inscription",
+        "label": "Parcours d'inscription",
+        "focus": [
+          "client",
+          "bookings",
+          "accounts",
+          "purchases",
+          "sqlite",
+          "notifications",
+          "ntfy"
+        ],
+        "note": "Du clic sur « S'inscrire » à la notification push envoyée au coach."
+      },
+      {
+        "id": "autres-notifications",
+        "label": "Autres notifications (hors parcours)",
+        "focus": [
+          "notifications",
+          "smtp"
+        ],
+        "note": "L'email sert à d'autres événements (ouverture des inscriptions, création de compte), pas à l'inscription elle-même."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "client",
+      "type": "frontend",
+      "label": "Membre",
+      "sublabel": "Navigateur / PWA",
+      "pos": [
+        40,
+        190
+      ],
+      "size": [
+        140,
+        60
+      ]
+    },
+    {
+      "id": "scheduling",
+      "type": "backend",
+      "label": "Calendrier & séance",
+      "sublabel": "apps/scheduling",
+      "pos": [
+        230,
+        50
+      ],
+      "size": [
+        150,
+        60
+      ],
+      "sources": [
+        {
+          "path": "apps/scheduling/views.py",
+          "line": 169,
+          "label": "SeanceDetailView"
+        }
+      ]
+    },
+    {
+      "id": "accounts",
+      "type": "backend",
+      "label": "Comptes membres",
+      "sublabel": "apps/accounts (User, Famille)",
+      "pos": [
+        460,
+        50
+      ],
+      "size": [
+        150,
+        60
+      ],
+      "sources": [
+        {
+          "path": "apps/accounts/models.py",
+          "line": 141,
+          "end_line": 143,
+          "label": "tolerance_applicable"
+        }
+      ]
+    },
+    {
+      "id": "purchases",
+      "type": "backend",
+      "label": "Achats & Mouvements",
+      "sublabel": "apps/purchases",
+      "pos": [
+        690,
+        50
+      ],
+      "size": [
+        150,
+        60
+      ],
+      "sources": [
+        {
+          "path": "apps/purchases/services.py",
+          "line": 14,
+          "label": "solde_seances()"
+        },
+        {
+          "path": "apps/purchases/models.py",
+          "line": 38,
+          "label": "MouvementSeance"
+        }
+      ]
+    },
+    {
+      "id": "bookings",
+      "type": "backend",
+      "label": "Inscriptions",
+      "sublabel": "apps/bookings",
+      "pos": [
+        230,
+        190
+      ],
+      "size": [
+        150,
+        60
+      ],
+      "sources": [
+        {
+          "path": "apps/bookings/views.py",
+          "line": 41,
+          "label": "inscrire()"
+        }
+      ]
+    },
+    {
+      "id": "sqlite",
+      "type": "database",
+      "label": "SQLite",
+      "sublabel": "db.sqlite3",
+      "pos": [
+        920,
+        190
+      ],
+      "size": [
+        140,
+        60
+      ],
+      "sources": [
+        {
+          "path": "config/settings.py",
+          "line": 95,
+          "label": "DATABASES"
+        }
+      ]
+    },
+    {
+      "id": "notifications",
+      "type": "backend",
+      "label": "Notifications",
+      "sublabel": "apps/notifications",
+      "pos": [
+        230,
+        283
+      ],
+      "size": [
+        150,
+        60
+      ],
+      "sources": [
+        {
+          "path": "apps/notifications/ntfy.py",
+          "line": 36,
+          "label": "notifier_evenement_seance()"
+        }
+      ]
+    },
+    {
+      "id": "ntfy",
+      "type": "messagebus",
+      "label": "ntfy.sh",
+      "sublabel": "push pub/sub",
+      "pos": [
+        230,
+        408
+      ],
+      "size": [
+        140,
+        60
+      ],
+      "sources": [
+        {
+          "path": "apps/notifications/ntfy.py",
+          "line": 9,
+          "label": "_envoyer() — requests.post"
+        }
+      ]
+    },
+    {
+      "id": "smtp",
+      "type": "external",
+      "label": "SMTP (Gmail)",
+      "sublabel": "email sortant",
+      "pos": [
+        460,
+        408
+      ],
+      "size": [
+        140,
+        60
+      ],
+      "sources": [
+        {
+          "path": "config/settings.py",
+          "line": 148,
+          "label": "EMAIL_BACKEND"
+        },
+        {
+          "path": "apps/notifications/email.py",
+          "line": 11,
+          "label": "notifier_ouverture_inscriptions_par_email()"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Application Django (un seul process, SQLite en fichier local)",
+      "wraps": [
+        "scheduling",
+        "bookings",
+        "accounts",
+        "purchases",
+        "notifications",
+        "sqlite"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "client-scheduling",
+      "from": "client",
+      "to": "scheduling",
+      "label": "consulte le calendrier / la fiche séance"
+    },
+    {
+      "id": "client-bookings",
+      "from": "client",
+      "to": "bookings",
+      "label": "POST « S'inscrire »",
+      "variant": "emphasis",
+      "labelAt": [
+        205,
+        264
+      ]
+    },
+    {
+      "id": "bookings-accounts",
+      "from": "bookings",
+      "to": "accounts",
+      "label": "lit la tolérance négative"
+    },
+    {
+      "id": "bookings-purchases",
+      "from": "bookings",
+      "to": "purchases",
+      "label": "vérifie le crédit restant"
+    },
+    {
+      "id": "bookings-sqlite",
+      "from": "bookings",
+      "to": "sqlite",
+      "label": "persiste Inscription + MouvementSeance (−1)",
+      "variant": "emphasis",
+      "labelAt": [
+        790,
+        220
+      ]
+    },
+    {
+      "id": "bookings-notifications",
+      "from": "bookings",
+      "to": "notifications",
+      "label": "déclenche la notification",
+      "variant": "emphasis",
+      "labelAt": [
+        305,
+        264
+      ]
+    },
+    {
+      "id": "notifications-ntfy",
+      "from": "notifications",
+      "to": "ntfy",
+      "label": "push vers le canal du coach",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        305,
+        388
+      ]
+    },
+    {
+      "id": "notifications-smtp",
+      "from": "notifications",
+      "to": "smtp",
+      "label": "autres événements (ouverture, création de compte)",
+      "variant": "dashed",
+      "labelAt": [
+        500,
+        404
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Parcours principal",
+      "items": [
+        "Le membre consulte la fiche séance puis clique « S'inscrire »",
+        "apps/bookings vérifie la tolérance et le solde avant d'écrire en base",
+        "Une notification push part vers le canal ntfy du coach de la séance"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Apps Django impliquées",
+      "items": [
+        "scheduling (fiche séance), bookings (logique d'inscription)",
+        "accounts (comptes, tolérance), purchases (ledger des séances)"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Hors de ce parcours (vérifié dans le dépôt)",
+      "items": [
+        "apps/payments existe, squelette vide, non routé dans config/urls.py",
+        "Le SMTP sert à d'autres événements (ouverture, création de compte)",
+        "Nginx / Gunicorn / Let's Encrypt / DynDNS : non versionnés ici"
+      ]
+    }
+  ]
+}
