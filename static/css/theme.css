@@ -428,10 +428,7 @@ h1, h2, h3, .display-font {
   max-width: 640px;
 }
 
-.bandeau-actualites {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
+.bandeau-actualites-conteneur {
   background-color: rgba(255, 255, 255, 0.55);
   backdrop-filter: blur(4px);
   border: 1px solid var(--ps-green);
@@ -440,6 +437,12 @@ h1, h2, h3, .display-font {
   margin-bottom: 1.5rem;
   color: var(--ps-black);
   overflow: hidden;
+}
+
+.bandeau-actualites {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .bandeau-actualites-item {
@@ -494,6 +497,27 @@ h1, h2, h3, .display-font {
 
 .bandeau-actualites-fermer:hover {
   color: var(--ps-green-dark);
+}
+
+.bandeau-actualites-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.bandeau-actualites-dot {
+  width: 8px;
+  height: 8px;
+  border: none;
+  border-radius: 50%;
+  padding: 0;
+  background-color: rgba(32, 30, 31, 0.25);
+  cursor: pointer;
+}
+
+.bandeau-actualites-dot.active {
+  background-color: var(--ps-green);
 }
 
 .text-accent {
