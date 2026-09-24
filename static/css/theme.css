@@ -468,7 +468,7 @@ h1, h2, h3, .display-font {
   white-space: nowrap;
   font-size: 1.3rem;
   padding-left: 100%;
-  animation: bandeau-actualites-defilement 16s linear infinite;
+  animation: bandeau-actualites-defilement 10s linear infinite;
 }
 
 @keyframes bandeau-actualites-defilement {
