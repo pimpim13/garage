@@ -4,12 +4,11 @@
     id="bandeau-actualites"
     data-ids="{% for a in actualites %}{{ a.pk }}{% if not forloop.last %},{% endif %}{% endfor %}"
   >
-    {% if fermable %}
-      <button type="button" class="bandeau-actualites-fermer" id="bandeau-actualites-fermer" aria-label="Fermer">&times;</button>
-    {% endif %}
     {% for actualite in actualites %}
       <div class="bandeau-actualites-item" {% if not forloop.first %}hidden{% endif %}>
-        <p class="bandeau-actualites-texte mb-2">{{ actualite.texte }}</p>
+        <div class="bandeau-actualites-defilement">
+          <span class="bandeau-actualites-texte">{{ actualite.texte }}</span>
+        </div>
         {% if actualite.cible %}
           {% url actualite.cible_url_name as cible_href %}
           {% if user.is_authenticated %}
@@ -20,17 +19,8 @@
         {% endif %}
       </div>
     {% endfor %}
-    {% if actualites|length > 1 %}
-      <div class="bandeau-actualites-dots">
-        {% for actualite in actualites %}
-          <button
-            type="button"
-            class="bandeau-actualites-dot {% if forloop.first %}active{% endif %}"
-            data-index="{{ forloop.counter0 }}"
-            aria-label="Message {{ forloop.counter }}"
-          ></button>
-        {% endfor %}
-      </div>
+    {% if fermable %}
+      <button type="button" class="bandeau-actualites-fermer" id="bandeau-actualites-fermer" aria-label="Fermer">&times;</button>
     {% endif %}
   </div>
 
@@ -62,34 +52,20 @@
       }
 
       const items = bandeau.querySelectorAll('.bandeau-actualites-item');
-      const dots = bandeau.querySelectorAll('.bandeau-actualites-dot');
+      if (items.length <= 1) return;
       let index = 0;
-      let minuteur = null;
 
       function afficher(i) {
         index = i;
         items.forEach(function (el, idx) { el.hidden = idx !== index; });
-        dots.forEach(function (el, idx) { el.classList.toggle('active', idx === index); });
       }
 
-      function demarrerRotation() {
-        if (items.length <= 1) return;
-        minuteur = setInterval(function () {
+      items.forEach(function (item) {
+        const texte = item.querySelector('.bandeau-actualites-texte');
+        texte.addEventListener('animationiteration', function () {
           afficher((index + 1) % items.length);
-        }, 5000);
-      }
-
-      dots.forEach(function (dot, i) {
-        dot.addEventListener('click', function () {
-          afficher(i);
-          if (minuteur) {
-            clearInterval(minuteur);
-            demarrerRotation();
-          }
         });
       });
-
-      demarrerRotation();
     });
   </script>
 {% endif %}
