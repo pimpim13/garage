@@ -36,6 +36,33 @@
           {% if user.is_authenticated %}
             <li class="nav-item"><a class="nav-link" href="{% url 'scheduling:calendrier' %}">Calendrier</a></li>
           {% endif %}
+          {% if actualites_navbar %}
+            <li class="nav-item dropdown">
+              <a
+                class="nav-link dropdown-toggle position-relative"
+                href="#"
+                role="button"
+                id="bandeau-cloche"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+                data-ids="{% for a in actualites_navbar %}{{ a.pk }}{% if not forloop.last %},{% endif %}{% endfor %}"
+              >
+                🔔
+                <span class="bandeau-cloche-point" id="bandeau-cloche-point" hidden></span>
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end p-3" style="min-width: 280px;">
+                {% for actualite in actualites_navbar %}
+                  <li class="mb-2 pb-2 {% if not forloop.last %}border-bottom{% endif %}">
+                    <p class="mb-1 small">{{ actualite.texte }}</p>
+                    {% if actualite.cible %}
+                      {% url actualite.cible_url_name as cible_href %}
+                      <a href="{{ cible_href }}" class="btn btn-accent btn-sm">{{ actualite.cible_libelle }}</a>
+                    {% endif %}
+                  </li>
+                {% endfor %}
+              </ul>
+            </li>
+          {% endif %}
           <li class="nav-item"><a class="nav-link" href="{% url 'offers:catalogue' %}">Offres</a></li>
           {% if user.is_authenticated %}
             <li class="nav-item"><a class="nav-link" href="{% url 'notifications:preferences' %}">Notifications</a></li>
@@ -95,6 +122,31 @@
         bootstrap.Alert.getOrCreateInstance(el).close();
       });
     }, 10000);
+  </script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const cloche = document.getElementById('bandeau-cloche');
+      const point = document.getElementById('bandeau-cloche-point');
+      if (!cloche || !point) return;
+      const idsActuels = (cloche.dataset.ids || '').split(',').filter(Boolean);
+
+      function idsDejaVus() {
+        try {
+          return JSON.parse(localStorage.getItem('actualites_fermees') || '[]');
+        } catch (e) {
+          return [];
+        }
+      }
+
+      point.hidden = !idsActuels.some(function (id) { return !idsDejaVus().includes(id); });
+
+      cloche.addEventListener('click', function () {
+        try {
+          localStorage.setItem('actualites_fermees', JSON.stringify(idsActuels));
+        } catch (e) { /* localStorage indisponible : on ignore */ }
+        point.hidden = true;
+      });
+    });
   </script>
   {% block extra_js %}{% endblock %}
 </body>

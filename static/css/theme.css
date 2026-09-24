@@ -520,6 +520,17 @@ h1, h2, h3, .display-font {
   background-color: var(--ps-green);
 }
 
+.bandeau-cloche-point {
+  position: absolute;
+  top: 0.1rem;
+  right: 0;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background-color: var(--ps-green);
+  border: 1px solid var(--ps-black);
+}
+
 .text-accent {
   color: var(--ps-green);
 }

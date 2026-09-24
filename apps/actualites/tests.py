@@ -189,3 +189,29 @@ class ActualiteDeleteViewTests(TestCase):
         self.client.post(reverse('actualites:supprimer', args=[actualite.pk]))
 
         self.assertFalse(Actualite.objects.filter(pk=actualite.pk).exists())
+
+
+class ClocheNavigationTests(TestCase):
+    def test_affiche_la_cloche_si_une_actualite_est_active(self):
+        membre = User.objects.create_user(username='membre_cloche', password='motdepasse123')
+        creer_actualite()
+        self.client.force_login(membre)
+
+        response = self.client.get(reverse('offers:catalogue'))
+
+        self.assertContains(response, 'id="bandeau-cloche"')
+
+    def test_pas_de_cloche_si_aucune_actualite_active(self):
+        membre = User.objects.create_user(username='membre_sans_cloche', password='motdepasse123')
+        self.client.force_login(membre)
+
+        response = self.client.get(reverse('offers:catalogue'))
+
+        self.assertNotContains(response, 'id="bandeau-cloche"')
+
+    def test_pas_de_cloche_pour_un_anonyme(self):
+        creer_actualite()
+
+        response = self.client.get(reverse('offers:catalogue'))
+
+        self.assertNotContains(response, 'id="bandeau-cloche"')
