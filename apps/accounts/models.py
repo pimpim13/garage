@@ -73,6 +73,11 @@ class User(AbstractUser):
         help_text="Recevoir un email à l'ouverture des inscriptions à une séance. Le mot de passe oublié "
         "est envoyé quoi qu'il arrive, indépendamment de ce réglage.",
     )
+    email_annulation_seance = models.BooleanField(
+        default=True,
+        verbose_name="email en cas d'annulation d'une séance",
+        help_text="Recevoir un email quand une séance à laquelle vous êtes inscrit(e) est annulée par le gestionnaire.",
+    )
     topic_ntfy_coach = models.CharField(
         max_length=64,
         unique=True,

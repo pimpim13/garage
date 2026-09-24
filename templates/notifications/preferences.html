@@ -20,6 +20,18 @@
             Email à l'ouverture des inscriptions à une séance
           </label>
         </div>
+        <div class="form-check">
+          <input
+            type="checkbox"
+            class="form-check-input"
+            id="email_annulation_seance"
+            name="email_annulation_seance"
+            {% if email_annulation_seance %}checked{% endif %}
+          >
+          <label class="form-check-label" for="email_annulation_seance">
+            Email en cas d'annulation d'une séance à laquelle je suis inscrit(e)
+          </label>
+        </div>
         <p class="text-muted small mb-0 mt-2">
           Le mot de passe oublié est toujours envoyé par email, indépendamment de ce réglage.
         </p>

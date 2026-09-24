@@ -26,6 +26,22 @@ def notifier_ouverture_inscriptions_par_email(seance):
         )
 
 
+def notifier_annulation_seance_par_email(nom_seance, debut_seance, membres):
+    destinataires = [m for m in membres if m.email_annulation_seance and m.email]
+    for membre in destinataires:
+        send_mail(
+            subject=f"Séance annulée : {nom_seance} — Le Garage",
+            message=(
+                f"Bonjour {membre.get_full_name() or membre.username},\n\n"
+                f"La séance « {nom_seance} » du {debut_seance:%d/%m à %H:%M} a été annulée.\n"
+                "Votre crédit de séance a été restauré.\n\n"
+                "L'équipe Le Garage"
+            ),
+            from_email=None,
+            recipient_list=[membre.email],
+        )
+
+
 def notifier_creation_compte_par_email(user, request):
     if not user.email:
         return

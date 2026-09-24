@@ -46,6 +46,7 @@ class MouvementSeance(models.Model):
         )
         NON_PRESENTATION = 'non_presentation', 'Non présenté(e) (séance due)'
         AJUSTEMENT = 'ajustement', 'Ajustement manuel'
+        ANNULATION_SEANCE = 'annulation_seance', 'Séance annulée par le gestionnaire'
 
     membre = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='mouvements_seances')
     delta = models.IntegerField(help_text="Positif pour un crédit, négatif pour un débit.")
