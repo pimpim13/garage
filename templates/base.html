@@ -25,6 +25,32 @@
       </a>
       <div class="d-flex align-items-center gap-2">
         {% if user.is_authenticated %}
+          {% if actualites_navbar %}
+            <div class="dropdown d-lg-none">
+              <a
+                class="text-light position-relative bandeau-cloche-toggle"
+                href="#"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+                data-ids="{% for a in actualites_navbar %}{{ a.pk }}{% if not forloop.last %},{% endif %}{% endfor %}"
+              >
+                🔔
+                <span class="bandeau-cloche-point" hidden></span>
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end p-3" style="min-width: 280px;">
+                {% for actualite in actualites_navbar %}
+                  <li class="mb-2 pb-2 {% if not forloop.last %}border-bottom{% endif %}">
+                    <p class="mb-1 small">{{ actualite.texte }}</p>
+                    {% if actualite.cible %}
+                      {% url actualite.cible_url_name as cible_href %}
+                      <a href="{{ cible_href }}" class="btn btn-accent btn-sm">{{ actualite.cible_libelle }}</a>
+                    {% endif %}
+                  </li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
           <a href="{% url 'accounts:preferences' %}" class="avatar-cercle d-lg-none text-decoration-none">{{ user.get_full_name|default:user.username|first|upper }}</a>
         {% endif %}
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
@@ -37,18 +63,17 @@
             <li class="nav-item"><a class="nav-link" href="{% url 'scheduling:calendrier' %}">Calendrier</a></li>
           {% endif %}
           {% if actualites_navbar %}
-            <li class="nav-item dropdown">
+            <li class="nav-item dropdown d-none d-lg-flex">
               <a
-                class="nav-link dropdown-toggle position-relative"
+                class="nav-link dropdown-toggle position-relative bandeau-cloche-toggle"
                 href="#"
                 role="button"
-                id="bandeau-cloche"
                 data-bs-toggle="dropdown"
                 aria-expanded="false"
                 data-ids="{% for a in actualites_navbar %}{{ a.pk }}{% if not forloop.last %},{% endif %}{% endfor %}"
               >
                 🔔
-                <span class="bandeau-cloche-point" id="bandeau-cloche-point" hidden></span>
+                <span class="bandeau-cloche-point" hidden></span>
               </a>
               <ul class="dropdown-menu dropdown-menu-end p-3" style="min-width: 280px;">
                 {% for actualite in actualites_navbar %}
@@ -125,10 +150,9 @@
   </script>
   <script>
     document.addEventListener('DOMContentLoaded', function () {
-      const cloche = document.getElementById('bandeau-cloche');
-      const point = document.getElementById('bandeau-cloche-point');
-      if (!cloche || !point) return;
-      const idsActuels = (cloche.dataset.ids || '').split(',').filter(Boolean);
+      const cloches = document.querySelectorAll('.bandeau-cloche-toggle');
+      if (!cloches.length) return;
+      const idsActuels = (cloches[0].dataset.ids || '').split(',').filter(Boolean);
 
       function idsDejaVus() {
         try {
@@ -138,13 +162,22 @@
         }
       }
 
-      point.hidden = !idsActuels.some(function (id) { return !idsDejaVus().includes(id); });
+      function majPoints() {
+        const nouveau = idsActuels.some(function (id) { return !idsDejaVus().includes(id); });
+        document.querySelectorAll('.bandeau-cloche-point').forEach(function (point) {
+          point.hidden = !nouveau;
+        });
+      }
 
-      cloche.addEventListener('click', function () {
-        try {
-          localStorage.setItem('actualites_fermees', JSON.stringify(idsActuels));
-        } catch (e) { /* localStorage indisponible : on ignore */ }
-        point.hidden = true;
+      majPoints();
+
+      cloches.forEach(function (cloche) {
+        cloche.addEventListener('click', function () {
+          try {
+            localStorage.setItem('actualites_fermees', JSON.stringify(idsActuels));
+          } catch (e) { /* localStorage indisponible : on ignore */ }
+          majPoints();
+        });
       });
     });
   </script>

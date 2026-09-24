@@ -199,7 +199,7 @@ class ClocheNavigationTests(TestCase):
 
         response = self.client.get(reverse('offers:catalogue'))
 
-        self.assertContains(response, 'id="bandeau-cloche"')
+        self.assertContains(response, 'bandeau-cloche-toggle"')
 
     def test_pas_de_cloche_si_aucune_actualite_active(self):
         membre = User.objects.create_user(username='membre_sans_cloche', password='motdepasse123')
@@ -207,11 +207,20 @@ class ClocheNavigationTests(TestCase):
 
         response = self.client.get(reverse('offers:catalogue'))
 
-        self.assertNotContains(response, 'id="bandeau-cloche"')
+        self.assertNotContains(response, 'bandeau-cloche-toggle"')
 
     def test_pas_de_cloche_pour_un_anonyme(self):
         creer_actualite()
 
         response = self.client.get(reverse('offers:catalogue'))
 
-        self.assertNotContains(response, 'id="bandeau-cloche"')
+        self.assertNotContains(response, 'bandeau-cloche-toggle"')
+
+    def test_la_cloche_est_visible_a_la_fois_en_mobile_et_en_desktop(self):
+        membre = User.objects.create_user(username='membre_cloche_responsive', password='motdepasse123')
+        creer_actualite()
+        self.client.force_login(membre)
+
+        response = self.client.get(reverse('offers:catalogue'))
+
+        self.assertContains(response, 'bandeau-cloche-toggle"', count=2)
