@@ -169,6 +169,8 @@
       <p class="text-muted">Personne en liste d'attente.</p>
     {% endif %}
   {% endif %}
+
+  <a href="{% url 'scheduling:calendrier_semaine' semaine=seance.debut|date:'Y-m-d' %}?jour={{ seance.debut|date:'Y-m-d' }}" class="btn btn-outline-dark btn-sm mt-4">&larr; Retour au calendrier</a>
 {% endblock %}
 
 {% block extra_js %}

@@ -217,6 +217,17 @@ class SeanceDetailMessageOuvertureTests(TestCase):
         self.assertContains(response, '21:00')
 
 
+class SeanceDetailRetourCalendrierTests(TestCase):
+    def test_propose_un_retour_au_calendrier_en_bas_de_page(self):
+        membre = User.objects.create_user(username='membre_retour_bas', password='motdepasse123')
+        seance = Seance.objects.create(nom='WOD', debut=timezone.now() + datetime.timedelta(days=2))
+        self.client.force_login(membre)
+
+        response = self.client.get(reverse('scheduling:seance_detail', kwargs={'pk': seance.pk}))
+
+        self.assertContains(response, 'Retour au calendrier', count=2)
+
+
 class SeanceDetailBoutonAbsenceTests(TestCase):
     def setUp(self):
         self.coach = User.objects.create_user(
