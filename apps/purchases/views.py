@@ -3,37 +3,69 @@ from decimal import Decimal, InvalidOperation
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+from django.utils.text import slugify
 from django.views.decorators.http import require_POST
 
 from apps.accounts.models import User
 from apps.bookings.services import historique_jokers, solde_jokers
 from apps.offers.models import Offre
 
-from .services import ajuster_solde, enregistrer_achat, historique_seances, solde_seances, statut_solde
+from .export import ecrire_csv, lignes_export
+from .services import (
+    ajuster_solde, enregistrer_achat, historique_seances, resoudre_periode, solde_seances, statut_solde,
+)
 
 AJUSTEMENTS_AUTORISES = (1, -1)
 ROLES_GERES = [User.Role.MEMBRE, User.Role.COACH, User.Role.GESTIONNAIRE]
 
 
-def _contexte_jokers(membre):
+def _periode(request):
+    return resoudre_periode(request.GET.get('periode'), request.GET.get('du'), request.GET.get('au'))
+
+
+def _jokers(membre, periode):
+    return historique_jokers(membre, periode.debut, periode.fin) if membre.is_membre else None
+
+
+def _contexte_historique(request, membre, titre=None):
+    periode = _periode(request)
     return {
+        'membre': membre,
+        'titre': titre,
+        'periode': periode,
+        'solde': solde_seances(membre),
+        'statut_solde': statut_solde(membre),
+        'date_expiration': membre.date_expiration_applicable,
+        'historique': historique_seances(membre, periode.debut, periode.fin),
         'solde_jokers': solde_jokers(membre),
         'date_reacquisition_joker': membre.date_reacquisition_joker,
-        'historique_jokers': historique_jokers(membre) if membre.is_membre else None,
+        'historique_jokers': _jokers(membre, periode),
+        'afficher_membre': bool(membre.famille_id),
+        'imprime_le': timezone.localtime(),
     }
+
+
+def _export_csv(request, membre):
+    periode = _periode(request)
+    jokers = _jokers(membre, periode) or []
+    reponse = HttpResponse(content_type='text/csv; charset=utf-8')
+    nom_fichier = f"historique-{slugify(str(membre)) or membre.pk}-{timezone.localdate():%Y%m%d}.csv"
+    reponse['Content-Disposition'] = f'attachment; filename="{nom_fichier}"'
+    lignes = lignes_export(historique_seances(membre, periode.debut, periode.fin), jokers)
+    return ecrire_csv(reponse, lignes)
 
 
 @login_required
 def mon_solde(request):
-    context = {
-        'solde': solde_seances(request.user),
-        'statut_solde': statut_solde(request.user),
-        'date_expiration': request.user.date_expiration_applicable,
-        'historique': historique_seances(request.user),
-        **_contexte_jokers(request.user),
-    }
-    return render(request, 'purchases/mon_solde.html', context)
+    return render(request, 'purchases/mon_solde.html', _contexte_historique(request, request.user))
+
+
+@login_required
+def export_mon_solde(request):
+    return _export_csv(request, request.user)
 
 
 @login_required
@@ -41,16 +73,16 @@ def historique_membre(request, membre_id):
     if not request.user.is_staff_or_manager:
         raise PermissionDenied
     membre = get_object_or_404(User, pk=membre_id, role__in=ROLES_GERES)
-    context = {
-        'membre': membre,
-        'titre': f"Historique de {membre}",
-        'solde': solde_seances(membre),
-        'statut_solde': statut_solde(membre),
-        'date_expiration': membre.date_expiration_applicable,
-        'historique': historique_seances(membre),
-        **_contexte_jokers(membre),
-    }
+    context = _contexte_historique(request, membre, titre=f"Historique de {membre}")
     return render(request, 'purchases/mon_solde.html', context)
+
+
+@login_required
+def export_historique_membre(request, membre_id):
+    if not request.user.is_staff_or_manager:
+        raise PermissionDenied
+    membre = get_object_or_404(User, pk=membre_id, role__in=ROLES_GERES)
+    return _export_csv(request, membre)
 
 
 @login_required

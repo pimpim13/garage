@@ -12,7 +12,11 @@ from apps.offers.models import Offre
 from apps.scheduling.models import Seance
 
 from .models import Achat, MouvementSeance
-from .services import ajuster_solde, enregistrer_achat, historique_seances, solde_seances, statut_solde
+from apps.bookings.services import historique_jokers
+
+from .services import (
+    ajuster_solde, enregistrer_achat, historique_seances, resoudre_periode, solde_seances, statut_solde,
+)
 
 User = get_user_model()
 
@@ -464,3 +468,231 @@ class EnregistrerAchatMembreViewTests(TestCase):
         })
 
         self.assertEqual(response.status_code, 404)
+
+
+def _dater(mouvement, annee, mois, jour, heure=12):
+    """Force l'horodatage (auto_now_add) pour tester le filtre de période."""
+    quand = timezone.make_aware(datetime.datetime(annee, mois, jour, heure, 0))
+    type(mouvement).objects.filter(pk=mouvement.pk).update(horodatage=quand)
+
+
+class ResoudrePeriodeTests(TestCase):
+    AUJOURD_HUI = datetime.date(2026, 10, 7)  # un mercredi
+
+    def test_tout_n_a_pas_de_bornes(self):
+        periode = resoudre_periode('tout', '', '', aujourdhui=self.AUJOURD_HUI)
+
+        self.assertEqual((periode.debut, periode.fin), (None, None))
+
+    def test_parametre_absent_ou_inconnu_vaut_tout(self):
+        for valeur in (None, '', 'n_importe_quoi'):
+            periode = resoudre_periode(valeur, '', '', aujourdhui=self.AUJOURD_HUI)
+            self.assertEqual((periode.cle, periode.debut, periode.fin), ('tout', None, None))
+
+    def test_ce_mois_ci_va_du_premier_au_dernier_jour(self):
+        periode = resoudre_periode('mois', '', '', aujourdhui=self.AUJOURD_HUI)
+
+        self.assertEqual((periode.debut, periode.fin), (datetime.date(2026, 10, 1), datetime.date(2026, 10, 31)))
+
+    def test_cette_semaine_va_du_lundi_au_dimanche(self):
+        periode = resoudre_periode('semaine', '', '', aujourdhui=self.AUJOURD_HUI)
+
+        self.assertEqual((periode.debut, periode.fin), (datetime.date(2026, 10, 5), datetime.date(2026, 10, 11)))
+
+    def test_personnalise_utilise_les_dates_saisies(self):
+        periode = resoudre_periode('perso', '2026-09-01', '2026-09-15', aujourdhui=self.AUJOURD_HUI)
+
+        self.assertEqual((periode.debut, periode.fin), (datetime.date(2026, 9, 1), datetime.date(2026, 9, 15)))
+
+    def test_personnalise_accepte_une_seule_borne(self):
+        periode = resoudre_periode('perso', '2026-09-01', '', aujourdhui=self.AUJOURD_HUI)
+
+        self.assertEqual((periode.debut, periode.fin), (datetime.date(2026, 9, 1), None))
+
+    def test_personnalise_ignore_les_dates_invalides(self):
+        periode = resoudre_periode('perso', 'abc', '2026-13-45', aujourdhui=self.AUJOURD_HUI)
+
+        self.assertEqual((periode.debut, periode.fin), (None, None))
+
+    def test_personnalise_remet_les_dates_dans_l_ordre(self):
+        periode = resoudre_periode('perso', '2026-09-15', '2026-09-01', aujourdhui=self.AUJOURD_HUI)
+
+        self.assertEqual((periode.debut, periode.fin), (datetime.date(2026, 9, 1), datetime.date(2026, 9, 15)))
+
+
+class HistoriquePeriodeTests(TestCase):
+    def test_seances_filtrees_par_periode_bornes_incluses(self):
+        membre = User.objects.create(username='periode_seances')
+        avant = MouvementSeance.objects.create(membre=membre, delta=1, motif=MouvementSeance.Motif.AJUSTEMENT)
+        debut = MouvementSeance.objects.create(membre=membre, delta=1, motif=MouvementSeance.Motif.AJUSTEMENT)
+        fin = MouvementSeance.objects.create(membre=membre, delta=1, motif=MouvementSeance.Motif.AJUSTEMENT)
+        apres = MouvementSeance.objects.create(membre=membre, delta=1, motif=MouvementSeance.Motif.AJUSTEMENT)
+        _dater(avant, 2026, 8, 31, 23)
+        _dater(debut, 2026, 9, 1, 0)
+        _dater(fin, 2026, 9, 30, 23)
+        _dater(apres, 2026, 10, 1, 0)
+
+        resultat = set(historique_seances(membre, debut=datetime.date(2026, 9, 1), fin=datetime.date(2026, 9, 30)))
+
+        self.assertEqual(resultat, {debut, fin})
+
+    def test_jokers_filtres_par_periode(self):
+        membre = User.objects.create(username='periode_jokers')
+        ancien = MouvementJoker.objects.create(membre=membre, delta=1, motif=MouvementJoker.Motif.ATTRIBUTION)
+        recent = MouvementJoker.objects.create(membre=membre, delta=-1, motif=MouvementJoker.Motif.UTILISATION)
+        _dater(ancien, 2026, 1, 10)
+        _dater(recent, 2026, 9, 10)
+
+        resultat = list(historique_jokers(membre, debut=datetime.date(2026, 9, 1)))
+
+        self.assertEqual(resultat, [recent])
+
+    def test_jokers_incluent_ceux_de_toute_la_famille(self):
+        famille = Famille.objects.create(nom='Martin')
+        parent = User.objects.create(username='parent_martin', famille=famille)
+        enfant = User.objects.create(username='enfant_martin', famille=famille)
+        etranger = User.objects.create(username='etranger_martin')
+        joker_parent = MouvementJoker.objects.create(membre=parent, delta=1, motif=MouvementJoker.Motif.ATTRIBUTION)
+        joker_enfant = MouvementJoker.objects.create(membre=enfant, delta=1, motif=MouvementJoker.Motif.ATTRIBUTION)
+        MouvementJoker.objects.create(membre=etranger, delta=1, motif=MouvementJoker.Motif.ATTRIBUTION)
+
+        resultat = set(historique_jokers(parent))
+
+        self.assertEqual(resultat, {joker_parent, joker_enfant})
+
+
+class HistoriquePeriodeViewTests(TestCase):
+    def setUp(self):
+        self.membre = User.objects.create_user(username='vue_periode', password='motdepasse123')
+        self.ancien = MouvementSeance.objects.create(
+            membre=self.membre, delta=11, motif=MouvementSeance.Motif.ACHAT
+        )
+        self.recent = MouvementSeance.objects.create(
+            membre=self.membre, delta=1, motif=MouvementSeance.Motif.AJUSTEMENT
+        )
+        _dater(self.ancien, 2020, 1, 15)
+        _dater(self.recent, timezone.localdate().year, timezone.localdate().month, 1)
+        self.client.force_login(self.membre)
+
+    def test_par_defaut_tout_l_historique_est_affiche(self):
+        response = self.client.get(reverse('purchases:mon_solde'))
+
+        self.assertContains(response, '15/01/2020')
+
+    def test_periode_mois_masque_les_mouvements_plus_anciens(self):
+        response = self.client.get(reverse('purchases:mon_solde'), {'periode': 'mois'})
+
+        self.assertNotContains(response, '15/01/2020')
+        self.assertContains(response, 'Ajustement manuel')
+
+    def test_periode_personnalisee(self):
+        response = self.client.get(
+            reverse('purchases:mon_solde'), {'periode': 'perso', 'du': '2020-01-01', 'au': '2020-01-31'}
+        )
+
+        self.assertContains(response, '15/01/2020')
+        self.assertNotContains(response, 'Ajustement manuel')
+
+    def test_le_solde_affiche_ne_depend_pas_de_la_periode(self):
+        response = self.client.get(reverse('purchases:mon_solde'), {'periode': 'perso', 'du': '2020-01-01', 'au': '2020-01-31'})
+
+        self.assertEqual(response.context['solde'], 12)
+
+    def test_famille_affiche_le_nom_du_membre_concerne(self):
+        famille = Famille.objects.create(nom='Leroy')
+        parent = User.objects.create_user(username='parent_leroy', password='motdepasse123', famille=famille)
+        enfant = User.objects.create_user(
+            username='enfant_leroy', password='motdepasse123', famille=famille, first_name='Zoé'
+        )
+        MouvementSeance.objects.create(membre=enfant, delta=-1, motif=MouvementSeance.Motif.INSCRIPTION)
+        MouvementJoker.objects.create(membre=enfant, delta=1, motif=MouvementJoker.Motif.ATTRIBUTION)
+        self.client.force_login(parent)
+
+        response = self.client.get(reverse('purchases:mon_solde'))
+
+        self.assertContains(response, 'Zoé', count=2)
+
+
+class ExportHistoriqueTests(TestCase):
+    def setUp(self):
+        self.membre = User.objects.create_user(
+            username='export_membre', password='motdepasse123', first_name='Alice', last_name='Durand'
+        )
+        achat = MouvementSeance.objects.create(membre=self.membre, delta=11, motif=MouvementSeance.Motif.ACHAT)
+        joker = MouvementJoker.objects.create(
+            membre=self.membre, delta=-1, motif=MouvementJoker.Motif.UTILISATION, commentaire='Blessure'
+        )
+        recent = MouvementSeance.objects.create(
+            membre=self.membre, delta=-1, motif=MouvementSeance.Motif.INSCRIPTION
+        )
+        _dater(achat, 2020, 1, 15)
+        _dater(joker, 2020, 1, 16)
+        _dater(recent, timezone.localdate().year, timezone.localdate().month, 1)
+
+    def _lignes(self, response):
+        contenu = response.content.decode('utf-8-sig')
+        return [ligne.split(';') for ligne in contenu.strip().splitlines()]
+
+    def test_le_membre_exporte_son_historique_en_csv(self):
+        self.client.force_login(self.membre)
+
+        response = self.client.get(reverse('purchases:export_mon_solde'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('text/csv', response['Content-Type'])
+        self.assertIn('attachment', response['Content-Disposition'])
+        self.assertTrue(response.content.startswith(b'\xef\xbb\xbf'))
+        lignes = self._lignes(response)
+        self.assertEqual(lignes[0], ['Date', 'Membre', 'Type', 'Description', 'Variation'])
+        self.assertEqual(len(lignes), 4)  # en-tête + 2 mouvements de séances + 1 joker
+
+    def test_l_export_contient_les_jokers_et_les_variations(self):
+        self.client.force_login(self.membre)
+
+        response = self.client.get(reverse('purchases:export_mon_solde'))
+
+        contenu = response.content.decode('utf-8-sig')
+        self.assertIn('Joker', contenu)
+        self.assertIn('Blessure', contenu)
+        self.assertIn('15/01/2020 12:00', contenu)
+        self.assertIn('Alice Durand', contenu)
+        self.assertIn('+11', contenu)
+
+    def test_l_export_respecte_la_periode(self):
+        self.client.force_login(self.membre)
+
+        response = self.client.get(reverse('purchases:export_mon_solde'), {'periode': 'mois'})
+
+        self.assertEqual(len(self._lignes(response)), 2)  # en-tête + inscription du mois
+
+    def test_le_gestionnaire_exporte_l_historique_d_un_membre(self):
+        gestionnaire = User.objects.create_user(
+            username='export_gestionnaire', password='motdepasse123', role=User.Role.GESTIONNAIRE
+        )
+        self.client.force_login(gestionnaire)
+
+        response = self.client.get(reverse('purchases:export_historique_membre', args=[self.membre.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('Alice Durand', response.content.decode('utf-8-sig'))
+
+    def test_un_membre_ne_peut_pas_exporter_l_historique_d_un_autre(self):
+        intrus = User.objects.create_user(username='export_intrus', password='motdepasse123')
+        self.client.force_login(intrus)
+
+        response = self.client.get(reverse('purchases:export_historique_membre', args=[self.membre.pk]))
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_l_export_neutralise_les_formules_tableur(self):
+        piege = User.objects.create_user(
+            username='export_piege', password='motdepasse123', first_name='=HYPERLINK("x")', last_name='Test'
+        )
+        MouvementSeance.objects.create(membre=piege, delta=1, motif=MouvementSeance.Motif.AJUSTEMENT)
+        self.client.force_login(piege)
+
+        response = self.client.get(reverse('purchases:export_mon_solde'))
+
+        contenu = response.content.decode('utf-8-sig')
+        self.assertNotIn(';=HYPERLINK', contenu)
+        self.assertIn("'=HYPERLINK", contenu)

@@ -4,7 +4,7 @@ from django.utils import timezone
 
 from apps.notifications.ntfy import notifier_evenement_seance, notifier_membres
 from apps.purchases.models import MouvementSeance
-from apps.purchases.services import solde_seances
+from apps.purchases.services import filtrer_periode, solde_seances
 
 from .models import Inscription, MouvementJoker
 
@@ -21,10 +21,14 @@ def solde_jokers(membre):
     return total or 0
 
 
-def historique_jokers(membre):
-    return MouvementJoker.objects.filter(membre=membre).select_related(
-        'auteur', 'inscription__seance'
-    ).order_by('-horodatage')
+def historique_jokers(membre, debut=None, fin=None):
+    """Mouvements de joker du membre, ou de tous les comptes rattachés s'il fait partie d'une famille."""
+    if membre.famille_id:
+        mouvements = MouvementJoker.objects.filter(membre__famille=membre.famille)
+    else:
+        mouvements = MouvementJoker.objects.filter(membre=membre)
+    mouvements = mouvements.select_related('membre', 'auteur', 'inscription__seance')
+    return filtrer_periode(mouvements, debut, fin).order_by('-horodatage')
 
 
 def _consommer_joker(membre, auteur, inscription=None, commentaire=''):

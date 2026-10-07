@@ -3,9 +3,42 @@
 {% block content %}
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="mb-0">{{ titre|default:"Mon solde de séances" }}</h2>
-    {% if membre %}
-      <a href="{% url 'accounts:membre_modifier' pk=membre.pk %}" class="btn btn-outline-dark btn-sm">Retour à la fiche</a>
+    {% if titre %}
+      <a href="{% url 'accounts:membre_modifier' pk=membre.pk %}" class="btn btn-outline-dark btn-sm no-print">Retour à la fiche</a>
     {% endif %}
+  </div>
+
+  <div class="print-only mb-3">
+    <p class="mb-0"><strong>{{ membre }}</strong>{% if membre.famille %} — famille {{ membre.famille.nom }}{% endif %}</p>
+    <p class="mb-0">Période : {{ periode.libelle }}</p>
+    <p class="mb-0">Édité le {{ imprime_le|date:'d/m/Y à H:i' }}</p>
+  </div>
+
+  <div class="card p-3 mb-4 no-print">
+    <form method="get" class="row g-2 align-items-end" id="form-periode">
+      <input type="hidden" name="periode" id="champ-periode" value="{{ periode.cle }}">
+      <div class="col-12 d-flex flex-wrap gap-2">
+        <button type="submit" class="btn btn-sm {% if periode.cle == 'tout' %}btn-accent{% else %}btn-outline-dark{% endif %}" data-periode="tout">Tout</button>
+        <button type="submit" class="btn btn-sm {% if periode.cle == 'mois' %}btn-accent{% else %}btn-outline-dark{% endif %}" data-periode="mois">Ce mois-ci</button>
+        <button type="submit" class="btn btn-sm {% if periode.cle == 'semaine' %}btn-accent{% else %}btn-outline-dark{% endif %}" data-periode="semaine">Cette semaine</button>
+      </div>
+      <div class="col-6 col-md-3">
+        <label for="champ-du" class="form-label small mb-0">Du</label>
+        <input type="date" class="form-control form-control-sm" id="champ-du" name="du" value="{{ periode.debut|date:'Y-m-d' }}">
+      </div>
+      <div class="col-6 col-md-3">
+        <label for="champ-au" class="form-label small mb-0">Au</label>
+        <input type="date" class="form-control form-control-sm" id="champ-au" name="au" value="{{ periode.fin|date:'Y-m-d' }}">
+      </div>
+      <div class="col-12 col-md-auto">
+        <button type="submit" class="btn btn-sm {% if periode.cle == 'perso' %}btn-accent{% else %}btn-outline-dark{% endif %}" data-periode="perso">Appliquer les dates</button>
+      </div>
+    </form>
+    <div class="d-flex flex-wrap gap-2 mt-3">
+      <button type="button" class="btn btn-outline-dark btn-sm" onclick="window.print()">Imprimer</button>
+      <a class="btn btn-outline-dark btn-sm"
+         href="{% if titre %}{% url 'purchases:export_historique_membre' membre_id=membre.pk %}{% else %}{% url 'purchases:export_mon_solde' %}{% endif %}?periode={{ periode.cle }}&du={{ periode.debut|date:'Y-m-d' }}&au={{ periode.fin|date:'Y-m-d' }}">Exporter (CSV)</a>
+    </div>
   </div>
 
   <div class="card p-4 mb-4">
@@ -44,21 +77,7 @@
         <li class="list-group-item d-flex justify-content-between align-items-center">
           <div>
             <div>
-              {% if mouvement.motif == 'inscription' and mouvement.inscription %}
-                Inscription à la séance du {{ mouvement.inscription.seance.debut|date:'d/m/Y H:i' }}
-              {% elif mouvement.motif == 'desinscription' and mouvement.inscription %}
-                Désinscription de la séance du {{ mouvement.inscription.seance.debut|date:'d/m/Y H:i' }}
-              {% elif mouvement.motif == 'desinscription_tardive_joker' and mouvement.inscription %}
-                Désinscription tardive (joker utilisé) de la séance du {{ mouvement.inscription.seance.debut|date:'d/m/Y H:i' }}
-              {% elif mouvement.motif == 'desinscription_tardive_sans_joker' and mouvement.inscription %}
-                Désinscription tardive (séance perdue) de la séance du {{ mouvement.inscription.seance.debut|date:'d/m/Y H:i' }}
-              {% elif mouvement.motif == 'non_presentation' and mouvement.inscription %}
-                Non présenté(e) à la séance du {{ mouvement.inscription.seance.debut|date:'d/m/Y H:i' }} (séance due)
-              {% elif mouvement.motif == 'ajustement' %}
-                {{ mouvement.get_motif_display }}{% if mouvement.auteur %} — par {{ mouvement.auteur }}{% endif %}
-              {% else %}
-                {{ mouvement.get_motif_display }}
-              {% endif %}
+              {{ mouvement.libelle }}{% if afficher_membre %} <span class="text-muted">({{ mouvement.membre }})</span>{% endif %}
             </div>
             <div class="text-muted small">{{ mouvement.horodatage|date:'d/m/Y H:i' }}</div>
           </div>
@@ -69,7 +88,7 @@
       {% endfor %}
     </ul>
   {% else %}
-    <p class="text-muted">Aucun mouvement pour le moment.</p>
+    <p class="text-muted">Aucun mouvement sur cette période.</p>
   {% endif %}
 
   {% if historique_jokers is not None %}
@@ -80,12 +99,7 @@
           <li class="list-group-item d-flex justify-content-between align-items-center">
             <div>
               <div>
-                {{ mouvement.get_motif_display }}
-                {% if mouvement.inscription %}
-                  — séance du {{ mouvement.inscription.seance.debut|date:'d/m/Y H:i' }}
-                {% endif %}
-                {% if mouvement.commentaire %} — « {{ mouvement.commentaire }} »{% endif %}
-                {% if mouvement.auteur %} — par {{ mouvement.auteur }}{% endif %}
+                {{ mouvement.libelle }}{% if afficher_membre %} <span class="text-muted">({{ mouvement.membre }})</span>{% endif %}
               </div>
               <div class="text-muted small">{{ mouvement.horodatage|date:'d/m/Y H:i' }}</div>
             </div>
@@ -96,7 +110,21 @@
         {% endfor %}
       </ul>
     {% else %}
-      <p class="text-muted">Aucun mouvement de joker pour le moment.</p>
+      <p class="text-muted">Aucun mouvement de joker sur cette période.</p>
     {% endif %}
   {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+  <script>
+    document.querySelectorAll('#form-periode button[data-periode]').forEach(function (bouton) {
+      bouton.addEventListener('click', function () {
+        document.getElementById('champ-periode').value = bouton.dataset.periode;
+        if (bouton.dataset.periode !== 'perso') {
+          document.getElementById('champ-du').value = '';
+          document.getElementById('champ-au').value = '';
+        }
+      });
+    });
+  </script>
 {% endblock %}

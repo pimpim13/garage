@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 from apps.scheduling.models import Seance
 
@@ -71,3 +72,15 @@ class MouvementJoker(models.Model):
 
     def __str__(self):
         return f"{self.membre} {self.delta:+d} ({self.get_motif_display()})"
+
+    @property
+    def libelle(self):
+        morceaux = [self.get_motif_display()]
+        if self.inscription_id:
+            debut = timezone.localtime(self.inscription.seance.debut).strftime('%d/%m/%Y %H:%M')
+            morceaux.append(f"séance du {debut}")
+        if self.commentaire:
+            morceaux.append(f"« {self.commentaire} »")
+        if self.auteur_id:
+            morceaux.append(f"par {self.auteur}")
+        return ' — '.join(morceaux)

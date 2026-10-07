@@ -1,3 +1,6 @@
+import datetime
+from collections import namedtuple
+
 from dateutil.relativedelta import relativedelta
 from django.db.models import Sum
 from django.utils import timezone
@@ -30,10 +33,52 @@ def statut_solde(membre):
     return 'orange'
 
 
-def historique_seances(membre):
-    return _mouvements_pour(membre).select_related(
-        'membre', 'auteur', 'inscription__seance'
-    ).order_by('-horodatage')
+Periode = namedtuple('Periode', ['cle', 'debut', 'fin', 'libelle'])
+
+LIBELLE_TOUT = "Tout l'historique"
+
+
+def _date_ou_none(valeur):
+    try:
+        return datetime.date.fromisoformat(valeur)
+    except (TypeError, ValueError):
+        return None
+
+
+def resoudre_periode(periode, du, au, aujourdhui=None):
+    """Traduit le choix de période (tout / mois / semaine / perso) en bornes de dates incluses."""
+    aujourdhui = aujourdhui or timezone.localdate()
+    if periode == 'mois':
+        debut = aujourdhui.replace(day=1)
+        fin = debut + relativedelta(months=1, days=-1)
+        return Periode('mois', debut, fin, 'Ce mois-ci')
+    if periode == 'semaine':
+        debut = aujourdhui - datetime.timedelta(days=aujourdhui.weekday())
+        return Periode('semaine', debut, debut + datetime.timedelta(days=6), 'Cette semaine')
+    if periode == 'perso':
+        debut, fin = _date_ou_none(du), _date_ou_none(au)
+        if debut and fin and debut > fin:
+            debut, fin = fin, debut
+        if debut and fin:
+            return Periode('perso', debut, fin, f"Du {debut:%d/%m/%Y} au {fin:%d/%m/%Y}")
+        if debut:
+            return Periode('perso', debut, None, f"Depuis le {debut:%d/%m/%Y}")
+        if fin:
+            return Periode('perso', None, fin, f"Jusqu'au {fin:%d/%m/%Y}")
+    return Periode('tout', None, None, LIBELLE_TOUT)
+
+
+def filtrer_periode(queryset, debut=None, fin=None):
+    if debut:
+        queryset = queryset.filter(horodatage__date__gte=debut)
+    if fin:
+        queryset = queryset.filter(horodatage__date__lte=fin)
+    return queryset
+
+
+def historique_seances(membre, debut=None, fin=None):
+    mouvements = _mouvements_pour(membre).select_related('membre', 'auteur', 'inscription__seance')
+    return filtrer_periode(mouvements, debut, fin).order_by('-horodatage')
 
 
 def ajuster_solde(membre, delta, auteur):

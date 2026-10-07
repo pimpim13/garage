@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 from apps.offers.models import Offre
 
@@ -71,3 +72,21 @@ class MouvementSeance(models.Model):
 
     def __str__(self):
         return f"{self.membre} {self.delta:+d} ({self.get_motif_display()})"
+
+    @property
+    def libelle(self):
+        M = self.Motif
+        if self.inscription_id:
+            debut = timezone.localtime(self.inscription.seance.debut).strftime('%d/%m/%Y %H:%M')
+            modeles = {
+                M.INSCRIPTION: f"Inscription à la séance du {debut}",
+                M.DESINSCRIPTION: f"Désinscription de la séance du {debut}",
+                M.DESINSCRIPTION_TARDIVE_JOKER: f"Désinscription tardive (joker utilisé) de la séance du {debut}",
+                M.DESINSCRIPTION_TARDIVE_SANS_JOKER: f"Désinscription tardive (séance perdue) de la séance du {debut}",
+                M.NON_PRESENTATION: f"Non présenté(e) à la séance du {debut} (séance due)",
+            }
+            if self.motif in modeles:
+                return modeles[self.motif]
+        if self.motif == M.AJUSTEMENT and self.auteur_id:
+            return f"{self.get_motif_display()} — par {self.auteur}"
+        return self.get_motif_display()
