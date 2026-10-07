@@ -18,7 +18,9 @@ lire_config() {
     return
   fi
   [ -f "$PROJET_DIR/.env" ] || return 0
-  { grep -E "^${nom}=" "$PROJET_DIR/.env" || true; } | tail -n 1 | cut -d= -f2- | sed -e 's/^["'\'']//' -e 's/["'\'']$//'
+  # Retire espaces, retours chariot et guillemets autour de la valeur (collages, éditeurs Windows).
+  { grep -E "^${nom}=" "$PROJET_DIR/.env" || true; } | tail -n 1 | cut -d= -f2- \
+    | sed -e 's/\r//g' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/^["'\'']//' -e 's/["'\'']$//'
 }
 
 alerter() {
