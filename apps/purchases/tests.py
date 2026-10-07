@@ -561,6 +561,70 @@ class HistoriquePeriodeTests(TestCase):
         self.assertEqual(resultat, {joker_parent, joker_enfant})
 
 
+class HistoriquePeriodeSelonDateSeanceTests(TestCase):
+    def setUp(self):
+        self.membre = User.objects.create(username='periode_date_seance')
+
+    def _inscription(self, jour, mois=10):
+        seance = Seance.objects.create(
+            nom='Cross training',
+            debut=timezone.make_aware(datetime.datetime(2026, mois, jour, 18, 0)),
+            capacite_max=10,
+        )
+        return Inscription.objects.create(membre=self.membre, seance=seance)
+
+    def test_mouvement_lie_a_une_seance_suit_la_date_de_la_seance(self):
+        inscription = self._inscription(5)
+        mouvement = MouvementSeance.objects.create(
+            membre=self.membre, delta=-1, motif=MouvementSeance.Motif.INSCRIPTION, inscription=inscription
+        )
+        _dater(mouvement, 2026, 9, 30)  # inscrit fin septembre pour une séance du 5 octobre
+
+        octobre = historique_seances(self.membre, debut=datetime.date(2026, 10, 1), fin=datetime.date(2026, 10, 31))
+        septembre = historique_seances(self.membre, debut=datetime.date(2026, 9, 1), fin=datetime.date(2026, 9, 30))
+
+        self.assertEqual(list(octobre), [mouvement])
+        self.assertEqual(list(septembre), [])
+
+    def test_les_credits_restent_filtres_par_date_d_action(self):
+        achat = MouvementSeance.objects.create(membre=self.membre, delta=11, motif=MouvementSeance.Motif.ACHAT)
+        ajustement = MouvementSeance.objects.create(
+            membre=self.membre, delta=1, motif=MouvementSeance.Motif.AJUSTEMENT
+        )
+        _dater(achat, 2026, 9, 30)
+        _dater(ajustement, 2026, 10, 3)
+
+        septembre = historique_seances(self.membre, debut=datetime.date(2026, 9, 1), fin=datetime.date(2026, 9, 30))
+
+        self.assertEqual(list(septembre), [achat])
+
+    def test_joker_utilise_suit_la_date_de_la_seance_et_l_attribution_la_date_d_action(self):
+        inscription = self._inscription(5)
+        utilisation = MouvementJoker.objects.create(
+            membre=self.membre, delta=-1, motif=MouvementJoker.Motif.UTILISATION, inscription=inscription
+        )
+        attribution = MouvementJoker.objects.create(
+            membre=self.membre, delta=1, motif=MouvementJoker.Motif.ATTRIBUTION
+        )
+        _dater(utilisation, 2026, 9, 30)
+        _dater(attribution, 2026, 9, 20)
+
+        octobre = historique_jokers(self.membre, debut=datetime.date(2026, 10, 1), fin=datetime.date(2026, 10, 31))
+        septembre = historique_jokers(self.membre, debut=datetime.date(2026, 9, 1), fin=datetime.date(2026, 9, 30))
+
+        self.assertEqual(list(octobre), [utilisation])
+        self.assertEqual(list(septembre), [attribution])
+
+    def test_sans_periode_tous_les_mouvements_sont_renvoyes(self):
+        inscription = self._inscription(5)
+        MouvementSeance.objects.create(
+            membre=self.membre, delta=-1, motif=MouvementSeance.Motif.INSCRIPTION, inscription=inscription
+        )
+        MouvementSeance.objects.create(membre=self.membre, delta=11, motif=MouvementSeance.Motif.ACHAT)
+
+        self.assertEqual(historique_seances(self.membre).count(), 2)
+
+
 class HistoriquePeriodeViewTests(TestCase):
     def setUp(self):
         self.membre = User.objects.create_user(username='vue_periode', password='motdepasse123')

@@ -2,7 +2,7 @@ import datetime
 from collections import namedtuple
 
 from dateutil.relativedelta import relativedelta
-from django.db.models import Sum
+from django.db.models import Q, Sum
 from django.utils import timezone
 
 from .models import Achat, MouvementSeance
@@ -69,10 +69,14 @@ def resoudre_periode(periode, du, au, aujourdhui=None):
 
 
 def filtrer_periode(queryset, debut=None, fin=None):
-    if debut:
-        queryset = queryset.filter(horodatage__date__gte=debut)
-    if fin:
-        queryset = queryset.filter(horodatage__date__lte=fin)
+    """Un mouvement lié à une séance est placé à la date de la séance, les autres (achat,
+    ajustement, attribution de joker...) à leur date d'action."""
+    for borne, suffixe in ((debut, 'gte'), (fin, 'lte')):
+        if borne:
+            queryset = queryset.filter(
+                Q(inscription__isnull=False, **{f'inscription__seance__debut__date__{suffixe}': borne})
+                | Q(inscription__isnull=True, **{f'horodatage__date__{suffixe}': borne})
+            )
     return queryset
 
 
