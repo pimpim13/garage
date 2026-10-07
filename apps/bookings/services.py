@@ -1,10 +1,12 @@
 from dateutil.relativedelta import relativedelta
+from django.db import transaction
 from django.db.models import Sum
 from django.utils import timezone
 
 from apps.notifications.ntfy import notifier_evenement_seance, notifier_membres
 from apps.purchases.models import MouvementSeance
 from apps.purchases.services import filtrer_periode, solde_seances
+from apps.scheduling.models import Seance
 
 from .models import Inscription, MouvementJoker
 
@@ -143,6 +145,61 @@ def enregistrer_desinscription(inscription, auteur):
         'notifie_desinscription',
     )
     promouvoir_liste_attente(seance)
+
+
+def seances_permutables(membre, seance):
+    """Autres séances du même jour, à venir et avec des places, où le membre inscrit à `seance`
+    peut permuter. La permutation n'est ouverte que le jour même de la séance."""
+    inscrit = membre.inscriptions.filter(seance=seance, statut=Inscription.Statut.INSCRIT).exists()
+    jour = timezone.localtime(seance.debut).date()
+    if not inscrit or seance.est_passee or jour != timezone.localdate():
+        return []
+
+    deja_actives = membre.inscriptions.filter(
+        statut__in=[Inscription.Statut.INSCRIT, Inscription.Statut.EN_ATTENTE]
+    ).values_list('seance_id', flat=True)
+    candidates = (
+        Seance.objects.filter(debut__date=jour, debut__gt=timezone.now())
+        .exclude(pk=seance.pk)
+        .exclude(pk__in=deja_actives)
+        .select_related('coach')
+    )
+    return [candidate for candidate in candidates if candidate.places_restantes > 0]
+
+
+@transaction.atomic
+def permuter_inscription(inscription, nouvelle_seance, auteur):
+    """Déplace l'inscription vers une autre séance du jour : le solde net est inchangé et aucun
+    joker n'est consommé, même si la séance quittée est dans le délai de désinscription tardive."""
+    membre, ancienne_seance = inscription.membre, inscription.seance
+    if inscription.statut != Inscription.Statut.INSCRIT or nouvelle_seance not in seances_permutables(
+        membre, ancienne_seance
+    ):
+        raise ValueError("Cette permutation n'est pas possible.")
+
+    inscription.statut = Inscription.Statut.PERMUTE
+    inscription.desinscrit_le = timezone.now()
+    inscription.auteur = auteur
+    inscription.save(update_fields=['statut', 'desinscrit_le', 'auteur'])
+    MouvementSeance.objects.create(
+        membre=membre,
+        delta=1,
+        motif=MouvementSeance.Motif.PERMUTATION,
+        inscription=inscription,
+        auteur=auteur,
+    )
+    nouvelle_inscription = enregistrer_inscription(membre=membre, seance=nouvelle_seance, auteur=auteur)
+
+    ancien_debut = timezone.localtime(ancienne_seance.debut)
+    nouveau_debut = timezone.localtime(nouvelle_seance.debut)
+    notifier_evenement_seance(
+        ancienne_seance,
+        f"{membre} a permuté de « {ancienne_seance.nom} » ({ancien_debut:%H:%M}) "
+        f"vers « {nouvelle_seance.nom} » ({nouveau_debut:%H:%M}).",
+        'notifie_desinscription',
+    )
+    promouvoir_liste_attente(ancienne_seance)
+    return nouvelle_inscription
 
 
 def promouvoir_liste_attente(seance):

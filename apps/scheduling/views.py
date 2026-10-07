@@ -17,7 +17,7 @@ from apps.accounts.mixins import GestionnaireRequiredMixin
 from apps.accounts.models import User
 from apps.actualites.models import Actualite
 from apps.bookings.models import Inscription
-from apps.bookings.services import peut_s_inscrire
+from apps.bookings.services import peut_s_inscrire, seances_permutables
 from apps.notifications.email import notifier_annulation_seance_par_email
 from apps.notifications.ntfy import notifier_membres
 from apps.purchases.models import MouvementSeance
@@ -202,6 +202,8 @@ class SeanceDetailView(LoginRequiredMixin, DetailView):
         context['inscrit'] = self.object.inscriptions.filter(
             membre=self.request.user, statut=Inscription.Statut.INSCRIT
         ).exists()
+        if context['inscrit']:
+            context['seances_permutables'] = seances_permutables(self.request.user, self.object)
         if self.request.user.is_membre:
             context['solde_membre'] = solde_seances(self.request.user)
             context['statut_solde_membre'] = statut_solde(self.request.user)

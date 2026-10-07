@@ -13,6 +13,7 @@ class Inscription(models.Model):
         DESINSCRIT_TARDIF_JOKER = 'desinscrit_tardif_joker', 'Désinscrit tardivement (joker utilisé)'
         DESINSCRIT_TARDIF_SANS_JOKER = 'desinscrit_tardif_sans_joker', 'Désinscrit tardivement (séance perdue)'
         NON_PRESENTE = 'non_presente', 'Non présenté(e)'
+        PERMUTE = 'permute', 'Permuté(e) vers une autre séance'
 
     membre = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='inscriptions')
     seance = models.ForeignKey(Seance, on_delete=models.CASCADE, related_name='inscriptions')

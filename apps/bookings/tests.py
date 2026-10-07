@@ -20,7 +20,9 @@ from .services import (
     historique_jokers,
     marquer_non_presente,
     peut_s_inscrire,
+    permuter_inscription,
     promouvoir_liste_attente,
+    seances_permutables,
     retirer_joker,
     solde_jokers,
 )
@@ -625,3 +627,224 @@ class InscrireViewMessageOuvertureTests(TestCase):
 
         messages = [str(m) for m in response.context['messages']]
         self.assertTrue(any('21:00' in message for message in messages), messages)
+
+
+MAINTENANT = timezone.make_aware(datetime.datetime(2026, 10, 7, 10, 0))  # un mercredi, 10h00
+
+
+class PermutationTestCase(TestCase):
+    """Fige l'heure à mercredi 7 octobre 2026, 10h00, pour éviter tout aléa autour de minuit."""
+
+    def setUp(self):
+        patcher = patch('django.utils.timezone.now', return_value=MAINTENANT)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.coach = User.objects.create(username='coach_permutation')
+        self.membre = User.objects.create_user(username='membre_permutation', password='motdepasse123')
+        MouvementSeance.objects.create(membre=self.membre, delta=5, motif=MouvementSeance.Motif.ACHAT)
+
+    def seance(self, heure=12, jour=7, capacite=10, nom='WOD'):
+        return Seance.objects.create(
+            nom=nom,
+            debut=timezone.make_aware(datetime.datetime(2026, 10, jour, heure, 0)),
+            capacite_max=capacite,
+            delai_annulation_heures=24,
+            coach=self.coach,
+        )
+
+    def inscrire(self, seance, membre=None):
+        membre = membre or self.membre
+        return enregistrer_inscription(membre=membre, seance=seance, auteur=membre)
+
+
+class SeancesPermutablesTests(PermutationTestCase):
+    def test_liste_les_autres_seances_du_jour_avec_des_places(self):
+        origine = self.seance(heure=12)
+        cible = self.seance(heure=18, nom='Cible')
+        self.inscrire(origine)
+
+        self.assertEqual(seances_permutables(self.membre, origine), [cible])
+
+    def test_exclut_les_seances_completes(self):
+        origine = self.seance(heure=12)
+        pleine = self.seance(heure=18, capacite=1)
+        self.inscrire(origine)
+        self.inscrire(pleine, membre=User.objects.create(username='occupant'))
+
+        self.assertEqual(seances_permutables(self.membre, origine), [])
+
+    def test_exclut_les_seances_deja_commencees(self):
+        origine = self.seance(heure=12)
+        self.seance(heure=9)  # il est 10h00
+        self.inscrire(origine)
+
+        self.assertEqual(seances_permutables(self.membre, origine), [])
+
+    def test_exclut_les_seances_d_un_autre_jour(self):
+        origine = self.seance(heure=12)
+        self.seance(heure=18, jour=8)
+        self.inscrire(origine)
+
+        self.assertEqual(seances_permutables(self.membre, origine), [])
+
+    def test_exclut_les_seances_ou_le_membre_est_deja_inscrit_ou_en_attente(self):
+        origine = self.seance(heure=12)
+        deja_inscrit = self.seance(heure=18)
+        en_attente = self.seance(heure=19)
+        self.inscrire(origine)
+        self.inscrire(deja_inscrit)
+        Inscription.objects.create(membre=self.membre, seance=en_attente, statut=Inscription.Statut.EN_ATTENTE)
+
+        self.assertEqual(seances_permutables(self.membre, origine), [])
+
+    def test_vide_si_la_seance_d_origine_n_est_pas_aujourd_hui(self):
+        origine = self.seance(heure=12, jour=8)
+        self.seance(heure=18, jour=8)
+        self.inscrire(origine)
+
+        self.assertEqual(seances_permutables(self.membre, origine), [])
+
+    def test_vide_si_le_membre_n_est_pas_inscrit(self):
+        origine = self.seance(heure=12)
+        self.seance(heure=18)
+
+        self.assertEqual(seances_permutables(self.membre, origine), [])
+
+
+class PermuterInscriptionTests(PermutationTestCase):
+    def setUp(self):
+        super().setUp()
+        self.origine = self.seance(heure=12)  # dans 2h : désinscription tardive
+        self.cible = self.seance(heure=18, nom='Cible')
+        self.inscription = self.inscrire(self.origine)
+
+    def test_inscrit_le_membre_sur_la_nouvelle_seance_et_libere_l_ancienne(self):
+        permuter_inscription(self.inscription, self.cible, auteur=self.membre)
+
+        self.assertTrue(
+            Inscription.objects.filter(membre=self.membre, seance=self.cible, statut=Inscription.Statut.INSCRIT).exists()
+        )
+        self.inscription.refresh_from_db()
+        self.assertEqual(self.inscription.statut, Inscription.Statut.PERMUTE)
+        self.assertEqual(self.origine.places_restantes, 10)
+        self.assertEqual(self.cible.places_restantes, 9)
+
+    def test_le_solde_de_seances_est_inchange(self):
+        permuter_inscription(self.inscription, self.cible, auteur=self.membre)
+
+        self.assertEqual(solde_seances(self.membre), 4)
+
+    def test_le_solde_est_inchange_meme_a_la_limite_de_la_tolerance(self):
+        MouvementSeance.objects.create(membre=self.membre, delta=-4, motif=MouvementSeance.Motif.AJUSTEMENT)
+
+        permuter_inscription(self.inscription, self.cible, auteur=self.membre)
+
+        self.assertEqual(solde_seances(self.membre), 0)
+
+    def test_le_joker_n_est_pas_consomme_meme_en_permutation_tardive(self):
+        MouvementJoker.objects.create(membre=self.membre, delta=1, motif=MouvementJoker.Motif.ATTRIBUTION)
+        self.assertTrue(self.origine.desinscription_tardive)
+
+        permuter_inscription(self.inscription, self.cible, auteur=self.membre)
+
+        self.assertEqual(solde_jokers(self.membre), 1)
+        self.membre.refresh_from_db()
+        self.assertIsNone(self.membre.date_reacquisition_joker)
+
+    def test_trace_un_mouvement_de_permutation_sur_l_ancienne_seance(self):
+        permuter_inscription(self.inscription, self.cible, auteur=self.membre)
+
+        mouvement = MouvementSeance.objects.get(motif=MouvementSeance.Motif.PERMUTATION)
+        self.assertEqual((mouvement.membre, mouvement.delta, mouvement.inscription), (self.membre, 1, self.inscription))
+        self.assertIn('Permutation', mouvement.libelle)
+        self.assertIn('07/10/2026 12:00', mouvement.libelle)
+
+    def test_refuse_une_seance_non_permutable(self):
+        autre_jour = self.seance(heure=18, jour=8)
+
+        with self.assertRaises(ValueError):
+            permuter_inscription(self.inscription, autre_jour, auteur=self.membre)
+
+        self.inscription.refresh_from_db()
+        self.assertEqual(self.inscription.statut, Inscription.Statut.INSCRIT)
+        self.assertEqual(solde_seances(self.membre), 4)
+
+    def test_refuse_si_l_inscription_n_est_plus_active(self):
+        self.inscription.statut = Inscription.Statut.DESINSCRIT
+        self.inscription.save(update_fields=['statut'])
+
+        with self.assertRaises(ValueError):
+            permuter_inscription(self.inscription, self.cible, auteur=self.membre)
+
+
+class PermuterViewTests(PermutationTestCase):
+    def setUp(self):
+        super().setUp()
+        self.origine = self.seance(heure=12)
+        self.cible = self.seance(heure=18, nom='Cible')
+        self.inscription = self.inscrire(self.origine)
+        self.client.force_login(self.membre)
+
+    def _post(self, vers):
+        return self.client.post(reverse('bookings:permuter', args=[self.origine.pk]), {'vers': vers})
+
+    def test_permute_et_redirige_vers_la_nouvelle_seance(self):
+        response = self._post(self.cible.pk)
+
+        self.assertRedirects(response, reverse('scheduling:seance_detail', args=[self.cible.pk]))
+        self.assertTrue(
+            Inscription.objects.filter(membre=self.membre, seance=self.cible, statut=Inscription.Statut.INSCRIT).exists()
+        )
+
+    def test_refuse_une_cible_non_permutable_sans_rien_modifier(self):
+        autre_jour = self.seance(heure=18, jour=8)
+
+        self._post(autre_jour.pk)
+
+        self.inscription.refresh_from_db()
+        self.assertEqual(self.inscription.statut, Inscription.Statut.INSCRIT)
+
+    def test_refuse_si_le_membre_n_est_pas_inscrit_a_la_seance_d_origine(self):
+        autre = User.objects.create_user(username='autre_permutation', password='motdepasse123')
+        self.client.force_login(autre)
+
+        self._post(self.cible.pk)
+
+        self.assertFalse(Inscription.objects.filter(membre=autre).exists())
+
+    def test_refuse_une_requete_get(self):
+        response = self.client.get(reverse('bookings:permuter', args=[self.origine.pk]))
+
+        self.assertEqual(response.status_code, 405)
+
+    def test_la_fiche_seance_propose_la_permutation(self):
+        response = self.client.get(reverse('scheduling:seance_detail', args=[self.origine.pk]))
+
+        self.assertContains(response, 'Permuter')
+        self.assertContains(response, 'Cible')
+
+    def test_pas_de_bouton_si_aucune_autre_seance_n_a_de_place(self):
+        self.cible.capacite_max = 1
+        self.cible.save(update_fields=['capacite_max'])
+        self.inscrire(self.cible, membre=User.objects.create(username='occupant_vue'))
+
+        response = self.client.get(reverse('scheduling:seance_detail', args=[self.origine.pk]))
+
+        self.assertNotContains(response, 'Permuter')
+
+    def test_pas_de_bouton_si_le_membre_n_est_pas_inscrit(self):
+        autre = User.objects.create_user(username='non_inscrit_permutation', password='motdepasse123')
+        self.client.force_login(autre)
+
+        response = self.client.get(reverse('scheduling:seance_detail', args=[self.origine.pk]))
+
+        self.assertNotContains(response, 'Permuter')
+
+    def test_pas_de_bouton_si_la_seance_n_est_pas_aujourd_hui(self):
+        demain = self.seance(heure=12, jour=8, nom='Demain')
+        self.seance(heure=18, jour=8, nom='Demain soir')
+        self.inscrire(demain)
+
+        response = self.client.get(reverse('scheduling:seance_detail', args=[demain.pk]))
+
+        self.assertNotContains(response, 'Permuter')

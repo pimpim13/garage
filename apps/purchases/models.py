@@ -48,6 +48,7 @@ class MouvementSeance(models.Model):
         NON_PRESENTATION = 'non_presentation', 'Non présenté(e) (séance due)'
         AJUSTEMENT = 'ajustement', 'Ajustement manuel'
         ANNULATION_SEANCE = 'annulation_seance', 'Séance annulée par le gestionnaire'
+        PERMUTATION = 'permutation', 'Permutation vers une autre séance'
 
     membre = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='mouvements_seances')
     delta = models.IntegerField(help_text="Positif pour un crédit, négatif pour un débit.")
@@ -84,6 +85,7 @@ class MouvementSeance(models.Model):
                 M.DESINSCRIPTION_TARDIVE_JOKER: f"Désinscription tardive (joker utilisé) de la séance du {debut}",
                 M.DESINSCRIPTION_TARDIVE_SANS_JOKER: f"Désinscription tardive (séance perdue) de la séance du {debut}",
                 M.NON_PRESENTATION: f"Non présenté(e) à la séance du {debut} (séance due)",
+                M.PERMUTATION: f"Permutation : séance du {debut} quittée pour une autre séance du jour",
             }
             if self.motif in modeles:
                 return modeles[self.motif]

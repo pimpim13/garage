@@ -17,6 +17,7 @@ from .services import (
     enregistrer_inscription,
     marquer_non_presente,
     peut_s_inscrire,
+    permuter_inscription,
     retirer_joker,
 )
 
@@ -72,6 +73,28 @@ def desinscrire(request, seance_id):
     else:
         enregistrer_desinscription(inscription, request.user)
         messages.success(request, "Désinscription confirmée.")
+    return redirect(_retour(request, seance))
+
+
+@login_required
+@require_POST
+def permuter(request, seance_id):
+    seance = get_object_or_404(Seance, pk=seance_id)
+    inscription = request.user.inscriptions.filter(seance=seance, statut=Inscription.Statut.INSCRIT).first()
+    nouvelle_seance = Seance.objects.filter(pk=request.POST.get('vers') or 0).first()
+    if inscription is None:
+        messages.info(request, "Vous n'êtes pas inscrit(e) à cette séance.")
+    elif nouvelle_seance is None:
+        messages.error(request, "Séance de destination introuvable.")
+    else:
+        try:
+            permuter_inscription(inscription, nouvelle_seance, request.user)
+        except ValueError:
+            messages.error(request, "Cette permutation n'est pas possible (séance complète ou plus disponible).")
+        else:
+            messages.success(request, f"Permutation confirmée : vous êtes inscrit(e) à « {nouvelle_seance.nom} ».")
+            _notifier_inscription(nouvelle_seance, request.user)
+            return redirect(reverse('scheduling:seance_detail', kwargs={'pk': nouvelle_seance.pk}))
     return redirect(_retour(request, seance))
 
 
