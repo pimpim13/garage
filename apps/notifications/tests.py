@@ -164,20 +164,33 @@ class PreferencesViewMembreTests(TestCase):
 
         self.assertNotContains(response, 'garage-coach-')
 
-    def test_decocher_desactive_le_consentement(self):
-        self.client.post(reverse('notifications:preferences'), {})
+    def test_propose_les_trois_modes_d_email_d_ouverture(self):
+        response = self.client.get(reverse('notifications:preferences'))
+
+        self.assertContains(response, 'name="mode_email_ouverture"', count=3)
+        for valeur in ('seance', 'recap', 'aucun'):
+            self.assertContains(response, f'value="{valeur}"')
+
+    def test_le_mode_par_defaut_est_un_email_par_seance(self):
+        self.assertEqual(self.membre.mode_email_ouverture, User.ModeEmailOuverture.SEANCE)
+
+    def test_choisir_le_recapitulatif_est_enregistre(self):
+        self.client.post(reverse('notifications:preferences'), {'mode_email_ouverture': 'recap'})
 
         self.membre.refresh_from_db()
-        self.assertFalse(self.membre.email_ouverture_seance)
+        self.assertEqual(self.membre.mode_email_ouverture, User.ModeEmailOuverture.RECAP)
 
-    def test_cocher_active_le_consentement(self):
-        self.membre.email_ouverture_seance = False
-        self.membre.save(update_fields=['email_ouverture_seance'])
-
-        self.client.post(reverse('notifications:preferences'), {'email_ouverture_seance': 'on'})
+    def test_choisir_aucun_email_est_enregistre(self):
+        self.client.post(reverse('notifications:preferences'), {'mode_email_ouverture': 'aucun'})
 
         self.membre.refresh_from_db()
-        self.assertTrue(self.membre.email_ouverture_seance)
+        self.assertEqual(self.membre.mode_email_ouverture, User.ModeEmailOuverture.AUCUN)
+
+    def test_une_valeur_invalide_ne_change_rien(self):
+        self.client.post(reverse('notifications:preferences'), {'mode_email_ouverture': 'n_importe_quoi'})
+
+        self.membre.refresh_from_db()
+        self.assertEqual(self.membre.mode_email_ouverture, User.ModeEmailOuverture.SEANCE)
 
     def test_affiche_la_case_a_cocher_annulation_de_seance_cochee_par_defaut(self):
         response = self.client.get(reverse('notifications:preferences'))
@@ -186,7 +199,7 @@ class PreferencesViewMembreTests(TestCase):
         self.assertTrue(self.membre.email_annulation_seance)
 
     def test_decocher_desactive_l_email_d_annulation(self):
-        self.client.post(reverse('notifications:preferences'), {'email_ouverture_seance': 'on'})
+        self.client.post(reverse('notifications:preferences'), {'mode_email_ouverture': 'seance'})
 
         self.membre.refresh_from_db()
         self.assertFalse(self.membre.email_annulation_seance)
@@ -196,7 +209,7 @@ class PreferencesViewMembreTests(TestCase):
         self.membre.save(update_fields=['email_annulation_seance'])
 
         self.client.post(reverse('notifications:preferences'), {
-            'email_ouverture_seance': 'on', 'email_annulation_seance': 'on',
+            'mode_email_ouverture': 'seance', 'email_annulation_seance': 'on',
         })
 
         self.membre.refresh_from_db()
@@ -220,7 +233,7 @@ class PreferencesViewCoachTests(TestCase):
 
         response = self.client.get(reverse('notifications:preferences'))
 
-        self.assertNotContains(response, 'name="email_ouverture_seance"')
+        self.assertNotContains(response, 'name="mode_email_ouverture"')
 
 
 class PreferencesViewCoachEvenementsTests(TestCase):

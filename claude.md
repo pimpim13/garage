@@ -126,7 +126,7 @@ Un membre peut être rattaché à une **famille**, qui regroupe plusieurs membre
 Deux canaux : **email** et **push (ntfy.sh)**, gérables par chaque utilisateur depuis l'onglet « Notifications ».
 
 **Emails** — chaque type est activable/désactivable indépendamment par le membre (page Notifications) :
-- Ouverture des inscriptions à une séance — *implémenté*
+- Ouverture des inscriptions à une séance — *implémenté*, au choix du membre : un email par séance, un seul **récapitulatif** regroupant les séances ouvertes depuis la dernière exécution du cron de 21h (séances ajoutées en semaine incluses), ou aucun email
 - Annulation d'une séance à laquelle le membre est inscrit — *implémenté*
 - Désinscription, joker utilisé, solde bas, crédit renouvelé, etc. — *à ajouter au fur et à mesure, même mécanisme*
 

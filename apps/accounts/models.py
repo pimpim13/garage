@@ -67,11 +67,19 @@ class User(AbstractUser):
         help_text="Date à partir de laquelle un nouveau joker peut être ré-attribué (3 mois après la "
         "consommation du précédent). Effacée si un joker est attribué manuellement avant cette date.",
     )
-    email_ouverture_seance = models.BooleanField(
-        default=True,
+    class ModeEmailOuverture(models.TextChoices):
+        SEANCE = 'seance', "Un email par séance"
+        RECAP = 'recap', "Un récapitulatif par jour"
+        AUCUN = 'aucun', "Aucun email"
+
+    mode_email_ouverture = models.CharField(
+        max_length=10,
+        choices=ModeEmailOuverture.choices,
+        default=ModeEmailOuverture.SEANCE,
         verbose_name="email à l'ouverture des inscriptions",
-        help_text="Recevoir un email à l'ouverture des inscriptions à une séance. Le mot de passe oublié "
-        "est envoyé quoi qu'il arrive, indépendamment de ce réglage.",
+        help_text="Un email par séance ouverte, un seul récapitulatif quotidien (envoyé à 21h avec "
+        "l'ouverture des inscriptions), ou aucun email. Le mot de passe oublié est envoyé quoi qu'il "
+        "arrive, indépendamment de ce réglage.",
     )
     email_annulation_seance = models.BooleanField(
         default=True,

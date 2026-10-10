@@ -8,17 +8,44 @@ from django.utils.http import urlsafe_base64_encode
 from apps.accounts.models import User
 
 
+def _membres_a_notifier(mode):
+    return User.objects.filter(
+        role=User.Role.MEMBRE, is_active=True, mode_email_ouverture=mode
+    ).exclude(email='')
+
+
 def notifier_ouverture_inscriptions_par_email(seance):
     debut = timezone.localtime(seance.debut)
-    destinataires = User.objects.filter(
-        role=User.Role.MEMBRE, is_active=True, email_ouverture_seance=True
-    ).exclude(email='')
-    for membre in destinataires:
+    for membre in _membres_a_notifier(User.ModeEmailOuverture.SEANCE):
         send_mail(
             subject=f"Inscriptions ouvertes : {seance.nom} — Le Garage",
             message=(
                 f"Bonjour {membre.get_full_name() or membre.username},\n\n"
                 f"Les inscriptions sont ouvertes pour « {seance.nom} » le {debut:%d/%m à %H:%M}.\n\n"
+                "L'équipe Le Garage"
+            ),
+            from_email=None,
+            recipient_list=[membre.email],
+        )
+
+
+def notifier_recap_ouvertures_par_email(seances):
+    if not seances:
+        return
+    lignes = "\n".join(
+        f"- {s.nom} — {timezone.localtime(s.debut):%A %d/%m à %H:%M}" for s in seances
+    )
+    pluriel = len(seances) > 1
+    for membre in _membres_a_notifier(User.ModeEmailOuverture.RECAP):
+        send_mail(
+            subject=(
+                f"Récapitulatif : {len(seances)} séance{'s' if pluriel else ''} "
+                f"ouverte{'s' if pluriel else ''} aux inscriptions — Le Garage"
+            ),
+            message=(
+                f"Bonjour {membre.get_full_name() or membre.username},\n\n"
+                f"Les inscriptions viennent d'ouvrir pour {'les séances suivantes' if pluriel else 'la séance suivante'} :\n\n"
+                f"{lignes}\n\n"
                 "L'équipe Le Garage"
             ),
             from_email=None,

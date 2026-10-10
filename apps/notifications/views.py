@@ -13,7 +13,6 @@ CHAMPS_PREFERENCE_EVENEMENTS = [
 ]
 
 CHAMPS_PREFERENCE_EMAILS = [
-    'email_ouverture_seance',
     'email_annulation_seance',
 ]
 
@@ -26,11 +25,16 @@ def preferences(request):
         if request.method == 'POST':
             for champ in CHAMPS_PREFERENCE_EMAILS:
                 setattr(request.user, champ, champ in request.POST)
-            request.user.save(update_fields=CHAMPS_PREFERENCE_EMAILS)
+            mode = request.POST.get('mode_email_ouverture')
+            if mode in User.ModeEmailOuverture.values:
+                request.user.mode_email_ouverture = mode
+            request.user.save(update_fields=CHAMPS_PREFERENCE_EMAILS + ['mode_email_ouverture'])
             messages.success(request, "Préférences de notification mises à jour.")
             return redirect('notifications:preferences')
         for champ in CHAMPS_PREFERENCE_EMAILS:
             context[champ] = getattr(request.user, champ)
+        context['mode_email_ouverture'] = request.user.mode_email_ouverture
+        context['modes_email_ouverture'] = User.ModeEmailOuverture.choices
         context['topic_ntfy_membres'] = settings.NTFY_TOPIC_MEMBRES
 
     if request.user.anime_des_seances:

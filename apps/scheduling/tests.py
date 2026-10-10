@@ -526,12 +526,83 @@ class NotifierOuverturesInscriptionsEmailTests(TestCase):
     def test_n_envoie_pas_si_le_membre_a_refuse_les_emails(self):
         User.objects.create_user(
             username='membre_refuse_email', password='motdepasse123',
-            role=User.Role.MEMBRE, email='refuse@example.com', email_ouverture_seance=False,
+            role=User.Role.MEMBRE, email='refuse@example.com',
+            mode_email_ouverture=User.ModeEmailOuverture.AUCUN,
         )
 
         call_command('notifier_ouvertures_inscriptions')
 
         self.assertEqual(len(mail.outbox), 0)
+
+    def test_n_envoie_pas_d_email_par_seance_au_membre_en_mode_recapitulatif(self):
+        User.objects.create_user(
+            username='membre_recap_seul', password='motdepasse123', role=User.Role.MEMBRE,
+            email='recap@example.com', mode_email_ouverture=User.ModeEmailOuverture.RECAP,
+        )
+
+        call_command('notifier_ouvertures_inscriptions')
+
+        # un seul email (le récapitulatif), pas un email séparé en plus
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn('récapitulatif', mail.outbox[0].subject.lower())
+
+    def test_envoie_un_seul_recapitulatif_pour_plusieurs_seances(self):
+        Seance.objects.create(
+            nom='Cross', debut=timezone.now() + datetime.timedelta(days=2), capacite_max=10,
+        )
+        User.objects.create_user(
+            username='membre_recap_multi', password='motdepasse123', role=User.Role.MEMBRE,
+            email='multi@example.com', mode_email_ouverture=User.ModeEmailOuverture.RECAP,
+        )
+
+        call_command('notifier_ouvertures_inscriptions')
+
+        self.assertEqual(len(mail.outbox), 1)
+        contenu = mail.outbox[0].body
+        self.assertIn('WOD', contenu)
+        self.assertIn('Cross', contenu)
+
+    def test_les_membres_par_seance_recoivent_un_email_chacun(self):
+        Seance.objects.create(
+            nom='Cross', debut=timezone.now() + datetime.timedelta(days=2), capacite_max=10,
+        )
+        User.objects.create_user(
+            username='membre_par_seance', password='motdepasse123', role=User.Role.MEMBRE,
+            email='parseance@example.com',
+        )
+
+        call_command('notifier_ouvertures_inscriptions')
+
+        self.assertEqual(len(mail.outbox), 2)
+
+    def test_n_envoie_pas_de_recapitulatif_sans_nouvelle_seance(self):
+        User.objects.create_user(
+            username='membre_recap_vide', password='motdepasse123', role=User.Role.MEMBRE,
+            email='vide@example.com', mode_email_ouverture=User.ModeEmailOuverture.RECAP,
+        )
+        call_command('notifier_ouvertures_inscriptions')
+        mail.outbox.clear()
+
+        call_command('notifier_ouvertures_inscriptions')
+
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_une_seance_ajoutee_plus_tard_part_dans_le_recapitulatif_suivant(self):
+        User.objects.create_user(
+            username='membre_recap_tard', password='motdepasse123', role=User.Role.MEMBRE,
+            email='tard@example.com', mode_email_ouverture=User.ModeEmailOuverture.RECAP,
+        )
+        call_command('notifier_ouvertures_inscriptions')
+        mail.outbox.clear()
+        Seance.objects.create(
+            nom='Ajout jeudi', debut=timezone.now() + datetime.timedelta(days=3), capacite_max=10,
+        )
+
+        call_command('notifier_ouvertures_inscriptions')
+
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn('Ajout jeudi', mail.outbox[0].body)
+        self.assertNotIn('WOD', mail.outbox[0].body)
 
     def test_n_envoie_pas_a_un_membre_sans_email(self):
         User.objects.create_user(username='membre_sans_email', password='motdepasse123', role=User.Role.MEMBRE)
