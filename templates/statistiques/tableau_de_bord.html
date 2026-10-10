@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Statistiques — Le Garage{% endblock %}
+
+{% block content %}
+  <h2 class="mb-3">Statistiques</h2>
+
+  <form method="get" class="card p-3 mb-4">
+    <div class="row g-2 align-items-end">
+      <div class="col-6 col-md-3">
+        <label class="form-label small mb-1" for="periode">Période</label>
+        <select class="form-select form-select-sm" id="periode" name="periode">
+          {% for valeur, libelle in periodes %}
+            <option value="{{ valeur }}" {% if periode == valeur %}selected{% endif %}>{{ libelle }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-3 champ-perso">
+        <label class="form-label small mb-1" for="debut">Du</label>
+        <input type="date" class="form-control form-control-sm" id="debut" name="debut" value="{{ debut|date:'Y-m-d' }}">
+      </div>
+      <div class="col-6 col-md-3 champ-perso">
+        <label class="form-label small mb-1" for="fin">Au</label>
+        <input type="date" class="form-control form-control-sm" id="fin" name="fin" value="{{ fin|date:'Y-m-d' }}">
+      </div>
+      <div class="col-6 col-md-3">
+        <label class="form-label small mb-1" for="type">Type de séance</label>
+        <select class="form-select form-select-sm" id="type" name="type">
+          <option value="">Tous</option>
+          {% for nom in noms %}
+            <option value="{{ nom }}" {% if nom == nom_selectionne %}selected{% endif %}>{{ nom }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-3">
+        <label class="form-label small mb-1" for="coach">Coach</label>
+        <select class="form-select form-select-sm" id="coach" name="coach">
+          <option value="">Tous</option>
+          {% for coach in coachs %}
+            <option value="{{ coach.pk }}" {% if coach.pk == coach_selectionne %}selected{% endif %}>{{ coach.first_name|default:coach.username }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-3">
+        <button type="submit" class="btn btn-accent btn-sm w-100">Appliquer</button>
+      </div>
+    </div>
+    <p class="text-muted small mb-0 mt-2">Du {{ debut|date:'d/m/Y' }} au {{ fin|date:'d/m/Y' }} — séances déjà passées uniquement.</p>
+  </form>
+
+  {% with s=resultat.synthese %}
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-3"><div class="card p-3 text-center"><div class="fs-2 fw-bold">{{ s.seances }}</div><div class="text-muted small">Séances données</div></div></div>
+      <div class="col-6 col-md-3"><div class="card p-3 text-center"><div class="fs-2 fw-bold">{{ s.inscrits }}</div><div class="text-muted small">Inscrits cumulés</div></div></div>
+      <div class="col-6 col-md-3"><div class="card p-3 text-center"><div class="fs-2 fw-bold">{{ s.remplissage }} %</div><div class="text-muted small">Remplissage moyen</div></div></div>
+      <div class="col-6 col-md-3"><div class="card p-3 text-center"><div class="fs-2 fw-bold">{{ s.moyenne_inscrits }}</div><div class="text-muted small">Inscrits par séance</div></div></div>
+    </div>
+  {% endwith %}
+
+  {% if resultat.synthese.seances %}
+    <div class="card p-3 mb-4">
+      <h5 class="mb-3">Évolution (par {{ resultat.evolution.granularite }})</h5>
+      <div style="position: relative; height: 280px;"><canvas id="graphique-evolution"></canvas></div>
+    </div>
+
+    <div class="row g-3 mb-4">
+      <div class="col-12 col-lg-6">
+        <div class="card p-3 h-100">
+          <h5 class="mb-3">Par type de séance</h5>
+          {% include "statistiques/_tableau_ventilation.html" with lignes=resultat.par_type %}
+        </div>
+      </div>
+      <div class="col-12 col-lg-6">
+        <div class="card p-3 h-100">
+          <h5 class="mb-3">Par coach</h5>
+          {% include "statistiques/_tableau_ventilation.html" with lignes=resultat.par_coach %}
+        </div>
+      </div>
+    </div>
+
+    <div class="card p-3 mb-4">
+      <h5 class="mb-1">Remplissage par créneau</h5>
+      <p class="text-muted small">Remplissage moyen selon le jour et l'heure de début ; plus la case est verte, plus elle est remplie.</p>
+      <div class="table-responsive">
+        <table class="table table-sm text-center align-middle mb-0">
+          <thead>
+            <tr><th></th>{% for jour in resultat.heatmap.jours %}<th>{{ jour }}</th>{% endfor %}</tr>
+          </thead>
+          <tbody>
+            {% for heure, cases in resultat.heatmap.cases.items %}
+              <tr>
+                <th class="text-nowrap">{{ heure }}h</th>
+                {% for case in cases %}
+                  {% if case %}
+                    <td style="background: rgba(128, 176, 72, {{ case.remplissage|floatformat:0|default:0 }}%);" title="{{ case.seances }} séance{{ case.seances|pluralize }}">
+                      <strong>{{ case.remplissage|floatformat:0 }} %</strong>
+                    </td>
+                  {% else %}
+                    <td class="text-muted">·</td>
+                  {% endif %}
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card p-3 mb-4">
+      <h5 class="mb-1">Séances sous le seuil de 4 inscrits</h5>
+      {% if resultat.sous_seuil %}
+        <p class="text-muted small">Candidates à l'annulation ou à un réaménagement du planning.</p>
+        <ul class="list-unstyled mb-0">
+          {% for ligne in resultat.sous_seuil %}
+            <li class="py-1 border-bottom">
+              <a href="{% url 'scheduling:seance_detail' pk=ligne.seance.pk %}">{{ ligne.seance.nom }}</a>
+              — {{ ligne.seance.debut|date:'D d/m H:i' }} — <strong>{{ ligne.inscrits }}</strong> inscrit{{ ligne.inscrits|pluralize }}
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-muted mb-0">Aucune séance sous le seuil sur cette période.</p>
+      {% endif %}
+    </div>
+  {% else %}
+    <div class="card p-4 text-center text-muted">Aucune séance passée sur cette période avec ces filtres.</div>
+  {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+  <script>
+    (function () {
+      var selecteur = document.getElementById('periode');
+      function basculer() {
+        document.querySelectorAll('.champ-perso').forEach(function (el) {
+          el.style.display = selecteur.value === 'perso' ? '' : 'none';
+        });
+      }
+      selecteur.addEventListener('change', basculer);
+      basculer();
+    })();
+  </script>
+  {% if resultat.synthese.seances %}
+    {{ resultat.evolution|json_script:"donnees-evolution" }}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script>
+      (function () {
+        var d = JSON.parse(document.getElementById('donnees-evolution').textContent);
+        new Chart(document.getElementById('graphique-evolution'), {
+          data: {
+            labels: d.libelles,
+            datasets: [
+              { type: 'bar', label: 'Inscrits', data: d.inscrits, backgroundColor: '#80b048', yAxisID: 'y' },
+              { type: 'line', label: 'Remplissage (%)', data: d.remplissage, borderColor: '#f0f0f0', backgroundColor: '#f0f0f0', tension: 0.3, yAxisID: 'y2' }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: { beginAtZero: true, title: { display: true, text: 'Inscrits' } },
+              y2: { beginAtZero: true, max: 100, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: '%' } }
+            }
+          }
+        });
+      })();
+    </script>
+  {% endif %}
+{% endblock %}

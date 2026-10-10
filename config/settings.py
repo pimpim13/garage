@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'apps.notifications',
     'apps.payments',
     'apps.actualites',
+    'apps.statistiques',
     'crispy_forms',
     'crispy_bootstrap5',
 ]

@@ -1,0 +1,18 @@
+<div class="table-responsive">
+  <table class="table table-sm align-middle mb-0">
+    <thead>
+      <tr><th>Nom</th><th class="text-end">Séances</th><th class="text-end">Inscrits</th><th class="text-end">Remplissage</th><th class="text-end">&lt; 4</th></tr>
+    </thead>
+    <tbody>
+      {% for ligne in lignes %}
+        <tr>
+          <td>{{ ligne.libelle }}</td>
+          <td class="text-end">{{ ligne.seances }}</td>
+          <td class="text-end">{{ ligne.inscrits }}</td>
+          <td class="text-end">{{ ligne.remplissage }} %</td>
+          <td class="text-end">{% if ligne.sous_seuil %}<span class="text-danger fw-bold">{{ ligne.sous_seuil }}</span>{% else %}0{% endif %}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
