@@ -6,6 +6,7 @@
   <h2 class="mb-3">Statistiques</h2>
 
   <form method="get" class="card p-3 mb-4">
+    <input type="hidden" name="ref" value="{{ debut|date:'Y-m-d' }}">
     <div class="row g-2 align-items-end">
       <div class="col-6 col-md-3">
         <label class="form-label small mb-1" for="periode">Période</label>
@@ -45,7 +46,15 @@
         <button type="submit" class="btn btn-accent btn-sm w-100">Appliquer</button>
       </div>
     </div>
-    <p class="text-muted small mb-0 mt-2">Du {{ debut|date:'d/m/Y' }} au {{ fin|date:'d/m/Y' }} — séances déjà passées uniquement.</p>
+    <div class="d-flex justify-content-between align-items-center mt-3">
+      <a href="{{ url_precedent }}" class="btn btn-outline-dark btn-sm" aria-label="Période précédente">&larr; Précédente</a>
+      <span class="text-muted small text-center">Du {{ debut|date:'d/m/Y' }} au {{ fin|date:'d/m/Y' }}<br>séances déjà passées uniquement</span>
+      {% if url_suivant %}
+        <a href="{{ url_suivant }}" class="btn btn-outline-dark btn-sm" aria-label="Période suivante">Suivante &rarr;</a>
+      {% else %}
+        <span class="btn btn-outline-dark btn-sm disabled" aria-disabled="true">Suivante &rarr;</span>
+      {% endif %}
+    </div>
   </form>
 
   {% with s=resultat.synthese %}
@@ -58,9 +67,10 @@
   {% endwith %}
 
   {% if resultat.synthese.seances %}
-    <div class="card p-3 mb-4">
+    <div class="card p-3 mb-4" id="carte-evolution">
       <h5 class="mb-3">Évolution (par {{ resultat.evolution.granularite }})</h5>
       <div style="position: relative; height: 280px;"><canvas id="graphique-evolution"></canvas></div>
+      <p class="text-muted small text-center mb-0 mt-2 d-md-none">Glissez le graphique à gauche ou à droite pour changer de période.</p>
     </div>
 
     <div class="row g-3 mb-4">
@@ -138,6 +148,26 @@
       }
       selecteur.addEventListener('change', basculer);
       basculer();
+    })();
+  </script>
+  <script>
+    (function () {
+      var carte = document.getElementById('carte-evolution');
+      if (!carte) return;
+      var precedent = "{{ url_precedent|escapejs }}";
+      var suivant = "{{ url_suivant|default:''|escapejs }}";
+      var x0 = null, y0 = null;
+      carte.addEventListener('touchstart', function (e) {
+        x0 = e.changedTouches[0].clientX; y0 = e.changedTouches[0].clientY;
+      }, { passive: true });
+      carte.addEventListener('touchend', function (e) {
+        if (x0 === null) return;
+        var dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+        x0 = null;
+        if (Math.abs(dx) < 60 || Math.abs(dx) < 2 * Math.abs(dy)) return;
+        if (dx > 0 && precedent) window.location.search = precedent;
+        else if (dx < 0 && suivant) window.location.search = suivant;
+      }, { passive: true });
     })();
   </script>
   {% if resultat.synthese.seances %}

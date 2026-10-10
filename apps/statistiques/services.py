@@ -55,6 +55,16 @@ def resoudre_periode(preset, debut_str, fin_str, aujourd_hui):
     )
 
 
+def periode_voisine(preset, debut, fin, sens):
+    """Période de même nature juste avant (sens=-1) ou juste après (sens=1)."""
+    if preset == 'perso':
+        duree = (fin - debut).days + 1
+        decalage = datetime.timedelta(days=duree * sens)
+        return debut + decalage, fin + decalage
+    jour_de_reference = debut - datetime.timedelta(days=1) if sens < 0 else fin + datetime.timedelta(days=1)
+    return resoudre_periode(preset, '', '', jour_de_reference)
+
+
 def noms_de_seances():
     return list(Seance.objects.order_by('nom').values_list('nom', flat=True).distinct())
 

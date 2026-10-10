@@ -66,6 +66,58 @@ class ResoudrePeriodeTests(TestCase):
         self.assertEqual((debut, fin), (datetime.date(2026, 10, 1), datetime.date(2026, 10, 31)))
 
 
+class PeriodeVoisineTests(TestCase):
+    def test_semaine_precedente_et_suivante(self):
+        debut, fin = datetime.date(2026, 10, 12), datetime.date(2026, 10, 18)
+
+        self.assertEqual(
+            services.periode_voisine('semaine', debut, fin, -1),
+            (datetime.date(2026, 10, 5), datetime.date(2026, 10, 11)),
+        )
+        self.assertEqual(
+            services.periode_voisine('semaine', debut, fin, 1),
+            (datetime.date(2026, 10, 19), datetime.date(2026, 10, 25)),
+        )
+
+    def test_mois_precedent_a_cheval_sur_l_annee(self):
+        debut, fin = datetime.date(2027, 1, 1), datetime.date(2027, 1, 31)
+
+        self.assertEqual(
+            services.periode_voisine('mois', debut, fin, -1),
+            (datetime.date(2026, 12, 1), datetime.date(2026, 12, 31)),
+        )
+
+    def test_mois_suivant_gere_les_mois_courts(self):
+        debut, fin = datetime.date(2027, 1, 1), datetime.date(2027, 1, 31)
+
+        self.assertEqual(
+            services.periode_voisine('mois', debut, fin, 1),
+            (datetime.date(2027, 2, 1), datetime.date(2027, 2, 28)),
+        )
+
+    def test_trimestre_et_annee(self):
+        self.assertEqual(
+            services.periode_voisine('trimestre', datetime.date(2026, 10, 1), datetime.date(2026, 12, 31), -1),
+            (datetime.date(2026, 7, 1), datetime.date(2026, 9, 30)),
+        )
+        self.assertEqual(
+            services.periode_voisine('annee', datetime.date(2026, 1, 1), datetime.date(2026, 12, 31), 1),
+            (datetime.date(2027, 1, 1), datetime.date(2027, 12, 31)),
+        )
+
+    def test_personnalisee_se_decale_de_sa_propre_duree(self):
+        debut, fin = datetime.date(2026, 9, 1), datetime.date(2026, 9, 10)  # 10 jours
+
+        self.assertEqual(
+            services.periode_voisine('perso', debut, fin, -1),
+            (datetime.date(2026, 8, 22), datetime.date(2026, 8, 31)),
+        )
+        self.assertEqual(
+            services.periode_voisine('perso', debut, fin, 1),
+            (datetime.date(2026, 9, 11), datetime.date(2026, 9, 20)),
+        )
+
+
 class SyntheseTests(TestCase):
     def test_compte_les_seances_passees_et_les_inscrits(self):
         inscrire(creer_seance(jours=-3, capacite=10), 5)
@@ -298,6 +350,64 @@ class VueStatistiquesTests(TestCase):
     def test_un_coach_inconnu_ou_invalide_est_ignore(self):
         self.client.force_login(self.gestionnaire)
         self.assertEqual(self.client.get(self.url, {'coach': 'abc'}).status_code, 200)
+
+    def test_le_parametre_ref_affiche_la_periode_contenant_cette_date(self):
+        self.client.force_login(self.gestionnaire)
+
+        response = self.client.get(self.url, {'periode': 'mois', 'ref': '2026-03-15'})
+
+        self.assertEqual(response.context['debut'], datetime.date(2026, 3, 1))
+        self.assertEqual(response.context['fin'], datetime.date(2026, 3, 31))
+
+    def test_un_ref_invalide_est_ignore(self):
+        self.client.force_login(self.gestionnaire)
+
+        response = self.client.get(self.url, {'periode': 'mois', 'ref': 'pas-une-date'})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['debut'], timezone.localdate().replace(day=1))
+
+    def test_lien_vers_la_periode_precedente_conserve_les_filtres(self):
+        self.client.force_login(self.gestionnaire)
+
+        response = self.client.get(self.url, {'periode': 'mois', 'ref': '2026-03-15', 'type': 'WOD'})
+
+        precedent = response.context['url_precedent']
+        self.assertIn('periode=mois', precedent)
+        self.assertIn('ref=2026-02-28', precedent)
+        self.assertIn('type=WOD', precedent)
+
+    def test_lien_suivant_present_pour_une_periode_passee(self):
+        self.client.force_login(self.gestionnaire)
+
+        response = self.client.get(self.url, {'periode': 'mois', 'ref': '2026-03-15'})
+
+        self.assertIn('ref=2026-04-01', response.context['url_suivant'])
+
+    def test_pas_de_lien_suivant_quand_la_periode_contient_aujourd_hui(self):
+        self.client.force_login(self.gestionnaire)
+
+        response = self.client.get(self.url, {'periode': 'mois'})
+
+        self.assertIsNone(response.context['url_suivant'])
+
+    def test_navigation_personnalisee_utilise_debut_et_fin(self):
+        self.client.force_login(self.gestionnaire)
+
+        response = self.client.get(self.url, {'periode': 'perso', 'debut': '2026-03-01', 'fin': '2026-03-10'})
+
+        self.assertIn('debut=2026-02-19', response.context['url_precedent'])
+        self.assertIn('fin=2026-02-28', response.context['url_precedent'])
+        self.assertIn('debut=2026-03-11', response.context['url_suivant'])
+
+    def test_les_donnees_changent_avec_la_periode_naviguee(self):
+        inscrire(creer_seance(nom='Séance ancienne', jours=-100, heure=10), 2)
+        self.client.force_login(self.gestionnaire)
+        ancienne = timezone.localdate() - datetime.timedelta(days=100)
+
+        response = self.client.get(self.url, {'periode': 'mois', 'ref': ancienne.isoformat()})
+
+        self.assertEqual(response.context['resultat']['synthese']['seances'], 1)
 
     def test_lien_dans_le_menu_pour_le_gestionnaire(self):
         self.client.force_login(self.gestionnaire)
