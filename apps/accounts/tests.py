@@ -962,7 +962,7 @@ class UrlSuivanteTests(TestCase):
     def _requete(self, next_url):
         from django.test import RequestFactory
 
-        return RequestFactory().post('/', {'next': next_url}, HTTP_HOST='spiro6.hopto.org')
+        return RequestFactory().post('/', {'next': next_url})
 
     def test_garde_une_url_interne(self):
         from apps.accounts.redirections import url_suivante
