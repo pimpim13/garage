@@ -10,6 +10,7 @@ from django.utils.text import slugify
 from django.views.decorators.http import require_POST
 
 from apps.accounts.models import User
+from apps.accounts.redirections import url_suivante
 from apps.bookings.services import historique_jokers, solde_jokers
 from apps.offers.models import Offre
 
@@ -100,7 +101,7 @@ def ajuster_solde_membre(request, membre_id):
     else:
         ajuster_solde(membre=membre, delta=delta, auteur=request.user)
         messages.success(request, f"Solde de {membre} ajusté de {delta:+d}.")
-    return redirect(request.POST.get('next') or 'accounts:membre_liste')
+    return redirect(url_suivante(request, 'accounts:membre_liste'))
 
 
 @login_required
@@ -119,4 +120,4 @@ def enregistrer_achat_membre(request, membre_id):
     else:
         enregistrer_achat(membre=membre, offre=offre, prix_paye=prix_paye, saisi_par=request.user)
         messages.success(request, f"Achat « {offre.nom} » enregistré pour {membre}.")
-    return redirect(request.POST.get('next') or 'accounts:membre_liste')
+    return redirect(url_suivante(request, 'accounts:membre_liste'))

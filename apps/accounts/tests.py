@@ -954,3 +954,29 @@ class ConnexionInsensibleCasseTests(TestCase):
         connecte = self.client.login(username='jeandupont', password='mauvais')
 
         self.assertFalse(connecte)
+
+
+class UrlSuivanteTests(TestCase):
+    """Le paramètre « next » ne doit jamais rediriger vers un site externe."""
+
+    def _requete(self, next_url):
+        from django.test import RequestFactory
+
+        return RequestFactory().post('/', {'next': next_url}, HTTP_HOST='spiro6.hopto.org')
+
+    def test_garde_une_url_interne(self):
+        from apps.accounts.redirections import url_suivante
+
+        self.assertEqual(url_suivante(self._requete('/calendrier/'), 'home'), '/calendrier/')
+
+    def test_refuse_un_site_externe(self):
+        from apps.accounts.redirections import url_suivante
+
+        for piege in ['https://site-piege.example/', '//site-piege.example/', 'javascript:alert(1)']:
+            with self.subTest(piege=piege):
+                self.assertEqual(url_suivante(self._requete(piege), 'home'), reverse('home'))
+
+    def test_valeur_par_defaut_si_absent(self):
+        from apps.accounts.redirections import url_suivante
+
+        self.assertEqual(url_suivante(self._requete(''), 'accounts:membre_liste'), reverse('accounts:membre_liste'))

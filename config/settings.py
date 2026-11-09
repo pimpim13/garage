@@ -172,3 +172,13 @@ RECEPTIONNAIRE_PAIEMENTS_TEL = os.environ.get('RECEPTIONNAIRE_PAIEMENTS_TEL', ''
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Sécurité HTTPS en production (Nginx termine le TLS et transmet X-Forwarded-Proto).
+# Inactif en local (DJANGO_DEBUG=True) pour garder runserver en HTTP.
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    # HSTS : le navigateur n'utilisera plus que HTTPS pour ce domaine.
+    # Commencer court (1 h), puis passer à 31536000 (1 an) après une semaine sans souci.
+    SECURE_HSTS_SECONDS = int(os.environ.get('DJANGO_HSTS_SECONDS', '3600'))

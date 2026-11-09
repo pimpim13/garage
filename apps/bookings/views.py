@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from apps.accounts.models import User
+from apps.accounts.redirections import url_suivante
 from apps.notifications.ntfy import notifier_evenement_seance
 from apps.scheduling.models import Seance
 
@@ -23,7 +24,7 @@ from .services import (
 
 
 def _retour(request, seance):
-    return request.POST.get('next') or reverse('scheduling:seance_detail', kwargs={'pk': seance.pk})
+    return url_suivante(request, reverse('scheduling:seance_detail', kwargs={'pk': seance.pk}))
 
 
 def _notifier_inscription(seance, membre):
@@ -225,7 +226,7 @@ def attribuer_joker_membre(request, membre_id):
         messages.success(request, f"Joker attribué à {membre}.")
     except ValueError as erreur:
         messages.error(request, str(erreur))
-    return redirect(request.POST.get('next') or 'accounts:membre_liste')
+    return redirect(url_suivante(request, 'accounts:membre_liste'))
 
 
 @login_required
@@ -239,4 +240,4 @@ def retirer_joker_membre(request, membre_id):
         messages.success(request, f"Joker retiré à {membre}.")
     except ValueError as erreur:
         messages.error(request, str(erreur))
-    return redirect(request.POST.get('next') or 'accounts:membre_liste')
+    return redirect(url_suivante(request, 'accounts:membre_liste'))
