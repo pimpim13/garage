@@ -2,6 +2,9 @@ import secrets
 
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
+
+from . import reglement
 
 
 class Famille(models.Model):
@@ -67,6 +70,16 @@ class User(AbstractUser):
         help_text="Date à partir de laquelle un nouveau joker peut être ré-attribué (3 mois après la "
         "consommation du précédent). Effacée si un joker est attribué manuellement avant cette date.",
     )
+    reglement_version_acceptee = models.CharField(
+        max_length=20,
+        blank=True,
+        verbose_name="version du règlement acceptée",
+        help_text="Version du règlement intérieur acceptée par ce compte (vide = jamais accepté).",
+    )
+    reglement_accepte_le = models.DateTimeField(
+        null=True, blank=True, verbose_name="règlement accepté le"
+    )
+
     class ModeEmailOuverture(models.TextChoices):
         SEANCE = 'seance', "Un email par séance"
         RECAP = 'recap', "Un récapitulatif par jour"
@@ -122,6 +135,15 @@ class User(AbstractUser):
         if self.anime_des_seances and not self.topic_ntfy_coach:
             self.topic_ntfy_coach = _generer_topic_ntfy_coach()
         super().save(*args, **kwargs)
+
+    @property
+    def reglement_a_jour(self):
+        return self.reglement_version_acceptee == reglement.VERSION
+
+    def accepter_reglement(self):
+        self.reglement_version_acceptee = reglement.VERSION
+        self.reglement_accepte_le = timezone.now()
+        self.save(update_fields=['reglement_version_acceptee', 'reglement_accepte_le'])
 
     @property
     def is_admin(self):

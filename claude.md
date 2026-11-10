@@ -146,6 +146,14 @@ Le coach gestionnaire (ou l'admin) peut publier des actualités qui défilent en
 - Gérées depuis une page dédiée (`/actualites/`, onglet « Actualités » du menu), pas depuis les Préférences (réglages personnels d'un compte)
 - **Affichage à deux endroits** : en bas de la page d'accueil pour les visiteurs non connectés (pas de croix de fermeture), et au-dessus du calendrier hebdomadaire pour les membres/coachs connectés, avec une croix pour fermer le bandeau (mémorisé dans le navigateur, réapparaît si les actualités affichées changent)
 
+## Règlement intérieur
+
+Texte public sur `/comptes/reglement/` (lien dans le pied de page), source dans `templates/accounts/_reglement_texte.html`. Acceptation obligatoire, avec case à cocher, horodatée par compte (`reglement_version_acceptee`, `reglement_accepte_le`) :
+
+- **Nouveaux membres** : à leur toute première connexion (après avoir défini leur mot de passe via le lien reçu par email), redirection vers la page d'acceptation. Il n'y a pas d'auto-inscription : les comptes sont créés par le gestionnaire
+- **Membres déjà inscrits** : à leur prochaine tentative de s'inscrire, de rejoindre une liste d'attente ou de permuter, redirection vers la page d'acceptation puis retour à la séance. La désinscription n'est jamais bloquée
+- **Nouvelle version du texte** : changer `VERSION` dans `apps/accounts/reglement.py` force tout le monde à ré-accepter
+
 ## Design
 
 Structure et parcours UX (vue calendrier hebdomadaire, navigation par pastilles de jour, cards) inspirés de l'application **peppy.cool**.

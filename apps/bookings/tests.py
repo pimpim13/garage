@@ -553,6 +553,7 @@ class NotifierCoachSeancePleineTests(TestCase):
     def setUp(self):
         self.coach = User.objects.create(username='coach_pleine', role=User.Role.COACH)
         self.membre = User.objects.create_user(username='membre_pleine', password='motdepasse123')
+        self.membre.accepter_reglement()
         MouvementSeance.objects.create(membre=self.membre, delta=5, motif=MouvementSeance.Motif.ACHAT)
         self.seance = Seance.objects.create(
             nom='WOD',
@@ -614,6 +615,7 @@ class EnregistrerDesinscriptionNotifieCoachTests(TestCase):
 class InscrireViewMessageOuvertureTests(TestCase):
     def test_le_message_indique_la_date_et_l_heure_d_ouverture(self):
         membre = User.objects.create_user(username='membre_avant_ouverture', password='motdepasse123')
+        membre.accepter_reglement()
         seance = Seance.objects.create(
             nom='WOD',
             debut=timezone.now() + datetime.timedelta(days=20),
@@ -641,6 +643,7 @@ class PermutationTestCase(TestCase):
         self.addCleanup(patcher.stop)
         self.coach = User.objects.create(username='coach_permutation')
         self.membre = User.objects.create_user(username='membre_permutation', password='motdepasse123')
+        self.membre.accepter_reglement()
         MouvementSeance.objects.create(membre=self.membre, delta=5, motif=MouvementSeance.Motif.ACHAT)
 
     def seance(self, heure=12, jour=7, capacite=10, nom='WOD'):

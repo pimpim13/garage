@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from apps.accounts.models import User
+from apps.accounts.reglement import reglement_requis
 from apps.accounts.redirections import url_suivante
 from apps.notifications.ntfy import notifier_evenement_seance
 from apps.scheduling.models import Seance
@@ -40,6 +41,7 @@ def _notifier_inscription(seance, membre):
 
 @login_required
 @require_POST
+@reglement_requis
 def inscrire(request, seance_id):
     seance = get_object_or_404(Seance, pk=seance_id)
     if seance.est_passee:
@@ -79,6 +81,7 @@ def desinscrire(request, seance_id):
 
 @login_required
 @require_POST
+@reglement_requis
 def permuter(request, seance_id):
     seance = get_object_or_404(Seance, pk=seance_id)
     inscription = request.user.inscriptions.filter(seance=seance, statut=Inscription.Statut.INSCRIT).first()
@@ -101,6 +104,7 @@ def permuter(request, seance_id):
 
 @login_required
 @require_POST
+@reglement_requis
 def liste_attente_rejoindre(request, seance_id):
     seance = get_object_or_404(Seance, pk=seance_id)
     deja_actif = request.user.inscriptions.filter(

@@ -1,9 +1,11 @@
 from django.contrib import messages
+from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DeleteView, ListView, TemplateView, UpdateView
@@ -16,6 +18,7 @@ from apps.purchases.services import solde_seances, statut_solde
 from apps.purchases.views import AJUSTEMENTS_AUTORISES as AJUSTEMENTS_POSSIBLES
 
 from .forms import FamilleForm, MembreCreateForm, MembreUpdateForm, ProfilForm
+from .redirections import url_suivante
 from .mixins import GestionnaireRequiredMixin
 from .models import User
 
@@ -165,3 +168,30 @@ def membre_toggle_actif(request, pk):
     else:
         messages.success(request, f"{membre} désactivé(e).")
     return redirect('accounts:membre_liste')
+
+
+class ReglementView(TemplateView):
+    template_name = 'accounts/reglement.html'
+
+
+class GarageLoginView(auth_views.LoginView):
+    template_name = 'accounts/login.html'
+
+    def form_valid(self, form):
+        premiere_connexion = form.get_user().last_login is None
+        reponse = super().form_valid(form)
+        if premiere_connexion and not self.request.user.reglement_a_jour:
+            return redirect(f"{reverse('accounts:reglement_accepter')}?next={reponse.url}")
+        return reponse
+
+
+@login_required
+def reglement_accepter(request):
+    suivant = request.POST.get('next') or request.GET.get('next') or ''
+    if request.method == 'POST':
+        if request.POST.get('accepte'):
+            request.user.accepter_reglement()
+            messages.success(request, "Merci, le règlement intérieur est accepté.")
+            return redirect(url_suivante(request, 'scheduling:calendrier'))
+        messages.error(request, "Cochez la case pour confirmer que vous acceptez le règlement.")
+    return render(request, 'accounts/reglement_accepter.html', {'next': suivant})

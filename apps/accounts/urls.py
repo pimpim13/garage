@@ -6,7 +6,9 @@ from . import views
 app_name = 'accounts'
 
 urlpatterns = [
-    path('connexion/', auth_views.LoginView.as_view(template_name='accounts/login.html'), name='login'),
+    path('connexion/', views.GarageLoginView.as_view(), name='login'),
+    path('reglement/', views.ReglementView.as_view(), name='reglement'),
+    path('reglement/accepter/', views.reglement_accepter, name='reglement_accepter'),
     path('deconnexion/', auth_views.LogoutView.as_view(), name='logout'),
     path(
         'mot-de-passe/',
